@@ -1,0 +1,13 @@
+{
+  "application_type": "web",
+  "client_id": "cc_classic_xBuYRPZElJofF1DmpYo7Yq74k0Ay5",
+  "client_secret": "cc_sk_classic_UzgsqrGpNUGOd0m2N18DAbgu2h80kN9f7jRps1bs1VfNiEzi1J",
+  "cors_uris": [
+    ""
+  ],
+  "id": "CCCNEFK26",
+  "name": "smashd",
+  "redirect_uris": [
+    "http://localhost:3000/order-confirmation"
+  ]
+}
