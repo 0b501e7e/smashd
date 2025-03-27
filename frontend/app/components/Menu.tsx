@@ -23,11 +23,19 @@ export function Menu() {
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/menu`);
+      // Remove any trailing slash from the API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL?.endsWith('/') 
+        ? process.env.NEXT_PUBLIC_API_URL.slice(0, -1) 
+        : process.env.NEXT_PUBLIC_API_URL;
+        
+      console.log('Fetching menu from:', `${apiUrl}/v1/menu`);
+      const response = await fetch(`${apiUrl}/v1/menu`);
+      console.log('Response status:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data: MenuItem[] = await response.json();
+      console.log('Menu data received:', data);
 
       // Remove duplicates and group items by category
       const groupedItems = data.reduce((acc, item) => {
