@@ -52,6 +52,28 @@ export default function CartScreen() {
               <ThemedText>${item.price.toFixed(2)}</ThemedText>
             </ThemedView>
             
+            {item.customizations && (
+              <ThemedView style={styles.customizationsContainer}>
+                {item.customizations.extras && item.customizations.extras.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Extras: {item.customizations.extras.join(', ')}
+                  </ThemedText>
+                )}
+                
+                {item.customizations.sauces && item.customizations.sauces.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Sauces: {item.customizations.sauces.join(', ')}
+                  </ThemedText>
+                )}
+                
+                {item.customizations.toppings && item.customizations.toppings.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Toppings: {item.customizations.toppings.join(', ')}
+                  </ThemedText>
+                )}
+              </ThemedView>
+            )}
+            
             <ThemedView style={styles.quantityControls}>
               <TouchableOpacity
                 onPress={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
@@ -161,5 +183,17 @@ const styles = StyleSheet.create({
   checkoutButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  customizationsContainer: {
+    marginVertical: 8,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  customizationText: {
+    fontSize: 14,
+    color: '#555',
+    marginVertical: 2,
   },
 });

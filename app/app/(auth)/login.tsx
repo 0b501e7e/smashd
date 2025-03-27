@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'reac
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { router } from 'expo-router';
+import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 
@@ -79,6 +79,15 @@ export default function LoginScreen() {
             <ThemedText style={styles.buttonText}>Login</ThemedText>
           )}
         </TouchableOpacity>
+
+        <ThemedView style={styles.registerContainer}>
+          <ThemedText>Don't have an account? </ThemedText>
+          <Link href="/register" asChild>
+            <TouchableOpacity>
+              <ThemedText style={styles.registerLink}>Register</ThemedText>
+            </TouchableOpacity>
+          </Link>
+        </ThemedView>
       </ThemedView>
     </>
   );
@@ -115,5 +124,14 @@ const styles = StyleSheet.create({
   error: {
     color: '#ff4444',
     textAlign: 'center',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  registerLink: {
+    color: '#0a7ea4',
+    fontWeight: 'bold',
   },
 });

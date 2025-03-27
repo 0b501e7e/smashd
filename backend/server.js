@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: '*',  // Allow requests from any origin
   credentials: true
 }));
 app.use(express.json());
@@ -123,6 +123,35 @@ app.get('/v1/menu', async (req, res) => {
   }
 });
 
+// New endpoint to fetch a single menu item by ID
+app.get('/v1/menu/:id', async (req, res) => {
+  const { id } = req.params;
+  console.log(`Received request for menu item with ID: ${id}`);
+  
+  try {
+    const menuItem = await prisma.menuItem.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        category: true,
+        imageUrl: true
+      }
+    });
+    
+    if (!menuItem) {
+      return res.status(404).json({ error: 'Menu item not found' });
+    }
+    
+    res.json(menuItem);
+  } catch (error) {
+    console.error(`Error fetching menu item with ID ${id}:`, error);
+    res.status(500).json({ error: 'Error fetching menu item' });
+  }
+});
+
 app.post('/v1/admin/menu', authenticateToken, isAdmin, [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('description').trim().notEmpty().withMessage('Description is required'),
@@ -222,7 +251,8 @@ app.post('/v1/orders', [
             create: items.map(item => ({
               menuItemId: item.menuItemId,
               quantity: item.quantity,
-              price: item.price
+              price: item.price,
+              customizations: item.customizations ? JSON.stringify(item.customizations) : null
             }))
           }
         },
@@ -272,6 +302,7 @@ app.post('/v1/orders/:orderId/confirm-payment', async (req, res) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    // Check if payment has been completed
     if (status === 'PAID') {
       await prisma.$transaction(async (prisma) => {
         // Update order status
@@ -356,135 +387,696 @@ app.get('/v1/users/profile', authenticateToken, async (req, res) => {
   }
 });
 
-async function getSumupAccessToken() {
+// Helper for making HTTP requests to SumUp
+function makeHttpRequest(options, postData = null) {
   return new Promise((resolve, reject) => {
-    const postData = new URLSearchParams({
-      grant_type: 'client_credentials',
-      client_id: process.env.SUMUP_CLIENT_ID,
-      client_secret: process.env.SUMUP_CLIENT_SECRET
-    }).toString();
-
-    const options = {
-      hostname: 'api.sumup.com',
-      port: 443,
-      path: '/token',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Content-Length': Buffer.byteLength(postData)
-      }
-    };
-
     const req = https.request(options, (res) => {
       let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
+      res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
         try {
           const responseData = JSON.parse(data);
-          if (res.statusCode === 200 && responseData.access_token) {
-            resolve(responseData.access_token);
-            console.log('SumUp access token:', responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(responseData);
           } else {
-            reject(new Error(`Failed to get access token: ${data}`));
+            reject(new Error(`SumUp API error: ${JSON.stringify(responseData)}`));
           }
         } catch (error) {
-          reject(new Error(`Error parsing SumUp response: ${error.message}`));
+          reject(new Error(`Error parsing response: ${error.message}`));
         }
       });
     });
-
+    
     req.on('error', (error) => {
-      reject(new Error(`Error making request to SumUp: ${error.message}`));
+      reject(new Error(`Request error: ${error.message}`));
     });
-
-    req.write(postData);
+    
+    if (postData) {
+      req.write(postData);
+    }
+    
     req.end();
   });
 }
 
-app.post('/v1/initiate-checkout', async (req, res) => {
-  const { orderId } = req.body;
+async function getSumupAccessToken() {
+  const postData = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: process.env.SUMUP_CLIENT_ID,
+    client_secret: process.env.SUMUP_CLIENT_SECRET
+  }).toString();
+
+  const options = {
+    hostname: 'api.sumup.com',
+    path: '/token',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    }
+  };
 
   try {
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(orderId) },
-      include: { items: true }
-    });
-
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+    const responseData = await makeHttpRequest(options, postData);
+    if (responseData.access_token) {
+      return responseData.access_token;
+    } else {
+      throw new Error(`Failed to get access token: ${JSON.stringify(responseData)}`);
     }
+  } catch (error) {
+    console.error('Error getting SumUp access token:', error);
+    throw error;
+  }
+}
 
-    // Get the SumUp access token
-    const accessToken = await getSumupAccessToken();
+app.post('/v1/initiate-checkout', async (req, res) => {
+  const { orderId } = req.body;
+  console.log(`Initiating checkout for order: ${orderId}`);
 
-    const checkoutData = JSON.stringify({
-      checkout_reference: `ORDER-${order.id}`,
-      amount: order.total,
-      currency: 'EUR',
-      pay_to_email: process.env.SUMUP_MERCHANT_EMAIL,
-      description: `Order #${order.id}`,
-      merchant_code: process.env.SUMUP_MERCHANT_CODE
-    });
+  if (!orderId) {
+    return res.status(400).json({ error: 'Order ID is required' });
+  }
 
-    const options = {
-      hostname: 'api.sumup.com',
-      path: '/v0.1/checkouts',
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(checkoutData)
-      }
-    };
-
-    const sumupRequest = https.request(options, (sumupResponse) => {
-      let data = '';
-      sumupResponse.on('data', (chunk) => {
-        data += chunk;
+  try {
+    // Add request locking to prevent duplicate calls
+    const lockKey = `checkout:lock:${orderId}`;
+    
+    // Check if there's an existing ongoing checkout process for this order
+    if (global[lockKey]) {
+      console.log(`Checkout already in progress for order ${orderId}`);
+      return res.status(409).json({ 
+        error: 'Checkout already in progress for this order',
+        status: 'PENDING'
       });
-      sumupResponse.on('end', async () => {
-        try {
-          const responseData = JSON.parse(data);
-          console.log('SumUp API Response:', responseData);
-
-          if (responseData.id) {
-            // Update the order with the SumUp checkout ID
-            const updatedOrder = await prisma.order.update({
-              where: { id: order.id },
-              data: { sumupCheckoutId: responseData.id }
-            });
-
-            res.json({
-              orderId: updatedOrder.id,
-              checkoutId: responseData.id
-            });
-          } else {
-            throw new Error(`SumUp API error: ${JSON.stringify(responseData)}`);
+    }
+    
+    // Set lock
+    global[lockKey] = true;
+    
+    try {
+      const order = await prisma.order.findUnique({
+        where: { id: parseInt(orderId) },
+        include: { 
+          items: {
+            include: { menuItem: true }
           }
-        } catch (error) {
-          console.error('Error processing SumUp response:', error);
-          res.status(500).json({ error: 'Error processing payment provider response', details: error.message });
         }
       });
-    });
 
-    sumupRequest.on('error', (error) => {
-      console.error('Error initiating checkout:', error);
-      res.status(500).json({ error: 'Error initiating checkout', details: error.message });
-    });
+      if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+      }
 
-    sumupRequest.write(checkoutData);
-    sumupRequest.end();
+      // Check if this order already has a SumUp checkout ID
+      if (order.sumupCheckoutId) {
+        console.log(`Order ${orderId} already has checkout ID: ${order.sumupCheckoutId}`);
+        
+        // Get checkout details to return the checkout URL
+        try {
+          const accessToken = await getSumupAccessToken();
+          const options = {
+            hostname: 'api.sumup.com',
+            path: `/v0.1/checkouts/${order.sumupCheckoutId}`,
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          };
+          
+          const checkoutDetails = await makeHttpRequest(options);
+          
+          return res.json({
+            orderId: order.id,
+            checkoutId: order.sumupCheckoutId,
+            checkoutUrl: checkoutDetails.hosted_checkout_url || `https://checkout.sumup.com/pay/${order.sumupCheckoutId}`
+          });
+        } catch (checkoutError) {
+          console.error('Error fetching existing checkout details:', checkoutError);
+          // Continue with creating a new checkout if we couldn't get details for the existing one
+        }
+      }
 
+      // Check if SumUp credentials are configured
+      if (!process.env.SUMUP_CLIENT_ID || 
+          !process.env.SUMUP_CLIENT_SECRET || 
+          !process.env.SUMUP_MERCHANT_EMAIL) {
+        
+        console.error('Missing SumUp credentials - these are required for payment processing');
+        return res.status(500).json({ error: 'SumUp credentials not configured' });
+      }
+
+      // Get the SumUp access token
+      const accessToken = await getSumupAccessToken();
+
+      // Create a unique reference by adding a timestamp and a random string
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 8);
+      const uniqueReference = `ORDER-${order.id}-${timestamp}-${randomStr}`;
+      console.log(`Creating checkout with reference: ${uniqueReference}`);
+
+      const checkoutData = JSON.stringify({
+        checkout_reference: uniqueReference,
+        amount: order.total,
+        currency: 'EUR',
+        pay_to_email: process.env.SUMUP_MERCHANT_EMAIL,
+        description: `Order #${order.id}`,
+        // Enable hosted checkout
+        hosted_checkout: { enabled: true },
+        // Format redirect URL correctly - ensure APP_HOST is a full URL
+        redirect_url: process.env.APP_HOST && process.env.APP_HOST.startsWith('http') ? 
+          `${process.env.APP_HOST.replace(/\/$/, '')}/order-confirmation?orderId=${order.id}` : 
+          undefined,
+        // Add custom fields for order details - ensure we don't exceed SumUp's limit
+        custom_fields: {
+          order_id: order.id.toString()
+        }
+      });
+
+      console.log('Checkout request data:', checkoutData);
+
+      const options = {
+        hostname: 'api.sumup.com',
+        path: '/v0.1/checkouts',
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      try {
+        const responseData = await makeHttpRequest(options, checkoutData);
+        console.log('SumUp API Response:', responseData);
+
+        // Update the order with the SumUp checkout ID
+        const updatedOrder = await prisma.order.update({
+          where: { id: order.id },
+          data: { sumupCheckoutId: responseData.id }
+        });
+
+        res.json({
+          orderId: updatedOrder.id,
+          checkoutId: responseData.id,
+          checkoutUrl: responseData.hosted_checkout_url
+        });
+      } catch (apiError) {
+        // Handle the specific case of duplicate checkout
+        const errorMessage = apiError.message || '';
+        console.log(`API error message: ${errorMessage}`);
+        
+        if (errorMessage.includes('DUPLICATED_CHECKOUT')) {
+          console.log('Handling duplicate checkout error');
+          
+          // Extract the existing checkout ID if available in the error message
+          let existingCheckoutId = null;
+          try {
+            // Attempt to extract an ID from the error if possible
+            const jsonMatch = errorMessage.match(/{.*}/);
+            if (jsonMatch) {
+              const errorObj = JSON.parse(jsonMatch[0]);
+              
+              // Try to find any indication of an ID in the error, may vary by API
+              existingCheckoutId = errorObj.id || errorObj.checkout_id;
+            }
+          } catch (parseError) {
+            console.error('Error parsing API error for checkout ID:', parseError);
+          }
+          
+          // If we couldn't extract the ID, make a request to find existing checkouts
+          if (!existingCheckoutId) {
+            try {
+              // Try to find the existing checkout by making an API call
+              const listOptions = {
+                hostname: 'api.sumup.com',
+                path: '/v0.1/checkouts?limit=10',
+                method: 'GET',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                }
+              };
+              
+              const listResponse = await makeHttpRequest(listOptions);
+              console.log('Available checkouts:', listResponse);
+              
+              // Look for a checkout with a reference that matches this order
+              const matchingCheckout = listResponse.items?.find(checkout => 
+                checkout.checkout_reference.includes(`ORDER-${order.id}`)
+              );
+              
+              if (matchingCheckout) {
+                existingCheckoutId = matchingCheckout.id;
+                console.log(`Found existing checkout: ${existingCheckoutId}`);
+              }
+            } catch (listError) {
+              console.error('Error listing existing checkouts:', listError);
+            }
+          }
+          
+          // If we found an existing checkout ID, use it
+          if (existingCheckoutId) {
+            // Update our order with this checkout ID
+            const updatedOrder = await prisma.order.update({
+              where: { id: order.id },
+              data: { sumupCheckoutId: existingCheckoutId }
+            });
+            
+            return res.json({
+              orderId: updatedOrder.id,
+              checkoutId: existingCheckoutId,
+              checkoutUrl: `https://checkout.sumup.com/pay/${existingCheckoutId}`
+            });
+          }
+          
+          // If we couldn't find the existing checkout, try with a more unique reference
+          const superUniqueRef = `ORDER-${order.id}-${timestamp}-${randomStr}-retry`;
+          console.log(`Retrying with super unique reference: ${superUniqueRef}`);
+          
+          // Retry with the new super unique reference
+          const retryData = JSON.stringify({
+            checkout_reference: superUniqueRef,
+            amount: order.total,
+            currency: 'EUR',
+            pay_to_email: process.env.SUMUP_MERCHANT_EMAIL,
+            description: `Order #${order.id}`,
+            hosted_checkout: { enabled: true },
+            redirect_url: process.env.APP_HOST && process.env.APP_HOST.startsWith('http') ? 
+              `${process.env.APP_HOST.replace(/\/$/, '')}/order-confirmation?orderId=${order.id}` : 
+              undefined,
+            custom_fields: {
+              order_id: order.id.toString()
+            }
+          });
+          
+          console.log('Retry data:', retryData);
+          
+          const retryResponse = await makeHttpRequest(options, retryData);
+          console.log('Retry successful:', retryResponse);
+          
+          const updatedOrder = await prisma.order.update({
+            where: { id: order.id },
+            data: { sumupCheckoutId: retryResponse.id }
+          });
+          
+          return res.json({
+            orderId: updatedOrder.id,
+            checkoutId: retryResponse.id,
+            checkoutUrl: retryResponse.hosted_checkout_url
+          });
+        }
+        
+        // If it's not a duplicate checkout error or we couldn't recover, rethrow
+        throw apiError;
+      } 
+    } finally {
+      // Always release the lock
+      global[lockKey] = false;
+    }
   } catch (error) {
     console.error('Error initiating checkout:', error);
     res.status(500).json({ error: 'Error initiating checkout', details: error.message });
   }
 });
 
+// Helper function to verify SumUp webhook signatures
+function verifyWebhookSignature(signature, payload, secret) {
+  const crypto = require('crypto');
+  const hmac = crypto.createHmac('sha256', secret);
+  const expectedSignature = hmac.update(JSON.stringify(payload)).digest('hex');
+  return signature === expectedSignature;
+}
+
+app.post('/v1/webhooks/sumup', async (req, res) => {
+  try {
+    // Check signature if webhook secret is configured
+    const signature = req.headers['sumup-signature'];
+    if (process.env.SUMUP_WEBHOOK_SECRET && signature) {
+      if (!verifyWebhookSignature(signature, req.body, process.env.SUMUP_WEBHOOK_SECRET)) {
+        console.error('Invalid webhook signature');
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+    }
+
+    const { event_type, checkout_reference, status } = req.body;
+    console.log('Received SumUp webhook:', req.body);
+    
+    // Extract order ID from checkout reference (now in format "ORDER-123-timestamp")
+    let orderId = null;
+    if (checkout_reference) {
+      // Extract the order ID from the reference
+      const match = checkout_reference.match(/^ORDER-(\d+)(?:-\d+)?$/);
+      if (match && match[1]) {
+        orderId = parseInt(match[1]);
+      }
+    }
+    
+    if (!orderId) {
+      return res.status(400).json({ error: 'Invalid checkout reference' });
+    }
+    
+    // Map SumUp events to our order statuses
+    let orderStatus;
+    switch (event_type) {
+      case 'checkout.paid':
+        orderStatus = 'PAID';
+        break;
+      case 'checkout.failed':
+        orderStatus = 'PAYMENT_FAILED';
+        break;
+      case 'order.confirmed': // Custom event if SumUp sends it when business confirms
+        orderStatus = 'CONFIRMED';
+        break;
+      case 'order.ready': // Custom event if SumUp sends it when order is ready
+        orderStatus = 'READY';
+        break;
+      default:
+        // Log unknown event types but don't update order
+        console.log(`Unknown SumUp event type: ${event_type}`);
+        return res.status(200).send('Event received but not processed');
+    }
+    
+    if (orderStatus) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { 
+          status: orderStatus,
+          ...(orderStatus === 'READY' ? { readyAt: new Date() } : {})
+        }
+      });
+      console.log(`Updated order ${orderId} status to ${orderStatus}`);
+    }
+    
+    res.status(200).send('Webhook processed successfully');
+  } catch (error) {
+    console.error('Error processing SumUp webhook:', error);
+    res.status(500).send('Error processing webhook');
+  }
+});
+
+// 2. Order status polling endpoint for mobile app
+app.get('/v1/orders/:id/status', async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        status: true,
+        readyAt: true,
+        estimatedReadyTime: true,
+        sumupCheckoutId: true
+      }
+    });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    res.json(order);
+  } catch (error) {
+    console.error('Error fetching order status:', error);
+    res.status(500).json({ error: 'Error fetching order status' });
+  }
+});
+
+// 3. Business estimate time endpoint (for manual updates from business if needed)
+app.post('/v1/orders/:id/estimate', async (req, res) => {
+  const { id } = req.params;
+  const { estimatedMinutes } = req.body;
+  
+  if (!estimatedMinutes || typeof estimatedMinutes !== 'number') {
+    return res.status(400).json({ error: 'Valid estimatedMinutes required' });
+  }
+  
+  try {
+    const estimatedReadyTime = new Date(Date.now() + (estimatedMinutes * 60000));
+    
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(id) },
+      data: { 
+        estimatedReadyTime,
+        // Only update status if it's still pending
+        status: { set: 'CONFIRMED' }
+      }
+    });
+    
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating order estimate:', error);
+    res.status(500).json({ error: 'Error updating order estimate' });
+  }
+});
+
+app.post('/v1/admin/sync-menu-to-sumup', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    // Get SumUp access token
+    const accessToken = await getSumupAccessToken();
+    
+    // Fetch all available menu items
+    const menuItems = await prisma.menuItem.findMany({
+      where: { isAvailable: true }
+    });
+    
+    const results = [];
+    
+    // Process each menu item
+    for (const item of menuItems) {
+      const productData = {
+        name: item.name,
+        description: item.description,
+        price: item.price.toString(), // SumUp expects string
+        category: item.category
+      };
+      
+      // If we already have a SumUp product ID, update it
+      if (item.sumupProductId) {
+        await makeHttpRequest({
+          hostname: 'api.sumup.com',
+          path: `/v0.1/me/products/${item.sumupProductId}`,
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }, JSON.stringify(productData));
+        
+        results.push({ id: item.id, action: 'updated' });
+      } 
+      // Otherwise create a new product
+      else {
+        const response = await makeHttpRequest({
+          hostname: 'api.sumup.com',
+          path: '/v0.1/me/products',
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }, JSON.stringify(productData));
+        
+        // Store SumUp product ID in our database
+        await prisma.menuItem.update({
+          where: { id: item.id },
+          data: { sumupProductId: response.id }
+        });
+        
+        results.push({ id: item.id, action: 'created' });
+      }
+    }
+    
+    res.json({ success: true, results });
+  } catch (error) {
+    console.error('Error syncing menu to SumUp:', error);
+    res.status(500).json({ error: 'Error syncing menu to SumUp' });
+  }
+});
+
+// Only available in development environment
+app.post('/v1/test/sumup-webhook', async (req, res) => {
+  try {
+    const { orderId, event_type = 'checkout.paid' } = req.body;
+    
+    if (!orderId) {
+      return res.status(400).json({ error: 'Missing order ID' });
+    }
+    
+    console.log(`Simulating SumUp webhook for order ${orderId}, event: ${event_type}`);
+    
+    // Find the order
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(orderId) },
+    });
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    // Simulate different webhook event types
+    let status;
+    switch (event_type) {
+      case 'checkout.paid':
+        status = 'PAID';
+        break;
+      case 'checkout.failed':
+        status = 'PAYMENT_FAILED';
+        break;
+      case 'checkout.expired':
+        status = 'EXPIRED';
+        break;
+      default:
+        status = 'PAID';
+    }
+    
+    // Update the order status
+    const updatedOrder = await prisma.order.update({
+      where: { id: parseInt(orderId) },
+      data: { status }
+    });
+    
+    console.log(`Updated order ${orderId} status to ${status}`);
+    
+    res.json({
+      success: true,
+      message: `Order ${orderId} updated with status ${status}`,
+      order: updatedOrder
+    });
+  } catch (error) {
+    console.error('Error simulating webhook:', error);
+    res.status(500).json({ error: 'Error simulating webhook', details: error.message });
+  }
+});
+
+// Add a test endpoint to check SumUp connection
+app.get('/v1/test/sumup-connection', async (req, res) => {
+  try {
+    const accessToken = await getSumupAccessToken();
+    res.json({ 
+      success: true, 
+      message: 'SumUp connection successful',
+      token_prefix: accessToken.substring(0, 5) + '...'
+    });
+  } catch (error) {
+    console.error('Error testing SumUp connection:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error connecting to SumUp',
+      details: error.message
+    });
+  }
+});
+
+// Add a test endpoint to retrieve merchant profile
+app.get('/v1/test/merchant-profile', async (req, res) => {
+  try {
+    // First get an access token
+    const accessToken = await getSumupAccessToken();
+    
+    // Use the token to make a request to the merchant profile endpoint
+    const options = {
+      hostname: 'api.sumup.com',
+      path: '/v0.1/me',
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const profileData = await makeHttpRequest(options);
+    console.log('SumUp Merchant Profile:', profileData);
+    
+    // Extract the merchant code and email
+    const merchantCode = profileData.merchant_profile?.merchant_code;
+    const merchantEmail = profileData.personal_profile?.email;
+    
+    res.json({ 
+      success: true,
+      profile: profileData,
+      merchant_code: merchantCode,
+      merchant_email: merchantEmail,
+      message: 'You should set these values in your environment variables'
+    });
+  } catch (error) {
+    console.error('Error getting merchant profile:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Error retrieving merchant profile',
+      details: error.message
+    });
+  }
+});
+
+// Add a new endpoint to get the checkout URL for a SumUp checkout ID
+app.get('/v1/checkout-url/:checkoutId', async (req, res) => {
+  const { checkoutId } = req.params;
+  
+  if (!checkoutId) {
+    return res.status(400).json({ error: 'Missing checkout ID' });
+  }
+  
+  try {
+    // Get the access token
+    const accessToken = await getSumupAccessToken();
+    
+    // First, check if we've enabled hosted checkout when creating this checkout
+    // If not, we'll need to update the checkout to enable it
+    const options = {
+      hostname: 'api.sumup.com',
+      path: `/v0.1/checkouts/${checkoutId}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    let checkoutData = await makeHttpRequest(options);
+    console.log('Original checkout data:', checkoutData);
+    
+    // If hosted_checkout is not enabled, update it to enable hosted checkout
+    if (!checkoutData.hosted_checkout || !checkoutData.hosted_checkout.enabled) {
+      const updateOptions = {
+        hostname: 'api.sumup.com',
+        path: `/v0.1/checkouts/${checkoutId}`,
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      
+      const updateData = JSON.stringify({
+        hosted_checkout: { enabled: true }
+      });
+      
+      checkoutData = await makeHttpRequest(updateOptions, updateData);
+      console.log('Updated checkout data:', checkoutData);
+    }
+    
+    // Get the hosted checkout URL
+    let checkoutUrl;
+    
+    if (checkoutData.hosted_checkout_url) {
+      // If the response directly includes the URL, use it
+      checkoutUrl = checkoutData.hosted_checkout_url;
+    } else {
+      // Otherwise, construct the standard hosted checkout URL
+      checkoutUrl = `https://checkout.sumup.com/pay/${checkoutId}`;
+    }
+    
+    console.log('Checkout URL:', checkoutUrl);
+    
+    res.json({
+      checkoutId,
+      checkoutUrl,
+      checkoutData
+    });
+  } catch (error) {
+    console.error('Error getting checkout URL:', error);
+    res.status(500).json({ error: 'Failed to get checkout URL', details: error.message });
+  }
+});
 
 // Server initialization
 const PORT = process.env.PORT || 5001;

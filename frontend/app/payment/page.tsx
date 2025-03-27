@@ -86,7 +86,7 @@ export default function PaymentPage() {
 
     loadSumUpScript();
     setTimeout(checkSumUpLoaded, 2000); // Start checking after 2 seconds
-  }, [checkoutId, router]);
+  }, [checkoutId, searchParams, router]);
 
   if (isLoading) return <div>Loading payment form...</div>;
   if (error) return <div>Error: {error}</div>;

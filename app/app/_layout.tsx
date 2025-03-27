@@ -11,6 +11,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../contexts/AuthContext';
 import { CartProvider } from '../contexts/CartContext';
+import { SumUpWrapper } from '../contexts/SumUpContext';
+import { RootStoreProvider } from '../contexts/RootStoreContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -39,50 +41,54 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthProvider>
-          <CartProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <Stack 
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { 
-                    backgroundColor: colorScheme === 'dark' ? '#000' : '#fff'
-                  }
-                }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen 
-                  name="(tabs)" 
-                  options={{
-                    headerShown: false,
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen 
-                  name="(auth)"
-                  options={{
-                    headerShown: false,
-                    animation: 'slide_from_bottom',
-                  }}
-                />
-                <Stack.Screen 
-                  name="checkout"
-                  options={{
-                    headerShown: true,
-                    animation: 'slide_from_right',
-                  }}
-                />
-                <Stack.Screen 
-                  name="order-confirmation"
-                  options={{
-                    headerShown: true,
-                    animation: 'slide_from_right',
-                  }}
-                />
-              </Stack>
-              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            </ThemeProvider>
-          </CartProvider>
-        </AuthProvider>
+        <RootStoreProvider>
+          <AuthProvider>
+            <CartProvider>
+              <SumUpWrapper>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Stack 
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { 
+                        backgroundColor: colorScheme === 'dark' ? '#000' : '#fff'
+                      }
+                    }}>
+                    <Stack.Screen name="index" />
+                    <Stack.Screen 
+                      name="(tabs)" 
+                      options={{
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                      }}
+                    />
+                    <Stack.Screen 
+                      name="(auth)"
+                      options={{
+                        headerShown: false,
+                        animation: 'slide_from_bottom',
+                      }}
+                    />
+                    <Stack.Screen 
+                      name="checkout"
+                      options={{
+                        headerShown: true,
+                        animation: 'slide_from_right',
+                      }}
+                    />
+                    <Stack.Screen 
+                      name="order-confirmation"
+                      options={{
+                        headerShown: true,
+                        animation: 'slide_from_right',
+                      }}
+                    />
+                  </Stack>
+                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                </ThemeProvider>
+              </SumUpWrapper>
+            </CartProvider>
+          </AuthProvider>
+        </RootStoreProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );

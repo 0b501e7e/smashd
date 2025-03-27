@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { menuAPI } from '@/services/api';
 import { ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 type MenuItem = {
   id: number;
@@ -48,6 +49,14 @@ export default function MenuScreen() {
       id: item.id,
       name: item.name,
       price: item.price,
+    });
+  };
+
+  const handleItemPress = (item: MenuItem) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/item-customization',
+      params: { itemId: item.id }
     });
   };
 
@@ -95,7 +104,11 @@ export default function MenuScreen() {
             {menuItems
               .filter(item => item.category === category)
               .map(item => (
-                <ThemedView key={item.id} style={styles.menuItem}>
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.menuItem}
+                  onPress={() => handleItemPress(item)}
+                >
                   <ThemedView style={styles.itemInfo}>
                     <ThemedView style={styles.itemDetails}>
                       <ThemedText type="subtitle">{item.name}</ThemedText>
@@ -105,10 +118,13 @@ export default function MenuScreen() {
                   </ThemedView>
                   <TouchableOpacity
                     style={styles.addButton}
-                    onPress={() => handleAddToCart(item)}>
+                    onPress={() => {
+                      handleAddToCart(item);
+                    }}
+                  >
                     <ThemedText style={styles.addButtonText}>Add to Cart</ThemedText>
                   </TouchableOpacity>
-                </ThemedView>
+                </TouchableOpacity>
               ))}
           </ThemedView>
         ))}

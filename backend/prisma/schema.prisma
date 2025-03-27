@@ -26,36 +26,41 @@ model User {
 }
 
 model MenuItem {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String
-  price       Float
-  category    String
-  imageUrl    String
-  isAvailable Boolean  @default(true)
-  orderItems  OrderItem[]
+  id             Int         @id @default(autoincrement())
+  sumupProductId String?     // Add this field to track SumUp product ID
+  name           String
+  description    String
+  price          Float
+  category       String
+  imageUrl       String
+  isAvailable    Boolean     @default(true)
+  orderItems     OrderItem[]
 }
 
 model Order {
-  id              Int         @id @default(autoincrement())
-  userId          Int?
-  user            User?       @relation(fields: [userId], references: [id])
-  total           Float
-  status          OrderStatus
-  items           OrderItem[]
-  sumupCheckoutId String?     // Add this field
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id                Int         @id @default(autoincrement())
+  userId            Int?
+  user              User?       @relation(fields: [userId], references: [id])
+  total             Float
+  status            OrderStatus
+  items             OrderItem[]
+  sumupCheckoutId   String?     // SumUp checkout reference
+  sumupOrderId      String?     // If SumUp has a separate order ID
+  estimatedReadyTime DateTime?  // When business estimates order will be ready
+  readyAt           DateTime?   // When order was actually marked ready
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 }
 
 model OrderItem {
-  id         Int      @id @default(autoincrement())
-  orderId    Int
-  order      Order    @relation(fields: [orderId], references: [id])
-  menuItemId Int
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity   Int
-  price      Float
+  id            Int      @id @default(autoincrement())
+  orderId       Int
+  order         Order    @relation(fields: [orderId], references: [id])
+  menuItemId    Int
+  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity      Int
+  price         Float
+  customizations Json?    // Add customizations as a JSON field
 }
 
 model LoyaltyPoints {
@@ -81,11 +86,12 @@ enum Category {
 }
 
 enum OrderStatus {
-  PENDING
-  PAID
-  PREPARING
-  READY
-  DELIVERED
-  CANCELLED
-  PAYMENT_FAILED
+  PENDING        // Initial state, just created
+  PAID           // Payment confirmed but not yet confirmed by business
+  CONFIRMED      // Business confirmed, in preparation
+  PREPARING      // In preparation (optional)
+  READY          // Ready for collection
+  DELIVERED      // Customer picked up order
+  CANCELLED      // Order was cancelled
+  PAYMENT_FAILED // Payment processing failed
 }
