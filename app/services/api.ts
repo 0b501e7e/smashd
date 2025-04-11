@@ -1,7 +1,18 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.168:5001/v1';
+// Get the host from Expo when running in development
+const getLocalHost = () => {
+  const debuggerHost = Constants.expoConfig?.hostUri || 'localhost';
+  const host = debuggerHost.split(':')[0];
+  return host;
+};
+
+export const API_URL = Platform.OS === 'web' 
+  ? process.env.EXPO_PUBLIC_API_URL 
+  : process.env.EXPO_PUBLIC_API_URL?.replace('localhost', getLocalHost());
 console.log('Using API URL:', API_URL);
 
 // Create axios instance with proper error handling
@@ -14,14 +25,34 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Track guest mode status
+let isGuestMode = false;
+
+// Function to set guest mode
+export const setGuestMode = (enabled: boolean) => {
+  isGuestMode = enabled;
+  // Store the guest mode status for persistence across app restarts
+  AsyncStorage.setItem('guestMode', enabled ? 'true' : 'false');
+};
+
+// Function to check if in guest mode
+export const checkGuestMode = async () => {
+  const guestMode = await AsyncStorage.getItem('guestMode');
+  isGuestMode = guestMode === 'true';
+  return isGuestMode;
+};
+
 // Add a request interceptor to add the auth token to requests
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Skip token for guest mode on non-public endpoints
+    if (!isGuestMode) {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    console.log('API Request:', config.method?.toUpperCase(), config.url, isGuestMode ? '(Guest Mode)' : '');
     return config;
   },
   (error) => {
@@ -58,7 +89,13 @@ api.interceptors.response.use(
       console.error('API Error:', error.message, error.config?.url);
     }
 
-    if (error.response?.status === 401) {
+    // In guest mode, we don't care about 401 errors for certain endpoints
+    if (isGuestMode && error.response?.status === 401) {
+      // For public endpoints like menu, just continue without auth
+      if (error.config?.url?.includes('/menu')) {
+        return { data: [] }; // Return empty data instead of error
+      }
+    } else if (error.response?.status === 401) {
       // Token expired or invalid
       await AsyncStorage.removeItem('token');
       // You might want to redirect to login here
@@ -71,16 +108,19 @@ export const authAPI = {
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
     await AsyncStorage.setItem('token', response.data.token);
+    setGuestMode(false); // Disable guest mode on login
     return response.data;
   },
 
   register: async (username: string, email: string, password: string) => {
     const response = await api.post('/auth/register', { username, email, password });
+    setGuestMode(false); // Disable guest mode on registration
     return response.data;
   },
 
   logout: async () => {
     await AsyncStorage.removeItem('token');
+    setGuestMode(false); // Reset guest mode on logout
   },
 };
 
@@ -124,9 +164,16 @@ export const orderAPI = {
     return response.data;
   },
 
-  confirmPayment: async (orderId: number) => {
-    const response = await api.post(`/orders/${orderId}/confirm-payment`);
-    return response.data;
+  confirmPayment: async (orderId: number, transactionId: string) => {
+    try {
+      const response = await api.post(`/orders/${orderId}/payment-confirm`, {
+        transactionId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      throw error;
+    }
   },
 
   getUserOrders: async () => {
@@ -135,8 +182,24 @@ export const orderAPI = {
   },
   
   getOrderStatus: async (orderId: number) => {
-    const response = await api.get(`/orders/${orderId}/status`);
-    return response.data;
+    try {
+      console.log(`Fetching order status for order ID: ${orderId}`);
+      const response = await api.get(`/orders/${orderId}/status`);
+      
+      // Log and validate the response data
+      console.log(`Order status response data:`, response.data);
+      
+      // Check if response data has the expected structure
+      if (!response.data || !response.data.id) {
+        console.warn(`Invalid order status response for order ${orderId}:`, response.data);
+        throw new Error('Invalid order data received');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error(`Error getting order status for order ${orderId}:`, error);
+      throw error;
+    }
   },
 };
 
@@ -148,9 +211,55 @@ export const userAPI = {
 };
 
 export const paymentAPI = {
-  initiateCheckout: async (orderId: number) => {
-    const response = await api.post('/initiate-checkout', { orderId });
-    return response.data;
+  /**
+   * Initiates a payment checkout session with SumUp
+   * 
+   * @param orderId - Order ID to process payment for
+   * @param redirectUrl - Optional URL to redirect after payment
+   * @returns Checkout information including ID and URL
+   */
+  initiateCheckout: async (orderId: number, redirectUrl?: string) => {
+    try {
+      const payload = { orderId };
+      if (redirectUrl) {
+        Object.assign(payload, { redirectUrl });
+      }
+      const response = await api.post('/initiate-checkout', payload);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error initiating checkout:', error);
+      
+      // Check if we have an API error response
+      if (error.response && error.response.data && error.response.data.error) {
+        throw new Error(error.response.data.error);
+      }
+      
+      // Otherwise, throw a generic error
+      throw new Error('Failed to initialize payment. Please try again.');
+    }
+  },
+
+  /**
+   * Gets the current order status
+   * 
+   * @param orderId - Order ID to check
+   * @returns Order status and details
+   */
+  getOrderStatus: async (orderId: number) => {
+    try {
+      const response = await api.get(`/orders/${orderId}/status`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error checking order status:', error);
+      
+      // Check for specific error messages
+      if (error.response && error.response.status === 404) {
+        throw new Error('Order not found');
+      }
+      
+      // Otherwise, throw a generic error
+      throw new Error('Unable to get order status. Please try again.');
+    }
   }
 };
 

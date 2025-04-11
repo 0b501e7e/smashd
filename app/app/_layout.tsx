@@ -11,8 +11,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../contexts/AuthContext';
 import { CartProvider } from '../contexts/CartContext';
-import { SumUpWrapper } from '../contexts/SumUpContext';
 import { RootStoreProvider } from '../contexts/RootStoreContext';
+import { checkGuestMode } from '../services/api';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -29,9 +29,24 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        // Check for guest mode on app startup
+        await checkGuestMode();
+        
+        // Only hide splash screen once fonts are loaded
+        if (loaded) {
+          await SplashScreen.hideAsync();
+        }
+      } catch (e) {
+        console.warn('Error during app initialization:', e);
+        if (loaded) {
+          await SplashScreen.hideAsync();
+        }
+      }
     }
+
+    prepare();
   }, [loaded]);
 
   if (!loaded) {
@@ -44,48 +59,46 @@ export default function RootLayout() {
         <RootStoreProvider>
           <AuthProvider>
             <CartProvider>
-              <SumUpWrapper>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack 
-                    screenOptions={{
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <Stack 
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { 
+                      backgroundColor: colorScheme === 'dark' ? '#000' : '#fff'
+                    }
+                  }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen 
+                    name="(tabs)" 
+                    options={{
                       headerShown: false,
-                      contentStyle: { 
-                        backgroundColor: colorScheme === 'dark' ? '#000' : '#fff'
-                      }
-                    }}>
-                    <Stack.Screen name="index" />
-                    <Stack.Screen 
-                      name="(tabs)" 
-                      options={{
-                        headerShown: false,
-                        animation: 'slide_from_right',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="(auth)"
-                      options={{
-                        headerShown: false,
-                        animation: 'slide_from_bottom',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="checkout"
-                      options={{
-                        headerShown: true,
-                        animation: 'slide_from_right',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="order-confirmation"
-                      options={{
-                        headerShown: true,
-                        animation: 'slide_from_right',
-                      }}
-                    />
-                  </Stack>
-                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-                </ThemeProvider>
-              </SumUpWrapper>
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="(auth)"
+                    options={{
+                      headerShown: false,
+                      animation: 'slide_from_bottom',
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="checkout"
+                    options={{
+                      headerShown: true,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                  <Stack.Screen 
+                    name="order-confirmation"
+                    options={{
+                      headerShown: true,
+                      animation: 'slide_from_right',
+                    }}
+                  />
+                </Stack>
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              </ThemeProvider>
             </CartProvider>
           </AuthProvider>
         </RootStoreProvider>

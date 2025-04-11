@@ -1,11 +1,11 @@
-import { StyleSheet, ScrollView, Image } from 'react-native';
+import { StyleSheet, ScrollView, Image, View, Animated } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
 import * as Haptics from 'expo-haptics';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { menuAPI } from '@/services/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,40 +18,44 @@ type CustomizationOption = {
   price: number;
 };
 
-// Define categories of customizations
+// Define categories of customizations with unique IDs
 const EXTRAS = [
-  { id: 'extra-patty', name: 'Extra Patty', price: 2.00 },
-  { id: 'cheese', name: 'Cheese', price: 1.00 },
-  { id: 'bacon', name: 'Bacon', price: 1.50 },
-  { id: 'avocado', name: 'Avocado', price: 1.75 },
+  { id: 'extra-patty-1', name: 'Extra Patty', price: 2.00 },
+  { id: 'cheese-1', name: 'Cheese', price: 1.00 },
+  { id: 'bacon-1', name: 'Bacon', price: 1.50 },
+  { id: 'avocado-1', name: 'Avocado', price: 1.75 },
 ];
 
 const SAUCES = [
-  { id: 'ketchup', name: 'Ketchup', price: 0 },
-  { id: 'mayo', name: 'Mayo', price: 0 },
-  { id: 'bbq', name: 'BBQ Sauce', price: 0 },
-  { id: 'special-sauce', name: 'Special Sauce', price: 0.50 },
+  { id: 'ketchup-1', name: 'Ketchup', price: 0 },
+  { id: 'mayo-1', name: 'Mayo', price: 0 },
+  { id: 'bbq-1', name: 'BBQ Sauce', price: 0 },
+  { id: 'special-sauce-1', name: 'Special Sauce', price: 0.50 },
 ];
 
 const TOPPINGS = [
-  { id: 'lettuce', name: 'Lettuce', price: 0 },
-  { id: 'tomato', name: 'Tomato', price: 0 },
-  { id: 'onion', name: 'Onion', price: 0 },
-  { id: 'pickles', name: 'Pickles', price: 0 },
-  { id: 'jalapenos', name: 'Jalapenos', price: 0.75 },
+  { id: 'lettuce-1', name: 'Lettuce', price: 0 },
+  { id: 'tomato-1', name: 'Tomato', price: 0 },
+  { id: 'onion-1', name: 'Onion', price: 0 },
+  { id: 'pickles-1', name: 'Pickles', price: 0 },
+  { id: 'jalapenos-1', name: 'Jalapenos', price: 0.75 },
 ];
 
 export default function ItemCustomizationScreen() {
   const { itemId } = useLocalSearchParams();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const [selectedSauces, setSelectedSauces] = useState<string[]>(['ketchup', 'mayo']);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>(['lettuce', 'tomato', 'onion']);
+  const [selectedSauces, setSelectedSauces] = useState<string[]>(['ketchup-1', 'mayo-1']);
+  const [selectedToppings, setSelectedToppings] = useState<string[]>(['lettuce-1', 'tomato-1', 'onion-1']);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
-
+  
+  // Add pulse animation
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  
   // Calculate total price based on selections
   const calculateTotalPrice = () => {
     let total = item ? item.price * quantity : 0;
@@ -89,6 +93,24 @@ export default function ItemCustomizationScreen() {
     }
   }, [itemId]);
 
+  useEffect(() => {
+    // Start pulsing animation for Add to Cart button
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
   const fetchMenuItem = async (id: number) => {
     try {
       setLoading(true);
@@ -110,31 +132,53 @@ export default function ItemCustomizationScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const handleAddToCart = () => {
-    if (!item) return;
+  const handleAddToCart = useCallback(() => {
+    if (!item || addingToCart) return;
     
-    const customizations = {
-      extras: selectedExtras.map(id => EXTRAS.find(e => e.id === id)?.name).filter(Boolean) as string[],
-      sauces: selectedSauces.map(id => SAUCES.find(s => s.id === id)?.name).filter(Boolean) as string[],
-      toppings: selectedToppings.map(id => TOPPINGS.find(t => t.id === id)?.name).filter(Boolean) as string[],
-    };
+    // Provide haptic feedback for button press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    addItem({
-      id: item.id,
-      name: item.name,
-      price: calculateTotalPrice() / quantity, // Price per item with customizations
-      quantity,
-      customizations
-    });
+    // Set loading state
+    setAddingToCart(true);
     
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.back();
-  };
+    // Simulate a small delay for better UX
+    setTimeout(() => {
+      try {
+        const customizations = {
+          extras: selectedExtras.map(id => EXTRAS.find(e => e.id === id)?.name).filter(Boolean) as string[],
+          sauces: selectedSauces.map(id => SAUCES.find(s => s.id === id)?.name).filter(Boolean) as string[],
+          toppings: selectedToppings.map(id => TOPPINGS.find(t => t.id === id)?.name).filter(Boolean) as string[],
+        };
+        
+        addItem({
+          id: item.id,
+          name: item.name,
+          price: calculateTotalPrice() / quantity, // Price per item with customizations
+          quantity,
+          customizations
+        });
+        
+        // Success haptic feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        
+        // Navigate back
+        router.back();
+      } catch (error) {
+        console.error('Error adding item to cart:', error);
+        
+        // Error haptic feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        
+        // Reset loading state in case of error
+        setAddingToCart(false);
+      }
+    }, 300); // Short delay for feedback
+  }, [item, addingToCart, selectedExtras, selectedSauces, selectedToppings, quantity, addItem, router]);
 
   if (loading || !item) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ThemedText>Loading...</ThemedText>
+        <ThemedText style={styles.loadingText}>Loading item details...</ThemedText>
       </ThemedView>
     );
   }
@@ -148,145 +192,221 @@ export default function ItemCustomizationScreen() {
         }}
       />
       
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 160 }}
-      >
-        <ThemedView style={styles.contentContainer}>
-          <ThemedView style={styles.itemHeader}>
-            {item.imageUrl && (
-              <Image 
-                source={{ uri: item.imageUrl }} 
-                style={styles.itemImage} 
-                resizeMode="cover"
-              />
-            )}
-            <ThemedView style={styles.itemInfo}>
-              <ThemedText type="subtitle" style={styles.itemName}>{item.name}</ThemedText>
-              <ThemedText style={styles.itemDescription}>{item.description}</ThemedText>
-              <ThemedText style={styles.basePrice}>Base price: ${item.price.toFixed(2)}</ThemedText>
+      {/* Main content container with proper flex layout */}
+      <ThemedView style={styles.mainContainer}>
+        {/* Scrollable content */}
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          contentInsetAdjustmentBehavior="automatic"
+        >
+          <ThemedView style={styles.contentContainer}>
+            <ThemedView style={styles.itemHeader}>
+              {item.imageUrl && (
+                <Image 
+                  source={{ uri: item.imageUrl }} 
+                  style={styles.itemImage} 
+                  resizeMode="cover"
+                />
+              )}
+              <ThemedView style={styles.itemInfo}>
+                <ThemedText type="subtitle" style={styles.itemName}>{item.name}</ThemedText>
+                <ThemedText style={styles.itemDescription}>{item.description}</ThemedText>
+                <ThemedText style={styles.basePrice}>Base price: ${item.price.toFixed(2)}</ThemedText>
+              </ThemedView>
             </ThemedView>
-          </ThemedView>
 
-          <ThemedView style={styles.section}>
-            <ThemedText type="subtitle" style={styles.sectionTitle}>Quantity</ThemedText>
-            <ThemedView style={styles.quantitySelector}>
-              <TouchableOpacity
-                style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
-                disabled={quantity <= 1}
-                onPress={() => {
-                  if (quantity > 1) {
-                    setQuantity(quantity - 1);
+            <ThemedView style={styles.section}>
+              <ThemedText type="subtitle" style={styles.sectionTitle}>Quantity</ThemedText>
+              <ThemedView style={styles.quantitySelector}>
+                <TouchableOpacity
+                  style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
+                  disabled={quantity <= 1}
+                  onPress={() => {
+                    if (quantity > 1) {
+                      setQuantity(quantity - 1);
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                >
+                  <ThemedText style={styles.quantityButtonText}>-</ThemedText>
+                </TouchableOpacity>
+                <ThemedText style={styles.quantityText}>{quantity}</ThemedText>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={() => {
+                    setQuantity(quantity + 1);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }
-                }}
-              >
-                <ThemedText style={styles.quantityButtonText}>-</ThemedText>
-              </TouchableOpacity>
-              <ThemedText style={styles.quantityText}>{quantity}</ThemedText>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => {
-                  setQuantity(quantity + 1);
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-              >
-                <ThemedText style={styles.quantityButtonText}>+</ThemedText>
-              </TouchableOpacity>
+                  }}
+                >
+                  <ThemedText style={styles.quantityButtonText}>+</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
             </ThemedView>
+
+            {item.category === 'BURGER' && (
+              <>
+                <ThemedView style={styles.section}>
+                  <ThemedText type="subtitle" style={styles.sectionTitle}>Extras</ThemedText>
+                  {EXTRAS.map(extra => (
+                    <TouchableOpacity
+                      key={extra.id}
+                      style={[
+                        styles.optionItem,
+                        selectedExtras.includes(extra.id) && styles.optionItemSelected
+                      ]}
+                      onPress={() => toggleSelection(extra.id, selectedExtras, setSelectedExtras)}
+                    >
+                      <View style={styles.optionInfo}>
+                        <ThemedText>{extra.name}</ThemedText>
+                        {extra.price > 0 && (
+                          <ThemedText style={styles.optionPrice}>+${extra.price.toFixed(2)}</ThemedText>
+                        )}
+                      </View>
+                      {selectedExtras.includes(extra.id) && (
+                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ThemedView>
+
+                <ThemedView style={styles.section}>
+                  <ThemedText type="subtitle" style={styles.sectionTitle}>Sauces</ThemedText>
+                  {SAUCES.map(sauce => (
+                    <TouchableOpacity
+                      key={sauce.id}
+                      style={[
+                        styles.optionItem,
+                        selectedSauces.includes(sauce.id) && styles.optionItemSelected
+                      ]}
+                      onPress={() => toggleSelection(sauce.id, selectedSauces, setSelectedSauces)}
+                    >
+                      <View style={styles.optionInfo}>
+                        <ThemedText>{sauce.name}</ThemedText>
+                        {sauce.price > 0 && (
+                          <ThemedText style={styles.optionPrice}>+${sauce.price.toFixed(2)}</ThemedText>
+                        )}
+                      </View>
+                      {selectedSauces.includes(sauce.id) && (
+                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ThemedView>
+
+                <ThemedView style={styles.section}>
+                  <ThemedText type="subtitle" style={styles.sectionTitle}>Toppings</ThemedText>
+                  {TOPPINGS.map(topping => (
+                    <TouchableOpacity
+                      key={topping.id}
+                      style={[
+                        styles.optionItem,
+                        selectedToppings.includes(topping.id) && styles.optionItemSelected
+                      ]}
+                      onPress={() => toggleSelection(topping.id, selectedToppings, setSelectedToppings)}
+                    >
+                      <View style={styles.optionInfo}>
+                        <ThemedText>{topping.name}</ThemedText>
+                        {topping.price > 0 && (
+                          <ThemedText style={styles.optionPrice}>+${topping.price.toFixed(2)}</ThemedText>
+                        )}
+                      </View>
+                      {selectedToppings.includes(topping.id) && (
+                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ThemedView>
+              </>
+            )}
+            
+            {/* Add a summary at the bottom of scrollable content */}
+            <View style={styles.summaryContainer}>
+              <ThemedText style={styles.summaryTitle}>Order Summary</ThemedText>
+              <View style={styles.summaryRow}>
+                <ThemedText>{item.name} ({quantity})</ThemedText>
+                <ThemedText>${(item.price * quantity).toFixed(2)}</ThemedText>
+              </View>
+              
+              {selectedExtras.length > 0 && (
+                <View style={styles.summaryRow}>
+                  <ThemedText>Extras:</ThemedText>
+                  <ThemedText>
+                    ${selectedExtras.reduce((total, id) => {
+                      const extra = EXTRAS.find(e => e.id === id);
+                      return total + (extra?.price || 0) * quantity;
+                    }, 0).toFixed(2)}
+                  </ThemedText>
+                </View>
+              )}
+              
+              {selectedSauces.filter(id => {
+                const sauce = SAUCES.find(s => s.id === id);
+                return sauce && sauce.price > 0;
+              }).length > 0 && (
+                <View style={styles.summaryRow}>
+                  <ThemedText>Premium Sauces:</ThemedText>
+                  <ThemedText>
+                    ${selectedSauces.reduce((total, id) => {
+                      const sauce = SAUCES.find(s => s.id === id);
+                      return total + ((sauce?.price || 0) > 0 ? (sauce?.price || 0) * quantity : 0);
+                    }, 0).toFixed(2)}
+                  </ThemedText>
+                </View>
+              )}
+              
+              {selectedToppings.filter(id => {
+                const topping = TOPPINGS.find(t => t.id === id);
+                return topping && topping.price > 0;
+              }).length > 0 && (
+                <View style={styles.summaryRow}>
+                  <ThemedText>Premium Toppings:</ThemedText>
+                  <ThemedText>
+                    ${selectedToppings.reduce((total, id) => {
+                      const topping = TOPPINGS.find(t => t.id === id);
+                      return total + ((topping?.price || 0) > 0 ? (topping?.price || 0) * quantity : 0);
+                    }, 0).toFixed(2)}
+                  </ThemedText>
+                </View>
+              )}
+              
+              <View style={styles.summaryTotal}>
+                <ThemedText style={styles.totalLabelInline}>Total:</ThemedText>
+                <ThemedText style={styles.totalPriceInline}>${calculateTotalPrice().toFixed(2)}</ThemedText>
+              </View>
+            </View>
+            
+            {/* Add to Cart Button */}
+            <ThemedView style={styles.scrollAddToCartContainer}>
+              <Animated.View 
+                style={{ 
+                  transform: [{ scale: !addingToCart ? pulseAnim : 1 }], 
+                  width: '100%' 
+                }}
+              >
+                <TouchableOpacity
+                  style={[styles.scrollAddButton, addingToCart && styles.disabledButton]}
+                  onPress={handleAddToCart}
+                  activeOpacity={0.7}
+                  disabled={addingToCart}
+                >
+                  <ThemedView style={styles.addButtonContent}>
+                    <ThemedText style={styles.addButtonText}>
+                      {addingToCart ? 'ADDING TO CART...' : 'ADD TO CART'}
+                    </ThemedText>
+                    {!addingToCart && (
+                      <IconSymbol name="cart.fill.badge.plus" size={28} color="#ffffff" />
+                    )}
+                  </ThemedView>
+                </TouchableOpacity>
+              </Animated.View>
+            </ThemedView>
+            
+            {/* Extra padding at the bottom */}
+            <View style={[styles.bottomPadding, { paddingBottom: Math.max(insets.bottom + 30, 50) }]} />
           </ThemedView>
-
-          {item.category === 'BURGER' && (
-            <>
-              <ThemedView style={styles.section}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>Extras</ThemedText>
-                {EXTRAS.map(extra => (
-                  <TouchableOpacity
-                    key={extra.id}
-                    style={[
-                      styles.optionItem,
-                      selectedExtras.includes(extra.id) && styles.optionItemSelected
-                    ]}
-                    onPress={() => toggleSelection(extra.id, selectedExtras, setSelectedExtras)}
-                  >
-                    <ThemedView style={styles.optionInfo}>
-                      <ThemedText>{extra.name}</ThemedText>
-                      {extra.price > 0 && (
-                        <ThemedText style={styles.optionPrice}>+${extra.price.toFixed(2)}</ThemedText>
-                      )}
-                    </ThemedView>
-                    {selectedExtras.includes(extra.id) && (
-                      <IconSymbol name="chevron.right" size={20} color="#0a7ea4" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ThemedView>
-
-              <ThemedView style={styles.section}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>Sauces</ThemedText>
-                {SAUCES.map(sauce => (
-                  <TouchableOpacity
-                    key={sauce.id}
-                    style={[
-                      styles.optionItem,
-                      selectedSauces.includes(sauce.id) && styles.optionItemSelected
-                    ]}
-                    onPress={() => toggleSelection(sauce.id, selectedSauces, setSelectedSauces)}
-                  >
-                    <ThemedView style={styles.optionInfo}>
-                      <ThemedText>{sauce.name}</ThemedText>
-                      {sauce.price > 0 && (
-                        <ThemedText style={styles.optionPrice}>+${sauce.price.toFixed(2)}</ThemedText>
-                      )}
-                    </ThemedView>
-                    {selectedSauces.includes(sauce.id) && (
-                      <IconSymbol name="chevron.right" size={20} color="#0a7ea4" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ThemedView>
-
-              <ThemedView style={styles.section}>
-                <ThemedText type="subtitle" style={styles.sectionTitle}>Toppings</ThemedText>
-                {TOPPINGS.map(topping => (
-                  <TouchableOpacity
-                    key={topping.id}
-                    style={[
-                      styles.optionItem,
-                      selectedToppings.includes(topping.id) && styles.optionItemSelected
-                    ]}
-                    onPress={() => toggleSelection(topping.id, selectedToppings, setSelectedToppings)}
-                  >
-                    <ThemedView style={styles.optionInfo}>
-                      <ThemedText>{topping.name}</ThemedText>
-                      {topping.price > 0 && (
-                        <ThemedText style={styles.optionPrice}>+${topping.price.toFixed(2)}</ThemedText>
-                      )}
-                    </ThemedView>
-                    {selectedToppings.includes(topping.id) && (
-                      <IconSymbol name="chevron.right" size={20} color="#0a7ea4" />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </ThemedView>
-            </>
-          )}
-        </ThemedView>
-      </ScrollView>
-
-      <ThemedView style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <ThemedView style={styles.footerContent}>
-          <ThemedView style={styles.totalContainer}>
-            <ThemedText style={styles.totalLabel}>Total:</ThemedText>
-            <ThemedText style={styles.totalPrice}>${calculateTotalPrice().toFixed(2)}</ThemedText>
-          </ThemedView>
-          <TouchableOpacity 
-            style={styles.addButton} 
-            onPress={handleAddToCart}
-          >
-            <ThemedText style={styles.addButtonText}>ADD TO CART</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+        </ScrollView>
       </ThemedView>
     </ThemedView>
   );
@@ -296,16 +416,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  mainContainer: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+  },
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 0,
+    flexGrow: 1,
+  },
   contentContainer: {
-    flex: 1,
+    flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#333',
+    marginTop: 10,
   },
   itemHeader: {
     padding: 16,
@@ -351,7 +487,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#0a7ea4',
+    backgroundColor: '#ffaf1c',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -380,8 +516,8 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   optionItemSelected: {
-    backgroundColor: 'rgba(10, 126, 164, 0.1)',
-    borderColor: '#0a7ea4',
+    backgroundColor: 'rgba(255, 140, 0, 0.1)',
+    borderColor: '#ff8c00',
   },
   optionInfo: {
     flexDirection: 'row',
@@ -389,58 +525,82 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   optionPrice: {
-    color: '#0a7ea4',
+    color: '#ff8c00',
     fontWeight: 'bold',
   },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    zIndex: 1000,
+  // Summary section styles
+  summaryContainer: {
+    padding: 16,
+    marginTop: 16,
+    backgroundColor: 'rgba(255, 140, 0, 0.1)',
+    borderRadius: 8,
+    margin: 16,
+    borderWidth: 1,
+    borderColor: '#ff8c00',
   },
-  footerContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+  summaryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
   },
-  totalContainer: {
+  summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-    width: '100%',
+    marginBottom: 8,
   },
-  totalLabel: {
+  summaryTotal: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+  },
+  totalLabelInline: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  totalPrice: {
-    fontSize: 20,
+  totalPriceInline: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#0a7ea4',
+    color: '#ff8c00',
   },
-  addButton: {
-    backgroundColor: '#0a7ea4',
+  bottomPadding: {
+    height: 30,
+  },
+  scrollAddToCartContainer: {
+    padding: 16,
+    marginTop: 8,
+    marginHorizontal: 16,
+    marginBottom: 40,
+  },
+  scrollAddButton: {
+    backgroundColor: '#ff8c00',
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 54,
     width: '100%',
   },
+  addButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
   addButtonText: {
-    color: 'white',
+    color: '#ffffff',
     fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 0.75,
+    fontSize: 24,
+    letterSpacing: 1,
     textTransform: 'uppercase',
+    backgroundColor: 'transparent',
+  },
+  disabledButton: {
+    opacity: 0.6,
+    backgroundColor: '#ccc',
+    borderColor: '#999',
   },
 }); 

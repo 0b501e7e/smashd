@@ -45,8 +45,10 @@ export default function CartScreen() {
         </ThemedView>
       }>
       <ThemedView style={styles.container}>
-        {items.map(item => (
-          <ThemedView key={item.id} style={styles.cartItem}>
+        {items.map((item, index) => (
+          <ThemedView 
+            key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`} 
+            style={styles.cartItem}>
             <ThemedView style={styles.itemInfo}>
               <ThemedText type="subtitle">{item.name}</ThemedText>
               <ThemedText>${item.price.toFixed(2)}</ThemedText>
@@ -76,20 +78,20 @@ export default function CartScreen() {
             
             <ThemedView style={styles.quantityControls}>
               <TouchableOpacity
-                onPress={() => updateQuantity(item.id, Math.max(0, item.quantity - 1))}
+                onPress={() => updateQuantity(Number(item.id), Math.max(0, item.quantity - 1))}
                 style={styles.quantityButton}>
                 <ThemedText>-</ThemedText>
               </TouchableOpacity>
               <ThemedText>{item.quantity}</ThemedText>
               <TouchableOpacity
-                onPress={() => updateQuantity(item.id, item.quantity + 1)}
+                onPress={() => updateQuantity(Number(item.id), item.quantity + 1)}
                 style={styles.quantityButton}>
                 <ThemedText>+</ThemedText>
               </TouchableOpacity>
             </ThemedView>
 
             <TouchableOpacity
-              onPress={() => removeItem(item.id)}
+              onPress={() => removeItem(Number(item.id))}
               style={styles.removeButton}>
               <ThemedText style={styles.removeButtonText}>Remove</ThemedText>
             </TouchableOpacity>

@@ -190,70 +190,71 @@ app.post('/v1/initiate-checkout', async (req, res) => {
 });
 
 // Webhook endpoint
-app.post('/v1/sumup-webhook', async (req, res) => {
-  try {
-    const signature = req.headers['x-payload-signature'];
-    const payload = req.body;
-    
-    // Verify webhook signature
-    const isValid = verifyWebhookSignature(
-      signature,
-      payload,
-      process.env.SUMUP_WEBHOOK_SECRET
-    );
-    
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid webhook signature' });
-    }
-    
-    // Get checkout reference and event type
-    const { checkout_reference, event_type } = payload;
-    
-    // Find order by reference
-    const order = await prisma.order.findFirst({
-      where: { reference: checkout_reference }
-    });
-    
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    // Set order status based on event type
-    let newStatus;
-    
-    switch (event_type) {
-      case 'checkout.paid':
-        newStatus = 'PAID';
-        break;
-      case 'checkout.failed':
-        newStatus = 'FAILED';
-        break;
-      case 'checkout.expired':
-        newStatus = 'EXPIRED';
-        break;
-      default:
-        newStatus = order.status;
-    }
-    
-    // Update order status
-    if (newStatus !== order.status) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: newStatus }
-      });
-    }
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Webhook processed successfully',
-      order_id: order.id,
-      new_status: newStatus
-    });
-  } catch (error) {
-    console.error('Error processing webhook:', error);
-    return res.status(500).json({ error: `Failed to process webhook: ${error.message}` });
-  }
-});
+// NOTE: This webhook endpoint is disabled. Using the one in server.js instead to avoid duplicate endpoints.
+// app.post('/v1/sumup-webhook', async (req, res) => {
+//   try {
+//     const signature = req.headers['x-payload-signature'];
+//     const payload = req.body;
+//     
+//     // Verify webhook signature
+//     const isValid = verifyWebhookSignature(
+//       signature,
+//       payload,
+//       process.env.SUMUP_WEBHOOK_SECRET
+//     );
+//     
+//     if (!isValid) {
+//       return res.status(401).json({ error: 'Invalid webhook signature' });
+//     }
+//     
+//     // Get checkout reference and event type
+//     const { checkout_reference, event_type } = payload;
+//     
+//     // Find order by reference
+//     const order = await prisma.order.findFirst({
+//       where: { reference: checkout_reference }
+//     });
+//     
+//     if (!order) {
+//       return res.status(404).json({ error: 'Order not found' });
+//     }
+//     
+//     // Set order status based on event type
+//     let newStatus;
+//     
+//     switch (event_type) {
+//       case 'checkout.paid':
+//         newStatus = 'PAID';
+//         break;
+//       case 'checkout.failed':
+//         newStatus = 'FAILED';
+//         break;
+//       case 'checkout.expired':
+//         newStatus = 'EXPIRED';
+//         break;
+//       default:
+//         newStatus = order.status;
+//     }
+//     
+//     // Update order status
+//     if (newStatus !== order.status) {
+//       await prisma.order.update({
+//         where: { id: order.id },
+//         data: { status: newStatus }
+//       });
+//     }
+//     
+//     return res.status(200).json({
+//       success: true,
+//       message: 'Webhook processed successfully',
+//       order_id: order.id,
+//       new_status: newStatus
+//     });
+//   } catch (error) {
+//     console.error('Error processing webhook:', error);
+//     return res.status(500).json({ error: `Failed to process webhook: ${error.message}` });
+//   }
+// });
 
 // Test connection endpoint
 app.get('/v1/test/sumup-connection', async (req, res) => {

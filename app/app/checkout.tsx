@@ -1,30 +1,187 @@
-import React from 'react';
-import { StyleSheet, Alert, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Alert, View, AppState, AppStateStatus } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useCart } from '@/contexts/CartContext';
 import { useState } from 'react';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { orderAPI, paymentAPI } from '@/services/api';
-import { useSumUp } from '@/contexts/SumUpContext';
-import { PaymentSheet } from 'sumup-react-native-alpha';
+import { orderAPI } from '@/services/api';
+import { sumupService } from '@/services/sumupService';
+import api from '@/services/api';
 
 type CollectionTime = '15mins' | '30mins' | '45mins' | '60mins';
 
 export default function CheckoutScreen() {
+  const { orderId: urlOrderId, returnToApp } = useLocalSearchParams();
   const { items, total, clearCart } = useCart();
   const [selectedTime, setSelectedTime] = useState<CollectionTime>('30mins');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
-  const { processPayment, initiateCheckout, isProcessing: isPaymentProcessing, error } = useSumUp();
   const insets = useSafeAreaInsets();
-
+  const appState = useRef(AppState.currentState);
+  const [appStateVisible, setAppStateVisible] = useState(appState.current);
+  const paymentAttemptedRef = useRef(false);
+  
+  // Helper function to check order payment status
+  const checkOrderStatus = async (orderId: number): Promise<boolean> => {
+    try {
+      const orderStatus = await sumupService.getPaymentStatus(orderId);
+      return orderStatus?.status === 'PAID';
+    } catch (error) {
+      console.error('Error checking order status:', error);
+      return false;
+    }
+  };
+  
+  // Effect for handling app state changes and URL parameters 
+  useEffect(() => {
+    // Check if we're returning from payment with orderID
+    if (urlOrderId) {
+      console.log('URL order ID detected:', urlOrderId);
+      try {
+        const numOrderId = typeof urlOrderId === 'string' ? parseInt(urlOrderId) : 
+                          Array.isArray(urlOrderId) ? parseInt(urlOrderId[0]) : Number(urlOrderId);
+        
+        if (!isNaN(numOrderId)) {
+          console.log('Setting order ID and checking status for:', numOrderId);
+          setOrderId(numOrderId);
+          
+          // Always check if we're returning from payment
+          paymentAttemptedRef.current = true;
+          
+          // Check the order status
+          checkOrderStatus(numOrderId).then(isPaid => {
+            if (isPaid) {
+              // Show success message
+              Alert.alert(
+                'Payment Successful',
+                'Your payment was processed successfully. Would you like to view your order status?',
+                [
+                  {
+                    text: 'Not Now',
+                    style: 'cancel', 
+                    onPress: () => {
+                      setIsProcessing(false);
+                      paymentAttemptedRef.current = false;
+                      router.push('/(tabs)/menu');
+                    }
+                  },
+                  {
+                    text: 'View Order',
+                    onPress: () => {
+                      setIsProcessing(false);
+                      paymentAttemptedRef.current = false;
+                      router.push({
+                        pathname: '/order-confirmation',
+                        params: { orderId: numOrderId.toString() }
+                      });
+                    }
+                  }
+                ],
+                { cancelable: false } // Force the user to make a choice
+              );
+              // Clear cart on success
+              clearCart();
+            } else {
+              // Show a message that payment hasn't been confirmed yet
+              Alert.alert(
+                'Payment Not Confirmed Yet',
+                'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
+                [{ text: 'OK' }]
+              );
+            }
+            setIsProcessing(false);
+          });
+        }
+      } catch (err) {
+        console.error('Error parsing order ID:', err);
+      }
+    }
+    
+    // Listen for app state changes
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      console.log(`App state changed from ${appState.current} to ${nextAppState}`);
+      
+      if (
+        appState.current.match(/inactive|background/) && 
+        nextAppState === 'active' &&
+        (paymentAttemptedRef.current || orderId)
+      ) {
+        // We're coming back to the app after possibly making a payment
+        // Check payment status without auto-navigating
+        const orderToCheck = orderId || (
+          urlOrderId ? (
+            typeof urlOrderId === 'string' ? parseInt(urlOrderId) : 
+            Array.isArray(urlOrderId) ? parseInt(urlOrderId[0]) : Number(urlOrderId)
+          ) : null
+        );
+        
+        if (orderToCheck && !isNaN(orderToCheck)) {
+          console.log('App returned to foreground. Checking status for order:', orderToCheck);
+          
+          // Check order status
+          setIsProcessing(true);
+          checkOrderStatus(orderToCheck).then(isPaid => {
+            if (isPaid) {
+              // Handle successful payment
+              clearCart();
+              
+              // Show success dialog
+              Alert.alert(
+                'Payment Successful',
+                'Your payment was processed successfully. Would you like to view your order status?',
+                [
+                  {
+                    text: 'Not Now',
+                    style: 'cancel', 
+                    onPress: () => {
+                      setIsProcessing(false);
+                      paymentAttemptedRef.current = false;
+                      router.push('/(tabs)/menu');
+                    }
+                  },
+                  {
+                    text: 'View Order',
+                    onPress: () => {
+                      setIsProcessing(false);
+                      paymentAttemptedRef.current = false;
+                      router.push({
+                        pathname: '/order-confirmation',
+                        params: { orderId: orderToCheck.toString() }
+                      });
+                    }
+                  }
+                ],
+                { cancelable: false }
+              );
+            } else {
+              // Show not confirmed message
+              Alert.alert(
+                'Payment Not Confirmed Yet',
+                'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
+                [{ text: 'OK' }]
+              );
+              setIsProcessing(false);
+            }
+          });
+        }
+      }
+      
+      appState.current = nextAppState;
+      setAppStateVisible(appState.current);
+    });
+    
+    return () => {
+      subscription.remove();
+    };
+  }, [urlOrderId, returnToApp, orderId, clearCart]);
+  
   const handlePlaceOrder = async () => {
     // Prevent duplicate order submissions by checking if already processing
-    if (isProcessing || isPaymentProcessing) {
+    if (isProcessing) {
       Alert.alert('Processing', 'Your order is already being processed. Please wait.');
       return;
     }
@@ -52,48 +209,27 @@ export default function CheckoutScreen() {
         total: total
       });
 
-      console.log('Order created:', response);
-      
-      // Store the order ID for payment processing
-      setOrderId(response.order.id);
-      
-      // First, initiate the SumUp checkout to get a checkout ID
-      try {
-        await initiateCheckout(response.order.id);
+      // Get the order ID from the response
+      if (response && response.order && response.order.id) {
+        const createdOrderId = response.order.id;
+        setOrderId(createdOrderId);
         
-        // Process payment with SumUp
-        const paymentSuccess = await processPayment(response.order.id);
+        // Navigate to payment screen with the order ID
+        router.push({
+          pathname: '/payment',
+          params: { orderId: createdOrderId.toString() }
+        });
         
-        if (paymentSuccess) {
-          // If payment was successful, clear cart and navigate to confirmation
-          clearCart();
-          router.push({
-            pathname: '/order-confirmation',
-            params: { orderId: response.order.id.toString() }
-          });
-        } else {
-          // Payment failed or was cancelled
-          setIsProcessing(false);
-          Alert.alert(
-            'Payment Incomplete',
-            'Your payment was not completed. You can try again or come back later to complete your order.'
-          );
-        }
-      } catch (checkoutError: any) {
-        console.error('Checkout error:', checkoutError);
-        setIsProcessing(false);
-        Alert.alert(
-          'Checkout Error',
-          checkoutError.message || 'There was a problem with the payment process. Please try again.'
-        );
+        // Clear the cart after creating the order
+        clearCart();
+      } else {
+        throw new Error('Missing order ID in response');
       }
-    } catch (error: any) {
-      console.error('Error placing order:', error);
+    } catch (error) {
+      console.error('Error creating order:', error);
+      Alert.alert('Error', 'Failed to create your order. Please try again.');
+    } finally {
       setIsProcessing(false);
-      Alert.alert(
-        'Order Error',
-        error.message || 'There was a problem processing your order. Please try again.'
-      );
     }
   };
 
@@ -101,76 +237,187 @@ export default function CheckoutScreen() {
   const getButtonText = () => {
     if (isProcessing) {
       return 'Processing...';
-    } else if (isPaymentProcessing) {
-      return 'Preparing Checkout...';
     }
     return 'Place Order';
   }
 
+  // Helper to go to confirmation screen for testing
+  const goToConfirmation = () => {
+    if (orderId) {
+      router.push({
+        pathname: '/order-confirmation',
+        params: { orderId: orderId.toString() }
+      });
+    }
+  };
+
+  // Determine if each item has the same key as the first item with the same ID
+  // and add a more unique key that includes customizations
+  const renderItems = () => {
+    return items.map((item, index) => {
+      // Using a composite key that includes id, index, and customizations
+      const key = `${item.id}-${index}-${JSON.stringify(item.customizations)}`;
+      
+      return (
+        <ThemedView key={key} style={styles.itemRow}>
+          <View style={styles.itemDetails}>
+            <ThemedText type="subtitle" style={styles.itemName}>
+              {item.name}
+            </ThemedText>
+            
+            {item.customizations && (
+              <View style={styles.customizationsContainer}>
+                {item.customizations.extras && item.customizations.extras.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Extras: {item.customizations.extras.join(', ')}
+                  </ThemedText>
+                )}
+                
+                {item.customizations.sauces && item.customizations.sauces.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Sauces: {item.customizations.sauces.join(', ')}
+                  </ThemedText>
+                )}
+                
+                {item.customizations.toppings && item.customizations.toppings.length > 0 && (
+                  <ThemedText style={styles.customizationText}>
+                    Toppings: {item.customizations.toppings.join(', ')}
+                  </ThemedText>
+                )}
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.priceSection}>
+            <ThemedText type="default" style={styles.quantity}>
+              x{item.quantity}
+            </ThemedText>
+            <ThemedText type="subtitle" style={styles.price}>
+              ${(item.price * item.quantity).toFixed(2)}
+            </ThemedText>
+          </View>
+        </ThemedView>
+      );
+    });
+  };
+
   return (
     <>
-      <Stack.Screen options={{ title: 'Checkout' }} />
-      <ThemedView style={[
-        styles.container, 
-        { paddingTop: insets.top + 20 }
-      ]}>
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle">Order Summary</ThemedText>
-          {items.map(item => (
-            <ThemedView key={item.id} style={styles.itemRow}>
-              <ThemedText>{item.quantity}x {item.name}</ThemedText>
-              <ThemedText>${(item.price * item.quantity).toFixed(2)}</ThemedText>
-            </ThemedView>
-          ))}
+      <Stack.Screen 
+        options={{
+          headerTitle: 'Checkout',
+          headerShown: true,
+        }}
+      />
+      
+      <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
+        <ThemedView style={styles.orderSummary}>
+          <ThemedText type="title" style={styles.sectionTitle}>
+            Order Summary
+          </ThemedText>
+          
+          <ThemedView style={styles.itemsList}>
+            {renderItems()}
+          </ThemedView>
+          
           <ThemedView style={styles.totalRow}>
-            <ThemedText type="subtitle">Total</ThemedText>
-            <ThemedText type="subtitle">${total.toFixed(2)}</ThemedText>
+            <ThemedText type="subtitle">Total: </ThemedText>
+            <ThemedText type="subtitle" style={styles.totalAmount}>
+              ${total.toFixed(2)}
+            </ThemedText>
           </ThemedView>
         </ThemedView>
-
-        <ThemedView style={styles.section}>
-          <ThemedText type="subtitle">Collection Time</ThemedText>
-          <ThemedView style={styles.timeSelector}>
-            {(['15mins', '30mins', '45mins', '60mins'] as CollectionTime[]).map(time => (
+        
+        <ThemedView style={styles.collectSection}>
+          <ThemedText type="title" style={styles.sectionTitle}>
+            Collection Time
+          </ThemedText>
+          
+          <ThemedView style={styles.timeOptions}>
+            {(['15mins', '30mins', '45mins', '60mins'] as CollectionTime[]).map((time) => (
               <TouchableOpacity
                 key={time}
                 style={[
                   styles.timeOption,
-                  selectedTime === time && styles.selectedTime,
+                  selectedTime === time && styles.selectedTime
                 ]}
                 onPress={() => setSelectedTime(time)}
-                disabled={isProcessing || isPaymentProcessing}>
-                <ThemedText style={[
-                  styles.timeText,
-                  selectedTime === time && styles.selectedTimeText,
-                ]}>
+              >
+                <ThemedText
+                  style={[
+                    styles.timeText,
+                    selectedTime === time && styles.selectedTimeText
+                  ]}
+                >
                   {time}
                 </ThemedText>
               </TouchableOpacity>
             ))}
           </ThemedView>
         </ThemedView>
-
-        {error && (
-          <ThemedView style={styles.errorContainer}>
-            <ThemedText style={styles.errorText}>{error}</ThemedText>
-          </ThemedView>
-        )}
+        
+        <ThemedText style={styles.instructionText}>
+          Your order will be ready for collection in approximately {selectedTime}.
+          Please proceed to checkout to confirm your order.
+        </ThemedText>
 
         <TouchableOpacity
           style={[
             styles.placeOrderButton, 
-            (isProcessing || isPaymentProcessing) && styles.processingButton
+            isProcessing && styles.processingButton
           ]}
           onPress={handlePlaceOrder}
-          disabled={isProcessing || isPaymentProcessing}>
+          disabled={isProcessing}>
           <ThemedText style={styles.placeOrderText}>
             {getButtonText()}
           </ThemedText>
         </TouchableOpacity>
         
-        {/* Include PaymentSheet component */}
-        <PaymentSheet />
+        <TouchableOpacity
+          style={[styles.testButton]}
+          onPress={goToConfirmation}
+          disabled={!orderId}>
+          <ThemedText style={styles.placeOrderText}>
+            Test: Go to Confirmation
+          </ThemedText>
+        </TouchableOpacity>
+        
+        {orderId && (
+          <TouchableOpacity
+            style={[styles.testButton, { marginTop: 8 }]}
+            onPress={async () => {
+              try {
+                console.log('Simulating successful payment via test webhook endpoint');
+                // Call the test webhook endpoint to simulate a successful payment
+                await api.post('/test/sumup-webhook', {
+                  orderId: orderId,
+                  event_type: 'checkout.paid'
+                });
+                
+                // Alert the user
+                Alert.alert(
+                  'Test Payment Complete',
+                  'Payment has been marked as completed for testing purposes. The app will now check the payment status.',
+                  [{ text: 'OK' }]
+                );
+                
+                // Check payment status after a short delay
+                setTimeout(() => {
+                  if (orderId) {
+                    checkOrderStatus(orderId);
+                  }
+                }, 500);
+              } catch (error) {
+                console.error('Error simulating payment:', error);
+                Alert.alert('Error', 'Failed to simulate payment test');
+              }
+            }}
+          >
+            <ThemedText style={styles.placeOrderText}>
+              Test: Simulate Payment
+            </ThemedText>
+          </TouchableOpacity>
+        )}
       </ThemedView>
     </>
   );
@@ -181,14 +428,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  section: {
+  orderSummary: {
     marginBottom: 24,
     gap: 16,
+  },
+  itemsList: {
+    gap: 8,
   },
   itemRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: 8,
+  },
+  itemDetails: {
+    flex: 1,
+  },
+  itemName: {
+    fontWeight: 'bold',
+  },
+  priceSection: {
+    alignItems: 'flex-end',
+  },
+  quantity: {
+    color: '#666',
+  },
+  price: {
+    fontWeight: 'bold',
   },
   totalRow: {
     flexDirection: 'row',
@@ -197,7 +462,18 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: '#ccc',
   },
-  timeSelector: {
+  totalAmount: {
+    fontWeight: 'bold',
+  },
+  collectSection: {
+    marginBottom: 24,
+    gap: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  timeOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
@@ -220,14 +496,11 @@ const styles = StyleSheet.create({
   selectedTimeText: {
     color: 'white',
   },
-  errorContainer: {
-    backgroundColor: '#ffebee',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+  customizationsContainer: {
+    marginTop: 4,
   },
-  errorText: {
-    color: '#d32f2f',
+  customizationText: {
+    color: '#666',
   },
   placeOrderButton: {
     backgroundColor: '#0a7ea4',
@@ -242,5 +515,15 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  testButton: {
+    backgroundColor: '#FF9800',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '100%',
+  },
+  instructionText: {
+    marginBottom: 16,
   },
 });

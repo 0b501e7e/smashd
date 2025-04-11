@@ -28,3 +28,13 @@ frontend/coverage
 frontend/public/sw.js
 frontend/public/workbox-*.js
 frontend/public/workbox-*.map
+frontend/package-lock.json
+
+backend/node_modules
+backend/dist
+backend/build
+backend/coverage
+backend/public/sw.js
+backend/public/workbox-*.js
+backend/public/workbox-*.map
+backend/package-lock.json
