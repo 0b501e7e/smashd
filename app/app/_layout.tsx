@@ -13,7 +13,6 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { CartProvider } from '../contexts/CartContext';
 import { RootStoreProvider } from '../contexts/RootStoreContext';
 import { checkGuestMode } from '../services/api';
-import { SumUpProvider } from '../providers/SumUpProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -58,7 +57,6 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <RootStoreProvider>
-          <SumUpProvider>
             <AuthProvider>
               <CartProvider>
                 <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -103,7 +101,6 @@ export default function RootLayout() {
                 </ThemeProvider>
               </CartProvider>
             </AuthProvider>
-          </SumUpProvider>
         </RootStoreProvider>
       </GestureHandlerRootView>
     </SafeAreaProvider>
