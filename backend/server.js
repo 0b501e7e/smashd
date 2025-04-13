@@ -544,10 +544,6 @@ app.post('/v1/initiate-checkout', async (req, res) => {
         description: `Order #${order.id}`,
         // Enable hosted checkout
         hosted_checkout: { enabled: true },
-        // Format redirect URL correctly - ensure APP_HOST is a full URL
-        redirect_url: process.env.APP_HOST && process.env.APP_HOST.startsWith('http') ? 
-          `${process.env.APP_HOST.replace(/\/$/, '')}/order-confirmation?orderId=${order.id}` : 
-          undefined,
         // Add custom fields for order details - ensure we don't exceed SumUp's limit
         custom_fields: {
           order_id: order.id.toString()
@@ -662,9 +658,7 @@ app.post('/v1/initiate-checkout', async (req, res) => {
             pay_to_email: process.env.SUMUP_MERCHANT_EMAIL,
             description: `Order #${order.id}`,
             hosted_checkout: { enabled: true },
-            redirect_url: process.env.APP_HOST && process.env.APP_HOST.startsWith('http') ? 
-              `${process.env.APP_HOST.replace(/\/$/, '')}/order-confirmation?orderId=${order.id}` : 
-              undefined,
+            redirect_url: `smashd://order-confirmation?orderId=${order.id}`,
             custom_fields: {
               order_id: order.id.toString()
             }
@@ -711,7 +705,8 @@ function verifyWebhookSignature(signature, payload, secret) {
 app.post('/v1/webhooks/sumup', async (req, res) => {
   try {
     // Check signature if webhook secret is configured
-    const signature = req.headers['sumup-signature'];
+    // Support both new and legacy signature headers
+    const signature = req.headers['x-payload-signature'] || req.headers['sumup-signature'];
     if (process.env.SUMUP_WEBHOOK_SECRET && signature) {
       if (!verifyWebhookSignature(signature, req.body, process.env.SUMUP_WEBHOOK_SECRET)) {
         console.error('Invalid webhook signature');
@@ -719,28 +714,53 @@ app.post('/v1/webhooks/sumup', async (req, res) => {
       }
     }
 
-    const { event_type, checkout_reference, status } = req.body;
-    console.log('Received SumUp webhook:', req.body);
+    // Log the full webhook payload for debugging
+    console.log('Received SumUp webhook:', JSON.stringify(req.body, null, 2));
+    
+    // Handle both the legacy and new webhook formats
+    // Legacy format: { event_type, checkout_reference, status }
+    // New format: { id, event_type, payload: { checkout_id, reference, status } }
+    const eventType = req.body.event_type;
+    let checkoutReference = req.body.checkout_reference;
+    let status = req.body.status;
+    
+    // If using new format with nested payload
+    if (req.body.payload) {
+      // New format uses 'reference' instead of 'checkout_reference'
+      checkoutReference = req.body.payload.reference;
+      // New format has status in the payload
+      status = req.body.payload.status;
+    }
     
     // Extract order ID from checkout reference (now in format "ORDER-123-timestamp")
     let orderId = null;
-    if (checkout_reference) {
+    if (checkoutReference) {
       // Extract the order ID from the reference
-      const match = checkout_reference.match(/^ORDER-(\d+)(?:-\d+)?$/);
+      const match = checkoutReference.match(/^ORDER-(\d+)(?:-\d+)?/);
       if (match && match[1]) {
         orderId = parseInt(match[1]);
       }
     }
     
     if (!orderId) {
+      console.error('Invalid checkout reference:', checkoutReference);
       return res.status(400).json({ error: 'Invalid checkout reference' });
     }
     
     // Map SumUp events to our order statuses
     let orderStatus;
-    switch (event_type) {
+    switch (eventType) {
       case 'checkout.paid':
-        orderStatus = 'PAID';
+      case 'checkout.status.updated':
+        // For new format, check the status from the payload
+        if (status === 'PAID' || status === 'SUCCESSFUL') {
+          orderStatus = 'PAID';
+        } else if (status === 'FAILED') {
+          orderStatus = 'PAYMENT_FAILED';
+        } else {
+          console.log(`Unhandled status in checkout update: ${status}`);
+          return res.status(200).send('Status received but not processed');
+        }
         break;
       case 'checkout.failed':
         orderStatus = 'PAYMENT_FAILED';
@@ -753,11 +773,12 @@ app.post('/v1/webhooks/sumup', async (req, res) => {
         break;
       default:
         // Log unknown event types but don't update order
-        console.log(`Unknown SumUp event type: ${event_type}`);
+        console.log(`Unknown SumUp event type: ${eventType}`);
         return res.status(200).send('Event received but not processed');
     }
     
     if (orderStatus) {
+      console.log(`Updating order ${orderId} status to ${orderStatus} based on event ${eventType}`);
       await prisma.order.update({
         where: { id: orderId },
         data: { 
@@ -856,6 +877,44 @@ app.post('/v1/orders/:id/estimate', async (req, res) => {
   } catch (error) {
     console.error('Error updating order estimate:', error);
     res.status(500).json({ error: 'Error updating order estimate' });
+  }
+});
+
+// Endpoint to get checkout status directly from SumUp API
+app.get('/v1/checkouts/:checkoutId/status', async (req, res) => {
+  const { checkoutId } = req.params;
+  
+  try {
+    // Get SumUp access token
+    const accessToken = await getSumupAccessToken();
+    
+    // Set up request options for SumUp API
+    const options = {
+      hostname: 'api.sumup.com',
+      path: `/v0.1/checkouts/${checkoutId}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    console.log(`Checking status for SumUp checkout ID: ${checkoutId}`);
+    
+    // Make request to SumUp API
+    const checkoutDetails = await makeHttpRequest(options);
+    
+    // Return checkout details with focus on payment status
+    res.json({
+      checkoutId: checkoutDetails.id,
+      status: checkoutDetails.status,
+      transaction_id: checkoutDetails.transaction_id,
+      payment_type: checkoutDetails.payment_type,
+      amount: checkoutDetails.amount
+    });
+  } catch (error) {
+    console.error(`Error checking status for checkout ${checkoutId}:`, error);
+    res.status(500).json({ error: 'Failed to check checkout status' });
   }
 });
 

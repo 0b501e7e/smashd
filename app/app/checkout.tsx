@@ -24,10 +24,12 @@ export default function CheckoutScreen() {
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
   const paymentAttemptedRef = useRef(false);
+  const appStateListenerRef = useRef<any>(null);
   
   // Helper function to check order payment status
   const checkOrderStatus = async (orderId: number): Promise<boolean> => {
     try {
+      console.log('Checking status for order:', orderId);
       const orderStatus = await sumupService.getPaymentStatus(orderId);
       return orderStatus?.status === 'PAID';
     } catch (error) {
@@ -101,17 +103,28 @@ export default function CheckoutScreen() {
       }
     }
     
-    // Listen for app state changes
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    // Cleanup any existing app state listener
+    if (appStateListenerRef.current) {
+      appStateListenerRef.current.remove();
+    }
+    
+    // Listen for app state changes - only needed when returning from payment and not being on payment screen
+    appStateListenerRef.current = AppState.addEventListener('change', nextAppState => {
       console.log(`App state changed from ${appState.current} to ${nextAppState}`);
       
+      // Only handle foreground event for orders we already know about
       if (
         appState.current.match(/inactive|background/) && 
         nextAppState === 'active' &&
-        (paymentAttemptedRef.current || orderId)
+        paymentAttemptedRef.current && 
+        orderId
       ) {
-        // We're coming back to the app after possibly making a payment
-        // Check payment status without auto-navigating
+        // Add a safeguard to prevent multiple status checks
+        if (isProcessing) {
+          console.log('Already processing, skipping additional status check');
+          return;
+        }
+        
         const orderToCheck = orderId || (
           urlOrderId ? (
             typeof urlOrderId === 'string' ? parseInt(urlOrderId) : 
@@ -175,7 +188,9 @@ export default function CheckoutScreen() {
     });
     
     return () => {
-      subscription.remove();
+      if (appStateListenerRef.current) {
+        appStateListenerRef.current.remove();
+      }
     };
   }, [urlOrderId, returnToApp, orderId, clearCart]);
   
@@ -214,9 +229,9 @@ export default function CheckoutScreen() {
         const createdOrderId = response.order.id;
         setOrderId(createdOrderId);
         
-        // Navigate to payment screen with the order ID
+        // Navigate to the webview payment screen with the order ID
         router.push({
-          pathname: '/payment',
+          pathname: '/payment-webview',
           params: { orderId: createdOrderId.toString() }
         });
         
@@ -372,52 +387,6 @@ export default function CheckoutScreen() {
             {getButtonText()}
           </ThemedText>
         </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.testButton]}
-          onPress={goToConfirmation}
-          disabled={!orderId}>
-          <ThemedText style={styles.placeOrderText}>
-            Test: Go to Confirmation
-          </ThemedText>
-        </TouchableOpacity>
-        
-        {orderId && (
-          <TouchableOpacity
-            style={[styles.testButton, { marginTop: 8 }]}
-            onPress={async () => {
-              try {
-                console.log('Simulating successful payment via test webhook endpoint');
-                // Call the test webhook endpoint to simulate a successful payment
-                await api.post('/test/sumup-webhook', {
-                  orderId: orderId,
-                  event_type: 'checkout.paid'
-                });
-                
-                // Alert the user
-                Alert.alert(
-                  'Test Payment Complete',
-                  'Payment has been marked as completed for testing purposes. The app will now check the payment status.',
-                  [{ text: 'OK' }]
-                );
-                
-                // Check payment status after a short delay
-                setTimeout(() => {
-                  if (orderId) {
-                    checkOrderStatus(orderId);
-                  }
-                }, 500);
-              } catch (error) {
-                console.error('Error simulating payment:', error);
-                Alert.alert('Error', 'Failed to simulate payment test');
-              }
-            }}
-          >
-            <ThemedText style={styles.placeOrderText}>
-              Test: Simulate Payment
-            </ThemedText>
-          </TouchableOpacity>
-        )}
       </ThemedView>
     </>
   );
