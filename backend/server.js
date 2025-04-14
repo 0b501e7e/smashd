@@ -859,7 +859,7 @@ app.post('/v1/orders/:orderId/verify-payment', authenticateToken, async (req, re
     console.log(`SumUp status for checkout ${order.sumupCheckoutId}: ${checkoutDetails.status}`);
 
     // 5. Update DB based on SumUp status
-    let updatedOrder = order; // Start with the current order
+    let updatedOrder = order;
     if (checkoutDetails.status === 'PAID') {
       console.log(`Payment confirmed by SumUp for order ${orderId}. Updating DB.`);
       
@@ -879,11 +879,13 @@ app.post('/v1/orders/:orderId/verify-payment', authenticateToken, async (req, re
         return newlyUpdatedOrder;
       });
        console.log(`Order ${orderId} status updated to PAID in DB.`);
-    } else if ([ 'FAILED', 'EXPIRED' ].includes(checkoutDetails.status)) {
-       console.log(`Payment failed or expired according to SumUp for order ${orderId}. Updating DB.`);
+    } else {
+       // If SumUp status is ANYTHING other than PAID (e.g., PENDING, FAILED, EXPIRED, etc.)
+       // We update our local status to reflect the payment wasn't successful.
+       console.log(`Payment not confirmed by SumUp (status: ${checkoutDetails.status}) for order ${orderId}. Updating DB to PAYMENT_FAILED.`);
        updatedOrder = await prisma.order.update({
            where: { id: parseInt(orderId) },
-           data: { status: 'PAYMENT_FAILED' } // Use a suitable status
+           data: { status: 'PAYMENT_FAILED' } // Consistently use PAYMENT_FAILED for non-PAID statuses
        });
        console.log(`Order ${orderId} status updated to PAYMENT_FAILED in DB.`);
     }

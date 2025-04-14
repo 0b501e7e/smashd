@@ -14,29 +14,32 @@ export default function RootLayout({
   const pathname = usePathname();
 
   const variants = {
-    hidden: { opacity: 0, x: 200 },
-    enter: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -200 },
+    hidden: { opacity: 0 },
+    enter: { opacity: 1 },
+    exit: { opacity: 0 },
   };
 
   return (
     <html lang="en" className="dark">
-      <body className="overflow-x-hidden">
+      {/* Padding on body pushes content below fixed Navbar */}
+      <body className="overflow-x-hidden pt-[var(--navbar-height,4rem)]">
         <BasketProvider>
-          <Navbar isMainPage={false} />
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.main
-              key={pathname}
-              variants={variants}
-              initial="hidden"
-              animate="enter"
-              exit="exit"
-              transition={{ type: 'tween', duration: 0.3 }}
-              className="min-h-[calc(100vh-var(--navbar-height,4rem))]"
-            >
-              {children}
-            </motion.main>
-          </AnimatePresence>
+          <Navbar /> {/* Navbar is rendered first and separate */}          
+          {/* Main content area, contains animated children */}
+          <main className="relative"> {/* Removed min-height, keep relative for potential stacking context needs */}          
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={pathname}
+                variants={variants}
+                initial="hidden"
+                animate="enter"
+                exit="exit"
+                transition={{ type: 'tween', duration: 0.3 }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </main>
         </BasketProvider>
       </body>
     </html>

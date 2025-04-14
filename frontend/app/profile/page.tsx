@@ -106,7 +106,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center p-4 pt-20 md:pt-24 pb-10">
+    <div className="min-h-screen bg-black flex flex-col items-center p-4 pb-10">
       <Card className="w-full max-w-2xl bg-gray-950 border border-yellow-400/30 mb-12 shadow-lg shadow-yellow-500/5">
         <CardHeader className="pb-4 border-b border-yellow-700/50">
           <CardTitle className="text-2xl font-bold text-yellow-400">Profile Details</CardTitle>

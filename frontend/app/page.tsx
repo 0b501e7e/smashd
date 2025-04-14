@@ -3,7 +3,6 @@
 import { useRef } from 'react';
 import { Hero } from './components/Hero';
 import { Menu } from './components/Menu';
-import { Navbar } from './components/Navbar';
 
 export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -14,8 +13,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen">
-      <Navbar scrollToSection={scrollToSection} heroRef={heroRef} menuRef={menuRef} isMainPage={true} />
+    <div className="min-h-screen pt-[var(--navbar-height,4rem)]">
       <main>
         <div ref={heroRef}>
           <Hero scrollToMenu={() => scrollToSection(menuRef)} />

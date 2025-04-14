@@ -8,9 +8,9 @@
     "scheme": "smashd",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/smashd.jpg",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FAB10A"
     },
     "assetBundlePatterns": [
       "**/*"

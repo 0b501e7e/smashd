@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { setGuestMode } from '@/services/api';
+import { AnimatedLogo } from '@/components/AnimatedLogo';
 
 export default function HomeScreen() {
   const { isLoggedIn, loading } = useAuth();
@@ -27,18 +28,15 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText style={styles.title}>SMASH'D</ThemedText>
-        <ThemedText style={styles.subtitle}>Loading...</ThemedText>
+        <AnimatedLogo />
+        <ThemedText style={styles.loadingText}>Loading...</ThemedText>
       </ThemedView>
     );
   }
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText style={[styles.title, { padding: 20, lineHeight: 48, height: 100 }]}>SMASH'D</ThemedText>
-      <ThemedText style={styles.subtitle}>
-        the best smash burgers in spain
-      </ThemedText>
+      <AnimatedLogo />
       
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
@@ -66,21 +64,14 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffaf1c',
+    backgroundColor: '#FAB10A',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-    gap: 20,
   },
-  title: {
-    fontSize: 48,
-    fontWeight: 'bold',
+  loadingText: {
+    fontSize: 18,
     color: '#000',
-  },
-  subtitle: {
-    fontSize: 24,
-    color: '#000',
-    marginBottom: 20,
   },
   buttonContainer: {
     width: '100%',
