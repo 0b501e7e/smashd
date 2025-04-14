@@ -1,125 +1,167 @@
 'use client'
 
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useUserProfile, OrderHistoryItem } from '@/hooks/useUserProfile';
+import { formatCurrency } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  loyaltyPoints: number;
+function ProfileSkeleton() {
+    return (
+        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 pt-20 space-y-8 animate-pulse">
+            <Card className="w-full max-w-2xl bg-yellow-950/50 border-yellow-400/20">
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/4 bg-gray-800" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Skeleton className="h-5 w-1/3 mb-2 bg-gray-800" />
+                        <Skeleton className="h-4 w-1/2 mb-1 bg-gray-800" />
+                        <Skeleton className="h-4 w-3/4 bg-gray-800" />
+                    </div>
+                    <div>
+                        <Skeleton className="h-5 w-1/4 mb-2 bg-gray-800" />
+                        <Skeleton className="h-4 w-1/5 bg-gray-800" />
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="w-full max-w-2xl bg-yellow-950/50 border-yellow-400/20">
+                <CardHeader>
+                     <Skeleton className="h-6 w-1/3 bg-gray-800" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {[...Array(2)].map((_, i) => (
+                        <div key={i} className="p-4 bg-gray-900/30 rounded-lg border border-gray-700/30 space-y-3">
+                             <Skeleton className="h-5 w-1/2 bg-gray-800" />
+                             <Skeleton className="h-4 w-full bg-gray-800" />
+                             <Skeleton className="h-4 w-3/4 bg-gray-800" />
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+    );
 }
 
-interface Order {
-  id: number;
-  total: number;
-  status: string;
-  createdAt: string;
-  items: Array<{
-    quantity: number;
-    menuItem: {
-      name: string;
-      price: number;
-    }
-  }>;
-}
+// Helper function for status colors
+const getStatusColor = (status: string): string => {
+  switch (status?.toUpperCase()) {
+    case 'PAID':
+      return 'text-green-400';
+    case 'PENDING':
+    case 'CONFIRMED':
+    case 'READY':
+      return 'text-yellow-300'; // Brighter yellow
+    case 'PAYMENT_FAILED':
+    case 'EXPIRED':
+      return 'text-orange-400'; // Orange for failure
+    default:
+      return 'text-gray-400'; // Fallback
+  }
+};
 
 export default function Profile() {
-  const [user, setUser] = useState<User | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user, orders, isLoading, error, refetchUserProfile } = useUserProfile();
   const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/users/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!response.ok) throw new Error('Failed to fetch user profile');
-        const userData: User = await response.json();
-        setUser(userData);
-
-        // Fetch orders
-        const ordersResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/users/${userData.id}/orders`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (!ordersResponse.ok) throw new Error('Failed to fetch orders');
-        const ordersData: Order[] = await ordersResponse.json();
-        setOrders(ordersData);
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('Failed to load user data. Please try again later.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [router]);
-
   if (isLoading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-yellow-400">Loading...</p>
-    </div>;
+    return <ProfileSkeleton />;
   }
 
-  if (error) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-red-500">{error}</p>
-    </div>;
+  if (error && !user) {
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 text-center">
+        <Alert variant="destructive" className="max-w-md">
+            <AlertTitle className="font-bold">Error Loading Profile</AlertTitle>
+            <AlertDescription className="text-sm mb-3">
+                {error}
+            </AlertDescription>
+             <Button onClick={() => refetchUserProfile()} variant="destructive" size="sm" className="mt-2">
+                 Try Again
+            </Button>
+        </Alert>
+      </div>
+    );
   }
 
   if (!user) {
-    return <div className="min-h-screen bg-black flex items-center justify-center">
-      <p className="text-yellow-400">No user data available</p>
-    </div>;
+    return (
+        <div className="min-h-screen bg-black flex items-center justify-center">
+             <p className="text-yellow-400">Please log in to view your profile.</p>
+        </div>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+      try {
+          return new Date(dateString).toLocaleDateString('en-GB', {
+              day: '2-digit', month: 'short', year: 'numeric'
+          });
+      } catch (e) {
+          return 'Invalid Date';
+      }
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-yellow-950 border-yellow-400/20">
-        <CardHeader>
-          <CardTitle className="text-yellow-400">User Profile</CardTitle>
+    <div className="min-h-screen bg-black flex flex-col items-center p-4 pt-20 md:pt-24 pb-10">
+      <Card className="w-full max-w-2xl bg-gray-950 border border-yellow-400/30 mb-12 shadow-lg shadow-yellow-500/5">
+        <CardHeader className="pb-4 border-b border-yellow-700/50">
+          <CardTitle className="text-2xl font-bold text-yellow-400">Profile Details</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-yellow-400">User Details</h2>
-            <p className="text-white">Name: {user.username}</p>
-            <p className="text-white">Email: {user.email}</p>
-          </div>
-          <div className="mb-4">
-            <h2 className="text-xl font-bold text-yellow-400">Loyalty Points</h2>
-            <p className="text-white">{user.loyaltyPoints} points</p>
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-yellow-400">Previous Orders</h2>
-            {orders.length > 0 ? (
-              <ul className="text-white">
-                {orders.map((order) => (
-                  <li key={order.id}>
-                    Order #{order.id} - {new Date(order.createdAt).toLocaleDateString()} - €
-                    {order.total.toFixed(2)} - Status: {order.status}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-white">No previous orders</p>
-            )}
-          </div>
+        <CardContent className="p-6 space-y-3 text-white">
+          <p><span className="font-semibold text-yellow-300 mr-2">Username:</span> {user.username}</p>
+          <p><span className="font-semibold text-yellow-300 mr-2">Email:</span> {user.email}</p>
+          {user.loyaltyPoints !== undefined && (
+              <div className="pt-3 mt-3 border-t border-yellow-700/30 flex items-center space-x-2">
+                 <span className="font-semibold text-yellow-300">Loyalty Points:</span>
+                 <Badge variant="default" className="text-lg font-bold">{user.loyaltyPoints}</Badge>
+              </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-2xl bg-gray-950 border border-yellow-400/30 shadow-lg shadow-yellow-500/5">
+        <CardHeader className="pb-4 border-b border-yellow-700/50">
+          <CardTitle className="text-2xl font-bold text-yellow-400">Order History</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          {error && orders.length === 0 && (
+             <Alert variant="destructive" className="">
+                 <AlertTitle className="font-bold">Could not load order history</AlertTitle>
+                 <AlertDescription className="text-sm mb-3">
+                     {error}
+                 </AlertDescription>
+                  <Button onClick={() => refetchUserProfile()} variant="destructive" size="sm" className="mt-2">
+                    Retry
+                 </Button>
+             </Alert>
+          )}
+
+          {orders.length > 0 ? (
+             orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                   .map((order: OrderHistoryItem) => (
+              <div key={order.id} className="p-4 rounded-lg bg-black/50 border border-yellow-600/30 space-y-2 hover:bg-black/70 hover:border-yellow-500/50 hover:scale-[1.01] transition-all duration-200 cursor-pointer">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold text-lg text-yellow-300">Order #{order.id}</h3>
+                  <span className="text-sm text-gray-300">{formatDate(order.createdAt)}</span>
+                </div>
+                <ul className="text-sm text-white pl-1 space-y-1">
+                  {order.items.map((item, index) => (
+                    <li key={index}>{item.quantity} x {item.menuItem.name} ({formatCurrency(item.menuItem.price)})</li>
+                  ))}
+                </ul>
+                <div className="flex justify-between items-center pt-2 border-t border-yellow-700/50 mt-3">
+                     <span className="text-sm font-medium text-gray-300">Status: <span className={`font-semibold ${getStatusColor(order.status)}`}>{order.status}</span></span>
+                     <span className="font-semibold text-white">Total: {formatCurrency(order.total)}</span>
+                </div>
+              </div>
+            ))
+          ) : (!error && !isLoading) ? (
+            <p className="text-gray-300 italic">You haven&apos;t placed any orders yet.</p>
+          ) : null }
         </CardContent>
       </Card>
     </div>

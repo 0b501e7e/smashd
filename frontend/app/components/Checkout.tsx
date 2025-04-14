@@ -1,102 +1,164 @@
 'use client'
 
-import { useBasket } from './BasketContext';
+import { useBasket, BasketItem } from './BasketContext';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/card"
-import { Button } from "@/app/components/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2 } from 'lucide-react';
 
 export function Checkout() {
-  const { basket, clearBasket } = useBasket();
+  const { basket, clearBasket, getTotalPrice } = useBasket();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const total = basket.reduce((sum, item) => sum + item.price, 0);
+  const total = getTotalPrice();
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
+    setError(null);
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      setError("You must be logged in to place an order.");
+      setIsProcessing(false);
+      return;
+    }
+
     try {
-      // Step 1: Create the order
-      const orderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/orders`, {
+      // Step 1: Create the order with detailed items
+      const orderPayload = {
+        items: basket.map(item => ({
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          price: item.unitPrice,
+          customizations: item.customizations || {}
+        })),
+        total: total
+      };
+
+      const orderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          items: basket.map(item => ({
-            menuItemId: item.id,
-            quantity: 1,
-            price: item.price
-          })),
-          total: total
-        }),
+        body: JSON.stringify(orderPayload),
       });
 
       if (!orderResponse.ok) {
-        throw new Error('Failed to create order');
+        const errorData = await orderResponse.json().catch(() => ({ error: `HTTP error ${orderResponse.status}` }));
+        throw new Error(errorData.error || 'Failed to create order');
       }
 
       const orderData = await orderResponse.json();
+      const createdOrderId = orderData.order.id;
 
-      // Step 2: Initiate checkout
-      const checkoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/v1/initiate-checkout`, {
+      // Step 1.5: Store orderId in sessionStorage BEFORE redirecting to SumUp
+      sessionStorage.setItem('pendingOrderId', createdOrderId.toString());
+      console.log(`Stored pendingOrderId: ${createdOrderId} in sessionStorage`);
+
+      // Step 2: Initiate SumUp checkout
+      const initiateCheckoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/initiate-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          orderId: orderData.order.id
-        }),
+        body: JSON.stringify({ orderId: createdOrderId }),
       });
 
-      if (!checkoutResponse.ok) {
-        throw new Error('Failed to initiate checkout');
+      if (!initiateCheckoutResponse.ok) {
+        const errorData = await initiateCheckoutResponse.json().catch(() => ({ error: `HTTP error ${initiateCheckoutResponse.status}` }));
+        throw new Error(errorData.error || 'Failed to initiate checkout process');
       }
 
-      const checkoutData = await checkoutResponse.json();
+      const checkoutData = await initiateCheckoutResponse.json();
+      const sumupCheckoutUrl = checkoutData.checkoutUrl;
 
-      // Step 3: Redirect to payment page
-      router.push(`/payment?checkoutId=${checkoutData.checkoutId}&orderId=${checkoutData.orderId}`);
+      if (!sumupCheckoutUrl) {
+          throw new Error('SumUp checkout URL not received from backend.');
+      }
 
-      // Clear the basket
+      // Step 3: Redirect directly to SumUp's hosted payment page
+      console.log(`Redirecting to SumUp hosted page: ${sumupCheckoutUrl}`);
+      window.location.href = sumupCheckoutUrl; // Use window.location.href for external redirect
+
+      // Clear the basket only after successful initiation
+      // Note: Basket clearing might happen before payment confirmation with this flow.
+      // Consider moving clearBasket() to the order confirmation page upon successful verification.
       clearBasket();
 
-    } catch (error) {
-      console.error('Error placing order:', error);
-      alert('There was an error placing your order. Please try again.');
+    } catch (err) {
+      console.error('Error placing order:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
     } finally {
       setIsProcessing(false);
     }
   };
 
+  // Helper to render customizations cleanly
+  const renderCustomizations = (item: BasketItem) => {
+    if (!item.customizations || Object.keys(item.customizations).length === 0) {
+      return null;
+    }
+
+    const { extras = [], sauces = [], toppings = [] } = item.customizations;
+    const allCustomizations = [...extras, ...sauces, ...toppings];
+
+    if (allCustomizations.length === 0) return null;
+
+    return (
+      <p className="text-xs text-gray-400 ml-2">({allCustomizations.join(', ')})</p>
+    );
+  };
+
   return (
-    <Card className="w-full max-w-md bg-yellow-950 border-yellow-400/20">
-      <CardHeader>
+    <Card className="w-full max-w-md bg-gray-950 border border-yellow-400/30 text-white">
+      <CardHeader className="border-b border-border pb-4">
         <CardTitle className="text-yellow-400">Your Order</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ul className="mb-4 text-white">
-          {basket.map((item, index) => (
-            <li key={index} className="flex justify-between items-center mb-2">
-              <span>{item.name}</span>
-              <span>€{item.price.toFixed(2)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="border-t border-yellow-400/20 pt-4">
-          <div className="flex justify-between items-center font-bold text-yellow-400">
-            <span>Total:</span>
-            <span>€{total.toFixed(2)}</span>
+      <CardContent className="p-6">
+        {basket.length === 0 ? (
+          <p className="text-center text-gray-400 py-8">Your basket is empty.</p>
+        ) : (
+          <ul className="mb-4 space-y-3">
+            {basket.map((item) => (
+              <li key={item.cartItemId} className="flex justify-between items-start text-sm text-white">
+                <div className="flex items-center">
+                  <span>{item.name} x {item.quantity}</span>
+                  {renderCustomizations(item)}
+                </div>
+                <span>€{(item.unitPrice * item.quantity).toFixed(2)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {basket.length > 0 && (
+          <div className="border-t border-border pt-4">
+            <div className="flex justify-between items-center font-bold text-yellow-400 text-lg">
+              <span>Total:</span>
+              <span>€{total.toFixed(2)}</span>
+            </div>
           </div>
-        </div>
+        )}
+        {error && (
+            <Alert variant="destructive" className="mt-4">
+                <AlertTitle>Order Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+            </Alert>
+        )}
       </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handlePlaceOrder} 
+      <CardFooter className="p-6 pt-0">
+        <Button
+          onClick={handlePlaceOrder}
           disabled={isProcessing || basket.length === 0}
-          className="w-full bg-yellow-400 text-black hover:bg-yellow-500 disabled:opacity-50"
+          className="w-full disabled:opacity-50 text-lg py-3"
         >
-          {isProcessing ? 'Processing...' : 'Place Order'}
+          {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+          {isProcessing ? 'Processing...' : 'Proceed to Payment'}
         </Button>
       </CardFooter>
     </Card>
