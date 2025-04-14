@@ -40,7 +40,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-yellow-950 border-yellow-400/20">
+      <Card className="w-full max-w-md bg-gray-900 border-gray-700">
         <CardHeader>
           <CardTitle className="text-yellow-400">Register</CardTitle>
         </CardHeader>
@@ -53,7 +53,7 @@ export default function Register() {
                   placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-white border-yellow-400/20 placeholder:text-black"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -63,7 +63,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white border-yellow-400/20 placeholder:text-black"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 />
               </div>
               <div className="flex flex-col space-y-1.5">
@@ -73,7 +73,7 @@ export default function Register() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-white border-yellow-400/20 placeholder:text-black"
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 />
               </div>
               {error && <p className="text-red-500">{error}</p>}

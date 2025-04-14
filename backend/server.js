@@ -25,7 +25,10 @@ const authenticateToken = (req, res, next) => {
   if (token == null) return res.sendStatus(401);
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.sendStatus(403);
+    if (err) {
+      console.error('JWT Verification Error:', err);
+      return res.sendStatus(403);
+    }
     req.user = user;
     next();
   });
@@ -121,6 +124,30 @@ app.get('/v1/menu', async (req, res) => {
   } catch (error) {
     console.error('Error fetching menu items:', error);
     res.status(500).json({ error: 'Error fetching menu items' });
+  }
+});
+
+// New endpoint to fetch customization options
+app.get('/v1/menu/customizations', async (req, res) => {
+  console.log('Received request for customization options');
+  try {
+    const categoriesWithWithOptions = await prisma.customizationCategory.findMany({
+      include: {
+        options: { // Include the related options for each category
+          orderBy: {
+             name: 'asc' // Optional: sort options alphabetically
+          }
+        },
+      },
+      orderBy: {
+        name: 'asc' // Optional: sort categories alphabetically (or define custom order)
+      }
+    });
+    console.log('Sending customization options:', categoriesWithWithOptions);
+    res.json(categoriesWithWithOptions);
+  } catch (error) {
+    console.error('Error fetching customization options:', error);
+    res.status(500).json({ error: 'Error fetching customization options' });
   }
 });
 
@@ -224,7 +251,7 @@ app.delete('/v1/admin/menu/:id', authenticateToken, isAdmin, async (req, res) =>
 });
 
 // Order routes
-app.post('/v1/orders', [
+app.post('/v1/orders', authenticateToken, [
   body('items').isArray().withMessage('Items must be an array'),
   body('items.*.menuItemId').isInt().withMessage('Invalid menu item ID'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
@@ -535,6 +562,13 @@ app.post('/v1/initiate-checkout', async (req, res) => {
       const randomStr = Math.random().toString(36).substring(2, 8);
       const uniqueReference = `ORDER-${order.id}-${timestamp}-${randomStr}`;
       console.log(`Creating checkout with reference: ${uniqueReference}`);
+      
+      // Define the redirect URL
+      const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; // Use env var or default
+      // Test: Remove query param for now
+      const redirectUrl = `${frontendBaseUrl}/order-confirmation`;
+      console.log(`Setting redirect URL (test): ${redirectUrl}`);
+
       // Prepare checkout data
       const checkoutData = JSON.stringify({
         checkout_reference: uniqueReference,
@@ -544,6 +578,8 @@ app.post('/v1/initiate-checkout', async (req, res) => {
         description: `Order #${order.id}`,
         // Enable hosted checkout
         hosted_checkout: { enabled: true },
+        // Set the simplified redirect URL
+        redirect_url: redirectUrl,
         // Add custom fields for order details - ensure we don't exceed SumUp's limit
         custom_fields: {
           order_id: order.id.toString()
@@ -694,108 +730,6 @@ app.post('/v1/initiate-checkout', async (req, res) => {
   }
 });
 
-// Helper function to verify SumUp webhook signatures
-function verifyWebhookSignature(signature, payload, secret) {
-  const crypto = require('crypto');
-  const hmac = crypto.createHmac('sha256', secret);
-  const expectedSignature = hmac.update(JSON.stringify(payload)).digest('hex');
-  return signature === expectedSignature;
-}
-
-app.post('/v1/webhooks/sumup', async (req, res) => {
-  try {
-    // Check signature if webhook secret is configured
-    // Support both new and legacy signature headers
-    const signature = req.headers['x-payload-signature'] || req.headers['sumup-signature'];
-    if (process.env.SUMUP_WEBHOOK_SECRET && signature) {
-      if (!verifyWebhookSignature(signature, req.body, process.env.SUMUP_WEBHOOK_SECRET)) {
-        console.error('Invalid webhook signature');
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
-    }
-
-    // Log the full webhook payload for debugging
-    console.log('Received SumUp webhook:', JSON.stringify(req.body, null, 2));
-    
-    // Handle both the legacy and new webhook formats
-    // Legacy format: { event_type, checkout_reference, status }
-    // New format: { id, event_type, payload: { checkout_id, reference, status } }
-    const eventType = req.body.event_type;
-    let checkoutReference = req.body.checkout_reference;
-    let status = req.body.status;
-    
-    // If using new format with nested payload
-    if (req.body.payload) {
-      // New format uses 'reference' instead of 'checkout_reference'
-      checkoutReference = req.body.payload.reference;
-      // New format has status in the payload
-      status = req.body.payload.status;
-    }
-    
-    // Extract order ID from checkout reference (now in format "ORDER-123-timestamp")
-    let orderId = null;
-    if (checkoutReference) {
-      // Extract the order ID from the reference
-      const match = checkoutReference.match(/^ORDER-(\d+)(?:-\d+)?/);
-      if (match && match[1]) {
-        orderId = parseInt(match[1]);
-      }
-    }
-    
-    if (!orderId) {
-      console.error('Invalid checkout reference:', checkoutReference);
-      return res.status(400).json({ error: 'Invalid checkout reference' });
-    }
-    
-    // Map SumUp events to our order statuses
-    let orderStatus;
-    switch (eventType) {
-      case 'checkout.paid':
-      case 'checkout.status.updated':
-        // For new format, check the status from the payload
-        if (status === 'PAID' || status === 'SUCCESSFUL') {
-          orderStatus = 'PAID';
-        } else if (status === 'FAILED') {
-          orderStatus = 'PAYMENT_FAILED';
-        } else {
-          console.log(`Unhandled status in checkout update: ${status}`);
-          return res.status(200).send('Status received but not processed');
-        }
-        break;
-      case 'checkout.failed':
-        orderStatus = 'PAYMENT_FAILED';
-        break;
-      case 'order.confirmed': // Custom event if SumUp sends it when business confirms
-        orderStatus = 'CONFIRMED';
-        break;
-      case 'order.ready': // Custom event if SumUp sends it when order is ready
-        orderStatus = 'READY';
-        break;
-      default:
-        // Log unknown event types but don't update order
-        console.log(`Unknown SumUp event type: ${eventType}`);
-        return res.status(200).send('Event received but not processed');
-    }
-    
-    if (orderStatus) {
-      console.log(`Updating order ${orderId} status to ${orderStatus} based on event ${eventType}`);
-      await prisma.order.update({
-        where: { id: orderId },
-        data: { 
-          status: orderStatus,
-          ...(orderStatus === 'READY' ? { readyAt: new Date() } : {})
-        }
-      });
-      console.log(`Updated order ${orderId} status to ${orderStatus}`);
-    }
-    
-    res.status(200).send('Webhook processed successfully');
-  } catch (error) {
-    console.error('Error processing SumUp webhook:', error);
-    res.status(500).send('Error processing webhook');
-  }
-});
-
 // 2. Order status polling endpoint for mobile app
 app.get('/v1/orders/:id/status', async (req, res) => {
   const { id } = req.params;
@@ -880,7 +814,116 @@ app.post('/v1/orders/:id/estimate', async (req, res) => {
   }
 });
 
+// New endpoint to verify payment status with SumUp and update order
+app.post('/v1/orders/:orderId/verify-payment', authenticateToken, async (req, res) => {
+  const { orderId } = req.params;
+  const authenticatedUserId = req.user.userId;
+
+  try {
+    // 1. Find the order in the database
+    const order = await prisma.order.findUnique({
+      where: { id: parseInt(orderId) }
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Security Check: Ensure the user requesting verification owns the order
+    if (order.userId !== authenticatedUserId) {
+        return res.status(403).json({ error: 'Not authorized to verify this order' });
+    }
+
+    // 2. Check if order requires verification (e.g., is PENDING and has a sumupCheckoutId)
+    if (!order.sumupCheckoutId || order.status !== 'PENDING') {
+       console.log(`Order ${orderId} status is ${order.status}, no verification needed or possible.`);
+       return res.json(order); // Return current order status
+    }
+
+    // 3. Get SumUp Access Token
+    const accessToken = await getSumupAccessToken();
+
+    // 4. Query SumUp API for checkout status
+    const options = {
+      hostname: 'api.sumup.com',
+      path: `/v0.1/checkouts/${order.sumupCheckoutId}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    };
+
+    console.log(`Verifying SumUp status for checkout ID: ${order.sumupCheckoutId} (Order ID: ${orderId})`);
+    const checkoutDetails = await makeHttpRequest(options);
+    console.log(`SumUp status for checkout ${order.sumupCheckoutId}: ${checkoutDetails.status}`);
+
+    // 5. Update DB based on SumUp status
+    let updatedOrder = order; // Start with the current order
+    if (checkoutDetails.status === 'PAID') {
+      console.log(`Payment confirmed by SumUp for order ${orderId}. Updating DB.`);
+      
+      // Use transaction to update order and potentially loyalty points
+      updatedOrder = await prisma.$transaction(async (prisma) => {
+        const newlyUpdatedOrder = await prisma.order.update({
+          where: { id: parseInt(orderId) },
+          data: { status: 'PAID' }
+        });
+
+        // Award loyalty points only if the user exists and points haven't been awarded yet
+        // Note: Loyalty points are currently awarded on creation, this logic might need adjustment
+        // if points should only be confirmed *after* payment.
+        // For now, let's assume they are awarded on creation and this just confirms payment.
+        // If loyalty points logic needs change, we adjust the POST /v1/orders endpoint.
+
+        return newlyUpdatedOrder;
+      });
+       console.log(`Order ${orderId} status updated to PAID in DB.`);
+    } else if ([ 'FAILED', 'EXPIRED' ].includes(checkoutDetails.status)) {
+       console.log(`Payment failed or expired according to SumUp for order ${orderId}. Updating DB.`);
+       updatedOrder = await prisma.order.update({
+           where: { id: parseInt(orderId) },
+           data: { status: 'PAYMENT_FAILED' } // Use a suitable status
+       });
+       console.log(`Order ${orderId} status updated to PAYMENT_FAILED in DB.`);
+    }
+
+    // 6. Re-fetch the complete order details to return to the frontend
+    const finalOrderDetails = await prisma.order.findUnique({
+        where: { id: parseInt(orderId) },
+        include: {
+            items: { // Include the items and their related menu item name
+                include: {
+                    menuItem: {
+                        select: { name: true }
+                    }
+                }
+            }
+        }
+    });
+
+    if (!finalOrderDetails) {
+        // Should not happen if we found it earlier, but good practice
+        console.error(`Could not re-fetch order ${orderId} after update.`);
+        return res.status(500).json({ error: 'Failed to retrieve final order details.'});
+    }
+
+    // 7. Return the latest FULL order status and details
+    res.json(finalOrderDetails);
+
+  } catch (error) {
+    console.error(`Error verifying payment for order ${orderId}:`, error);
+    // Distinguish between SumUp API errors and other errors
+    if (error.message.includes('SumUp API error')) {
+        res.status(502).json({ error: 'Failed to check payment status with provider', details: error.message });
+    } else {
+        res.status(500).json({ error: 'Error verifying payment', details: error.message });
+    }
+  }
+});
+
 // Endpoint to get checkout status directly from SumUp API
+// This can likely be removed or kept for admin/debugging purposes
 app.get('/v1/checkouts/:checkoutId/status', async (req, res) => {
   const { checkoutId } = req.params;
   
@@ -979,75 +1022,6 @@ app.post('/v1/admin/sync-menu-to-sumup', authenticateToken, isAdmin, async (req,
   } catch (error) {
     console.error('Error syncing menu to SumUp:', error);
     res.status(500).json({ error: 'Error syncing menu to SumUp' });
-  }
-});
-
-// Only available in development environment
-app.post('/v1/test/sumup-webhook', async (req, res) => {
-  try {
-    const { orderId, event_type = 'checkout.paid' } = req.body;
-    
-    if (!orderId) {
-      return res.status(400).json({ error: 'Missing order ID' });
-    }
-    
-    console.log(`Simulating SumUp webhook for order ${orderId}, event: ${event_type}`);
-    
-    // Find the order
-    const order = await prisma.order.findUnique({
-      where: { id: parseInt(orderId) },
-    });
-    
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    
-    console.log(`Current order status: ${order.status}`);
-    
-    // Simulate different webhook event types
-    let status;
-    switch (event_type) {
-      case 'checkout.paid':
-        status = 'PAID';
-        break;
-      case 'checkout.failed':
-        status = 'PAYMENT_FAILED';
-        break;
-      case 'checkout.expired':
-        status = 'EXPIRED';
-        break;
-      default:
-        status = 'PAID';
-    }
-    
-    console.log(`Will update order ${orderId} to status: ${status}`);
-    
-    // Add a small delay to simulate webhook processing time
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Update the order status
-    const updatedOrder = await prisma.order.update({
-      where: { id: parseInt(orderId) },
-      data: { status }
-    });
-    
-    console.log(`Updated order ${orderId} status to ${status}`);
-    
-    // Double-check the update was successful
-    const verifiedOrder = await prisma.order.findUnique({
-      where: { id: parseInt(orderId) },
-    });
-    
-    console.log(`Verified updated order status: ${verifiedOrder.status}`);
-    
-    res.json({
-      success: true,
-      message: `Order ${orderId} updated with status ${status}`,
-      order: updatedOrder
-    });
-  } catch (error) {
-    console.error('Error simulating webhook:', error);
-    res.status(500).json({ error: 'Error simulating webhook', details: error.message });
   }
 });
 

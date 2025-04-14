@@ -28,13 +28,14 @@ model User {
 model MenuItem {
   id             Int         @id @default(autoincrement())
   sumupProductId String?     // Add this field to track SumUp product ID
-  name           String
+  name           String      @unique
   description    String
   price          Float
   category       String
   imageUrl       String
   isAvailable    Boolean     @default(true)
   orderItems     OrderItem[]
+  customizationCategories MenuItemCustomization[]
 }
 
 model Order {
@@ -70,6 +71,33 @@ model LoyaltyPoints {
   points    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// New Models for Customizations
+model CustomizationCategory {
+  id          Int                  @id @default(autoincrement())
+  name        String               @unique // e.g., "Extras", "Sauces", "Toppings"
+  options     CustomizationOption[] // Relation to options within this category
+  menuItems   MenuItemCustomization[] // Which menu items use this category
+}
+
+model CustomizationOption {
+  id                 Int                  @id @default(autoincrement())
+  categoryId         Int
+  category           CustomizationCategory @relation(fields: [categoryId], references: [id])
+  name               String               // e.g., "Extra Patty", "Ketchup"
+  price              Float                @default(0) // Price addon for this option
+  isDefaultSelected  Boolean              @default(false) // e.g., Lettuce might be default
+}
+
+// Relation table: Links MenuItem to applicable CustomizationCategories
+model MenuItemCustomization {
+  menuItemId           Int
+  menuItem             MenuItem             @relation(fields: [menuItemId], references: [id])
+  customizationCategoryId Int
+  customizationCategory CustomizationCategory @relation(fields: [customizationCategoryId], references: [id])
+
+  @@id([menuItemId, customizationCategoryId]) // Composite primary key
 }
 
 enum Role {

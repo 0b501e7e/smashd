@@ -38,3 +38,12 @@ backend/public/sw.js
 backend/public/workbox-*.js
 backend/public/workbox-*.map
 backend/package-lock.json
+
+app/node_modules
+app/dist
+app/build
+app/coverage
+app/public/sw.js
+app/public/workbox-*.js
+app/public/workbox-*.map
+app/package-lock.json
