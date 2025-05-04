@@ -105,13 +105,22 @@ export function Menu() {
                             {category.toLowerCase()}
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-                            {(menuItems[category] || []).map((item, itemIndex) => (
-                                <motion.div
-                                    key={item.id}
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
-                                    transition={{ duration: 0.3, delay: itemIndex * 0.05 + catIndex * 0.1 }}
-                                >
+                            {(menuItems[category] || []).map((item, itemIndex) => {
+                                // Get API base URL, remove trailing /v1 or /api suffix
+                                const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, ''); 
+                                // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
+                                const imageSrc = item.imageUrl && apiUrl
+                                                  ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                                                  : '/burger.png'; // Use fallback from frontend/public
+                                console.log(`Menu Item: Rendering image for ${item.name}: src=${imageSrc}`);
+
+                                return (
+                                  <motion.div
+                                      key={item.id}
+                                      initial={{ opacity: 0, scale: 0.95 }}
+                                      animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                                      transition={{ duration: 0.3, delay: itemIndex * 0.05 + catIndex * 0.1 }}
+                                  >
                                     <Card
                                         className="relative group overflow-hidden rounded-lg bg-black/50 shadow-md border border-yellow-600/30 hover:border-yellow-500/50 transition-all duration-300 flex flex-col h-full cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                                         onClick={() => handleCardClick(item)}
@@ -122,13 +131,16 @@ export function Menu() {
                                                     <Skeleton className="w-full h-full bg-gray-700" />
                                                 ) : (
                                                     <Image
-                                                        src={item.imageUrl || ''}
+                                                        src={imageSrc}
                                                         alt={item.name}
                                                         fill
                                                         style={{ objectFit: 'cover' }}
                                                         sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, (max-width: 1280px) 30vw, 23vw"
                                                         className="transition-transform duration-300 ease-in-out group-hover:scale-105"
-                                                        onError={() => handleImageError(item.id)}
+                                                        onError={() => {
+                                                            console.error(`Menu Item: Error loading image for ${item.name}: ${imageSrc}`);
+                                                            handleImageError(item.id);
+                                                        }}
                                                         priority={itemIndex < 4 && catIndex === 0}
                                                     />
                                                 )}
@@ -151,8 +163,9 @@ export function Menu() {
                                             </div>
                                         </CardContent>
                                     </Card>
-                                </motion.div>
-                            ))}
+                                  </motion.div>
+                                );
+                            })}
                         </div>
                          {catIndex < sortedCategories.length - 1 && (
                            <Separator className="my-12 md:my-16 bg-border" />

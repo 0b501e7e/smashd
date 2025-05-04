@@ -10,6 +10,8 @@ import React from 'react';
 import { menuAPI } from '@/services/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { API_URL } from '@/services/api';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Define customization options
 type CustomizationOption = {
@@ -123,6 +125,10 @@ export default function ItemCustomizationScreen() {
     }
   };
 
+  // Calculate the full image URI
+  const baseApiUrl = API_URL?.replace(/\/(v1|api)$/, ''); // Get base URL
+  const imageUri = item?.imageUrl && baseApiUrl ? `${baseApiUrl}${item.imageUrl}` : null;
+
   const toggleSelection = (id: string, currentSelected: string[], setSelected: React.Dispatch<React.SetStateAction<string[]>>) => {
     if (currentSelected.includes(id)) {
       setSelected(currentSelected.filter(item => item !== id));
@@ -203,18 +209,31 @@ export default function ItemCustomizationScreen() {
         >
           <ThemedView style={styles.contentContainer}>
             <ThemedView style={styles.itemHeader}>
-              {item.imageUrl && (
+              {imageUri ? (
                 <Image 
-                  source={{ uri: item.imageUrl }} 
+                  source={{ uri: imageUri }}
                   style={styles.itemImage} 
                   resizeMode="cover"
                 />
+              ) : (
+                <View style={[styles.itemImage, styles.placeholderImage]}>
+                  <IconSymbol name="photo" size={40} color="#666" /> 
+                </View>
               )}
-              <ThemedView style={styles.itemInfo}>
-                <ThemedText type="subtitle" style={styles.itemName}>{item.name}</ThemedText>
-                <ThemedText style={styles.itemDescription}>{item.description}</ThemedText>
-                <ThemedText style={styles.basePrice}>Base price: ${item.price.toFixed(2)}</ThemedText>
-              </ThemedView>
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
+                style={styles.gradientOverlay}
+              />
+              <View style={styles.textOverlay}>
+                <ThemedText type="subtitle" style={styles.itemNameOverlay}>{item.name}</ThemedText>
+                <ThemedText style={styles.itemDescriptionOverlay} numberOfLines={2} ellipsizeMode="tail">
+                  {item.description}
+                </ThemedText>
+              </View>
+            </ThemedView>
+
+            <ThemedView style={styles.priceSection}>
+              <ThemedText style={styles.basePrice}>Base price: ${item.price.toFixed(2)}</ThemedText>
             </ThemedView>
 
             <ThemedView style={styles.section}>
@@ -444,34 +463,68 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   itemHeader: {
-    padding: 16,
-    marginTop: 8,
+    height: 300,
+    width: '100%',
+    position: 'relative',
+    backgroundColor: '#222',
   },
   itemImage: {
-    height: 200,
+    position: 'absolute',
+    top: 0,
+    left: 0,
     width: '100%',
-    borderRadius: 8,
-    marginBottom: 12,
+    height: '100%',
   },
-  itemInfo: {
-    gap: 8,
+  placeholderImage: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  itemName: {
-    fontSize: 24,
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 150,
+  },
+  textOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingTop: 50,
+  },
+  itemNameOverlay: {
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 10
   },
-  itemDescription: {
+  itemDescriptionOverlay: {
     fontSize: 16,
-    marginBottom: 8,
+    color: '#E0E0E0',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: -1, height: 1 },
+    textShadowRadius: 5
+  },
+  priceSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   basePrice: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   section: {
     padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    borderTopWidth: 0,
   },
   sectionTitle: {
     fontSize: 18,
@@ -528,7 +581,6 @@ const styles = StyleSheet.create({
     color: '#ff8c00',
     fontWeight: 'bold',
   },
-  // Summary section styles
   summaryContainer: {
     padding: 16,
     marginTop: 16,

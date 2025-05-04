@@ -76,72 +76,84 @@ export function BasketButton() {
           <>
             <ScrollArea className="flex-1 px-6 py-4">
               <ul className="space-y-4">
-                {basket.map((item) => (
-                  <li key={item.cartItemId} className="flex items-start space-x-4 py-4">
-                    <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
-                      <Image
-                        src={item.imageUrl || '/placeholder-image.png'} // Provide a fallback image
-                        alt={item.name}
-                        fill
-                        sizes="(max-width: 768px) 10vw, 5vw"
-                        style={{ objectFit: 'cover' }}
-                        onError={(e) => {
-                          // Optional: Handle image loading errors, e.g., set to placeholder
-                          e.currentTarget.src = '/placeholder-image.png';
-                        }}
-                      />
-                    </div>
+                {basket.map((item) => {
+                  // Get API base URL, remove trailing /v1 or /api suffix
+                  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
+                  // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
+                  const imageSrc = item.imageUrl && apiUrl 
+                                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                                    : '/burger.png'; // Keep using frontend fallback
+                  const fallbackSrc = '/burger.png';
+                  console.log(`Basket Item: Using image path: ${imageSrc}`);
 
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
-                           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
-                           {renderCustomizations(item)}
-                        </div>
-                        <span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                           {formatCurrency(item.unitPrice * item.quantity)}
-                        </span>
+                  return (
+                    <li key={item.cartItemId} className="flex items-start space-x-4 py-4">
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
+                        <Image
+                          src={imageSrc}
+                          alt={item.name}
+                          fill
+                          sizes="(max-width: 768px) 10vw, 5vw"
+                          style={{ objectFit: 'cover' }}
+                          onError={(e) => {
+                            console.error(`Basket Item: Error loading image ${imageSrc}`);
+                            (e.target as HTMLImageElement).src = fallbackSrc;
+                            (e.target as HTMLImageElement).srcset = fallbackSrc;
+                          }}
+                        />
                       </div>
 
-                       <div className="flex items-center justify-between mt-2">
-                           {/* Quantity Controls */}
-                           <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded">
-                               <Button
-                                   variant="ghost"
-                                   size="icon"
-                                   className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                   onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                                   disabled={item.quantity <= 1}
-                                >
-                                   <Minus className="h-4 w-4" />
-                               </Button>
-                               <span className="w-8 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                                   {item.quantity}
-                               </span>
-                               <Button
-                                   variant="ghost"
-                                   size="icon"
-                                   className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                   onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                               >
-                                   <Plus className="h-4 w-4" />
-                               </Button>
-                           </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
+                             {renderCustomizations(item)}
+                          </div>
+                          <span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                             {formatCurrency(item.unitPrice * item.quantity)}
+                          </span>
+                        </div>
 
-                           {/* Remove Button */}
-                           <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
-                              onClick={() => removeFromBasket(item.cartItemId)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Remove item</span>
-                           </Button>
-                       </div>
-                    </div>
-                  </li>
-                ))}
+                         <div className="flex items-center justify-between mt-2">
+                             {/* Quantity Controls */}
+                             <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded">
+                                 <Button
+                                     variant="ghost"
+                                     size="icon"
+                                     className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                     onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
+                                     disabled={item.quantity <= 1}
+                                  >
+                                     <Minus className="h-4 w-4" />
+                                 </Button>
+                                 <span className="w-8 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                                     {item.quantity}
+                                 </span>
+                                 <Button
+                                     variant="ghost"
+                                     size="icon"
+                                     className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                     onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+                                 >
+                                     <Plus className="h-4 w-4" />
+                                 </Button>
+                             </div>
+
+                             {/* Remove Button */}
+                             <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
+                                onClick={() => removeFromBasket(item.cartItemId)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="sr-only">Remove item</span>
+                             </Button>
+                         </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </ScrollArea>
 

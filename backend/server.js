@@ -18,6 +18,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Serve static files from public folder
+// Serve public/images directory at the root path to match database URLs
+app.use(express.static('public'));
+// Also serve at /images path for backward compatibility
+app.use('/images', express.static('public/images'));
+
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];

@@ -201,20 +201,33 @@ export default function MenuItemDetailPage() {
   if (error) return <div className="container mx-auto min-h-screen flex justify-center items-center"><p className="text-red-500 text-xl">Error: {error}</p></div>;
   if (!item) return <div className="container mx-auto min-h-screen flex justify-center items-center"><p className="text-white text-xl">Item not found.</p></div>;
 
+  // Get API base URL, remove trailing /v1 or /api suffix
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
+  // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
+  const imageSrc = item.imageUrl && apiUrl 
+                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                    : '/burger.png'; // Keep using frontend fallback
+  const fallbackSrc = '/burger.png'; // Define fallback for error handling
+  console.log(`Detail Page: Using image path: ${imageSrc}`);
+
   return (
     <div className="container mx-auto px-4 py-8 pt-20 min-h-screen bg-black text-white">
       <Card className="bg-yellow-950 border border-yellow-400/30 overflow-hidden">
         <div className="md:flex">
           {/* Image Section */}
           <div className="md:w-1/2">
-            <div className="relative h-64 md:h-full">
+            <div className="relative aspect-square w-full max-w-md mx-auto rounded-lg overflow-hidden shadow-lg bg-gray-800">
               <Image
-                src={item.imageUrl || '/placeholder.svg'} // Use placeholder if no image
+                src={imageSrc}
                 alt={item.name}
-                fill // Use fill instead of layout="fill"
-                style={{ objectFit: 'cover' }} // Use style object for objectFit
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority // Load image sooner
+                fill
+                style={{ objectFit: 'cover' }}
+                priority // Prioritize loading the main image on the detail page
+                onError={(e) => {
+                  console.error(`Detail Page: Error loading image ${imageSrc}`);
+                  (e.target as HTMLImageElement).src = fallbackSrc;
+                  (e.target as HTMLImageElement).srcset = fallbackSrc;
+                }}
               />
             </div>
           </div>
