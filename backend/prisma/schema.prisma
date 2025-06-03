@@ -15,27 +15,37 @@ datasource db {
 
 model User {
   id            Int            @id @default(autoincrement())
-  username      String         @unique
   email         String         @unique
   password      String
+  name          String
+  dateOfBirth   DateTime
+  address       String
+  phoneNumber   String
+  acceptedTerms Boolean        @default(false)
   role          Role           @default(CUSTOMER)
   orders        Order[]
   loyaltyPoints LoyaltyPoints?
+  pointsTransactions PointsTransaction[]
+  notifications Notification[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
 
 model MenuItem {
-  id             Int         @id @default(autoincrement())
-  sumupProductId String?     // Add this field to track SumUp product ID
-  name           String      @unique
-  description    String
-  price          Float
-  category       String
-  imageUrl       String
-  isAvailable    Boolean     @default(true)
-  orderItems     OrderItem[]
-  customizationCategories MenuItemCustomization[]
+  id                 Int      @id @default(autoincrement())
+  name               String
+  description        String?
+  price              Float
+  category           String   // BURGER, SIDE, DRINK, DESSERT
+  imageUrl           String?
+  isAvailable        Boolean  @default(true)
+  sumupProductId     String?  @unique // Used to link to SumUp catalog
+  orderItems         OrderItem[]
+  customizationCategories MenuItemCustomizationCategory[] // Relation to join table for old category-based linking
+  linkedCustomizationOptions MenuItemCustomizationOption[] // For direct option linking (NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Order {
@@ -51,6 +61,7 @@ model Order {
   readyAt           DateTime?   // When order was actually marked ready
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+  pointsTransactions PointsTransaction[]
 }
 
 model OrderItem {
@@ -65,39 +76,100 @@ model OrderItem {
 }
 
 model LoyaltyPoints {
+  id                 Int      @id @default(autoincrement())
+  user               User     @relation(fields: [userId], references: [id])
+  userId             Int      @unique
+  points             Int      @default(0)
+  tier               String   @default("BRONZE") // BRONZE, SILVER, GOLD
+  registrationDate   DateTime @default(now()) // Date of loyalty enrollment / first points record
+  lastPointsReset    DateTime? // When points were last reset (e.g. due to 90-day expiry)
+  totalSpentThisYear Float    @default(0) // For birthday reward tracking
+  birthdayRewardSent Boolean  @default(false)
+  pointsTransactions PointsTransaction[] // History of all points changes
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PointsTransaction {
   id        Int      @id @default(autoincrement())
+  
   user      User     @relation(fields: [userId], references: [id])
-  userId    Int      @unique
-  points    Int      @default(0)
+  userId    Int
+  
+  loyaltyPoints LoyaltyPoints @relation(fields: [loyaltyPointsId], references: [id])
+  loyaltyPointsId Int
+
+  points    Int      // positive for earned, negative for spent/expired
+  reason    String   // e.g., "ORDER_EARNED", "BIRTHDAY_BONUS", "POINTS_REDEEMED", "POINTS_EXPIRED"
+  
+  order     Order?   @relation(fields: [orderId], references: [id]) // Optional: link to an order if points are order-related
+  orderId   Int?     // Optional: foreign key for Order
+
+  details   String?  // Optional: e.g. "Order #123", "Redeemed for Free Burger", "Monthly points expiry"
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
-// New Models for Customizations
+// Join table for MenuItem and CustomizationCategory (Many-to-Many)
+model MenuItemCustomizationCategory {
+  menuItem    MenuItem             @relation(fields: [menuItemId], references: [id])
+  menuItemId  Int
+  category    CustomizationCategory @relation(fields: [categoryId], references: [id])
+  categoryId  Int
+
+  @@id([menuItemId, categoryId])
+}
+
+// New Model: CustomizationCategory
+// Represents a type of customization, e.g., "Extras", "Sauces", "Toppings"
 model CustomizationCategory {
-  id          Int                  @id @default(autoincrement())
-  name        String               @unique // e.g., "Extras", "Sauces", "Toppings"
-  options     CustomizationOption[] // Relation to options within this category
-  menuItems   MenuItemCustomization[] // Which menu items use this category
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // e.g., "Extras", "Sauces"
+  options     CustomizationOption[]
+  menuItems   MenuItemCustomizationCategory[] // Relation to join table
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
+// New Model: CustomizationOption
+// Represents a specific choice within a category, e.g., "Extra Patty" (under "Extras")
 model CustomizationOption {
-  id                 Int                  @id @default(autoincrement())
-  categoryId         Int
-  category           CustomizationCategory @relation(fields: [categoryId], references: [id])
-  name               String               // e.g., "Extra Patty", "Ketchup"
-  price              Float                @default(0) // Price addon for this option
-  isDefaultSelected  Boolean              @default(false) // e.g., Lettuce might be default
+  id          Int      @id @default(autoincrement())
+  name        String   // e.g., "Extra Patty", "Ketchup"
+  price       Float    // Price for this specific option
+  categoryId  Int      // Foreign key to CustomizationCategory
+  category    CustomizationCategory @relation(fields: [categoryId], references: [id])
+  menuItems   MenuItemCustomizationOption[] // For direct option linking (NEW)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  
+  @@unique([name, categoryId])
+  @@index([categoryId])
 }
 
-// Relation table: Links MenuItem to applicable CustomizationCategories
-model MenuItemCustomization {
+// New join table for MenuItem and CustomizationOption (Many-to-Many for direct linking)
+model MenuItemCustomizationOption {
+  menuItem             MenuItem            @relation(fields: [menuItemId], references: [id])
   menuItemId           Int
-  menuItem             MenuItem             @relation(fields: [menuItemId], references: [id])
-  customizationCategoryId Int
-  customizationCategory CustomizationCategory @relation(fields: [customizationCategoryId], references: [id])
+  customizationOption  CustomizationOption @relation(fields: [customizationOptionId], references: [id])
+  customizationOptionId Int
 
-  @@id([menuItemId, customizationCategoryId]) // Composite primary key
+  @@id([menuItemId, customizationOptionId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // "RATING_REQUEST", "BIRTHDAY_REWARD", "ORDER_UPDATE"
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  metadata  Json?    // Additional data like orderId, etc.
+  scheduledFor DateTime?
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
 }
 
 enum Role {
@@ -114,8 +186,8 @@ enum Category {
 }
 
 enum OrderStatus {
-  PENDING        // Initial state, just created
-  PAID           // Payment confirmed but not yet confirmed by business
+  AWAITING_PAYMENT // Newly created order, waiting for payment processing
+  PAYMENT_CONFIRMED // Payment confirmed by SumUp, ready for business to process
   CONFIRMED      // Business confirmed, in preparation
   PREPARING      // In preparation (optional)
   READY          // Ready for collection

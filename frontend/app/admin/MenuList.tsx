@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Edit, Trash2, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Loader2, Settings2 } from 'lucide-react';
 import AddMenuItemForm from './AddMenuItemForm';
 import EditMenuItemForm from './EditMenuItemForm';
+import ManageCustomizationsModal from './ManageCustomizationsModal';
 
 // Assuming MenuItem type structure based on BasketContext and common fields
 // TODO: Potentially refine this based on exact API response
@@ -79,6 +80,10 @@ const MenuList = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
 
+  // State for customization modal
+  const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
+  const [itemForCustomization, setItemForCustomization] = useState<MenuItem | null>(null);
+
   const fetchMenuItems = useCallback(async (showLoadingIndicator = true) => {
     if (showLoadingIndicator) {
         setIsLoading(true); // Initial load indicator
@@ -130,6 +135,17 @@ const MenuList = () => {
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setItemToEdit(null);
+  };
+
+  const handleOpenCustomizationModal = (item: MenuItem) => {
+    setApiError(null); // Clear previous API errors
+    setItemForCustomization(item);
+    setIsCustomizationModalOpen(true);
+  };
+
+  const handleCloseCustomizationModal = () => {
+    setIsCustomizationModalOpen(false);
+    setItemForCustomization(null);
   };
 
   const handleDeleteItem = (item: MenuItem) => {
@@ -228,11 +244,15 @@ const MenuList = () => {
                 <TableCell className="text-white text-right">€{item.price.toFixed(2)}</TableCell>
                 <TableCell className="text-center space-x-1"> { /* Add space */}
                    {/* Edit button styling is okay */}
-                  <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)} className="text-yellow-400 hover:text-yellow-300">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)} className="text-yellow-400 hover:text-yellow-300" title="Edit Item">
                     <Edit className="h-4 w-4" />
                   </Button>
+                  {/* Customizations button */}
+                  <Button variant="ghost" size="icon" onClick={() => handleOpenCustomizationModal(item)} className="text-blue-400 hover:text-blue-300" title="Manage Customizations">
+                    <Settings2 className="h-4 w-4" />
+                  </Button>
                    {/* Delete button uses ghost variant + orange text */}
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)} className="text-orange-400 hover:text-orange-300">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)} className="text-orange-400 hover:text-orange-300" title="Delete Item">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
@@ -282,6 +302,16 @@ const MenuList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Placeholder for ManageCustomizationsModal - will be created next */}
+      
+      <ManageCustomizationsModal
+        item={itemForCustomization}
+        isOpen={isCustomizationModalOpen}
+        onClose={handleCloseCustomizationModal}
+        // onCustomizationsUpdated={() => fetchMenuItems(false)} // Might not need to refetch all menu items
+      />
+      
     </div>
   );
 };

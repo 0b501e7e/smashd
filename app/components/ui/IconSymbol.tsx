@@ -15,6 +15,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'cart': 'shopping-cart',
   'person.circle': 'account-circle',
+  'menucard.fill': 'menu-book',
 } as Partial<
   Record<
     import('expo-symbols').SymbolViewProps['name'],
@@ -38,7 +39,7 @@ export function IconSymbol({
   name: IconSymbolName;
   size?: number;
   color: string | OpaqueColorValue;
-  style?: StyleProp<ViewStyle>;
+  style?: StyleProp<import('react-native').TextStyle>;
   weight?: SymbolWeight;
 }) {
   return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;

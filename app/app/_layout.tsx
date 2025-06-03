@@ -8,11 +8,15 @@ import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// Import useColorScheme from NativeWind
+import { useColorScheme as useNativeWindColorScheme } from "nativewind";
+
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../contexts/AuthContext';
 import { CartProvider } from '../contexts/CartContext';
 import { RootStoreProvider } from '../contexts/RootStoreContext';
 import { checkGuestMode } from '../services/api';
+import '../global.css';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -23,10 +27,18 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const systemColorScheme = useColorScheme();
+  const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme();
+
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  // Sync NativeWind scheme with system scheme initially or if needed
+  useEffect(() => {
+    // Provide default value if systemColorScheme is nullish
+    setColorScheme(systemColorScheme ?? 'light'); 
+  }, [systemColorScheme, setColorScheme]);
 
   useEffect(() => {
     async function prepare() {
@@ -55,17 +67,14 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView style={{ flex: 1 }} className={colorScheme === 'dark' ? 'dark' : ''}>
         <RootStoreProvider>
             <AuthProvider>
               <CartProvider>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <ThemeProvider value={systemColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                   <Stack 
                     screenOptions={{
                       headerShown: false,
-                      contentStyle: { 
-                        backgroundColor: colorScheme === 'dark' ? '#000' : '#fff'
-                      }
                     }}>
                     <Stack.Screen name="index" />
                     <Stack.Screen 
@@ -97,7 +106,7 @@ export default function RootLayout() {
                       }}
                     />
                   </Stack>
-                  <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                  <StatusBar style={systemColorScheme === 'dark' ? 'light' : 'dark'} />
                 </ThemeProvider>
               </CartProvider>
             </AuthProvider>

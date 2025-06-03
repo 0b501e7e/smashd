@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, View, ScrollView, Pressable, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { orderAPI } from '@/services/api';
 import * as Haptics from 'expo-haptics';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 
-type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED';
 
 type OrderDetails = {
   id: number;
@@ -71,6 +70,33 @@ export default function OrderConfirmationScreen() {
     
     fetchOrderDetails();
   }, [orderId]);
+
+  // Add polling for order status updates
+  useEffect(() => {
+    if (!orderId || !order || (order.status === 'COMPLETED' || order.status === 'CANCELLED')) {
+      return; // Don't poll if no order, or order is in a terminal state
+    }
+
+    const numOrderId = Number(orderId);
+    if (isNaN(numOrderId)) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        console.log(`Polling for status update on order ${numOrderId}`);
+        const updatedOrderDetails = await orderAPI.getOrderStatus(numOrderId);
+        setOrder(updatedOrderDetails);
+        // Optional: Haptic feedback for significant status changes if desired
+        // if (order && updatedOrderDetails.status !== order.status && (updatedOrderDetails.status === 'PREPARING' || updatedOrderDetails.status === 'READY')) {
+        //   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // }
+      } catch (error) {
+        console.error('Error polling order status:', error);
+        // Decide if we want to show a non-blocking error to the user, e.g., a small toast
+      }
+    }, 15000); // Poll every 15 seconds
+
+    return () => clearInterval(intervalId); // Cleanup interval on component unmount or when dependencies change
+  }, [orderId, order]); // Re-run if orderId changes or order data (like status) changes
   
   // Format estimated ready time
   const getEstimatedReadyTime = () => {
@@ -102,6 +128,8 @@ export default function OrderConfirmationScreen() {
     switch (order.status) {
       case 'PAID':
         return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Payment Confirmed' };
+      case 'CONFIRMED':
+        return { color: '#ff9800', icon: 'flame.fill', text: 'Order Confirmed, Preparing!' };
       case 'PREPARING':
         return { color: '#ff9800', icon: 'flame.fill', text: 'Preparing Your Order' };
       case 'READY':
@@ -118,7 +146,7 @@ export default function OrderConfirmationScreen() {
   // Loading state
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerTitle: 'Order Confirmation' }} />
         <ActivityIndicator size="large" color="#ff8c00" />
         <ThemedText style={styles.loadingText}>Loading order details...</ThemedText>
@@ -129,7 +157,7 @@ export default function OrderConfirmationScreen() {
   // Error state
   if (error || !order) {
     return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerTitle: 'Order Error' }} />
         <IconSymbol name="exclamationmark.triangle.fill" size={60} color="#f44336" />
         <ThemedText style={styles.errorText}>
@@ -149,120 +177,125 @@ export default function OrderConfirmationScreen() {
   const statusInfo = getStatusInfo();
   
   return (
-    <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <ThemedView style={styles.container}>
       <Stack.Screen options={{ headerTitle: 'Order Confirmation' }} />
       
-      <ThemedView style={styles.header}>
-        <IconSymbol name="checkmark.circle.fill" size={80} color="#4caf50" />
-        <ThemedText type="title" style={styles.headerTitle}>
-          Thank You for Your Order!
-        </ThemedText>
-        <ThemedText style={styles.headerSubtitle}>
-          Your order has been confirmed and paid.
-        </ThemedText>
-      </ThemedView>
-      
-      <ThemedView style={styles.orderInfo}>
-        <ThemedView style={styles.orderInfoRow}>
-          <ThemedText style={styles.orderInfoLabel}>Order Number:</ThemedText>
-          <ThemedText style={styles.orderInfoValue}>#{order.id}</ThemedText>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <ThemedView style={styles.header}>
+          <IconSymbol name="checkmark.circle.fill" size={80} color="#4caf50" />
+          <ThemedText type="title" style={styles.headerTitle}>
+            Thank You for Your Order!
+          </ThemedText>
+          <ThemedText style={styles.headerSubtitle}>
+            Your order has been confirmed and paid.
+          </ThemedText>
         </ThemedView>
         
-        {transactionId && (
+        <ThemedView style={styles.orderInfo}>
           <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Transaction ID:</ThemedText>
-            <ThemedText style={styles.orderInfoValue}>{transactionId}</ThemedText>
+            <ThemedText style={styles.orderInfoLabel}>Order Number:</ThemedText>
+            <ThemedText style={styles.orderInfoValue}>#{order.id}</ThemedText>
           </ThemedView>
-        )}
-        
-        <ThemedView style={styles.orderInfoRow}>
-          <ThemedText style={styles.orderInfoLabel}>Status:</ThemedText>
-          <ThemedView style={styles.statusBadge}>
-            <IconSymbol name={statusInfo.icon as any} size={16} color={statusInfo.color} />
-            <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
-              {statusInfo.text}
+          
+          <ThemedView style={styles.orderInfoRow}>
+            <ThemedText style={styles.orderInfoLabel}>Status:</ThemedText>
+            <ThemedView style={styles.statusBadge}>
+              <IconSymbol name={statusInfo.icon as any} size={16} color={statusInfo.color} />
+              <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
+                {statusInfo.text}
+              </ThemedText>
+            </ThemedView>
+          </ThemedView>
+          
+          <ThemedView style={styles.orderInfoRow}>
+            <ThemedText style={styles.orderInfoLabel}>Collection Time:</ThemedText>
+            <ThemedText style={styles.orderInfoValue}>
+              {order.status === 'CONFIRMED' || order.status === 'PREPARING' || order.status === 'READY' ? 
+                `Approximately ${getEstimatedReadyTime()}` : 
+                'Will be updated upon confirmation'}
             </ThemedText>
           </ThemedView>
         </ThemedView>
         
-        <ThemedView style={styles.orderInfoRow}>
-          <ThemedText style={styles.orderInfoLabel}>Collection Time:</ThemedText>
-          <ThemedText style={styles.orderInfoValue}>
-            Approximately {getEstimatedReadyTime()}
+        <ThemedView style={styles.orderSummary}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Order Summary
           </ThemedText>
-        </ThemedView>
-      </ThemedView>
-      
-      <ThemedView style={styles.orderSummary}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Order Summary
-        </ThemedText>
-        
-        {order.items && order.items.length > 0 ? (
-          order.items.map((item, index) => (
-            <ThemedView key={index} style={styles.itemRow}>
-              <ThemedView style={styles.itemInfo}>
-                <ThemedText style={styles.itemName}>
-                  {item.name} x{item.quantity}
-                </ThemedText>
+          
+          {order.items && order.items.length > 0 ? (
+            order.items.map((item, index) => (
+              <ThemedView key={index} style={styles.itemRow}>
+                <ThemedView style={styles.itemInfo}>
+                  <ThemedText style={styles.itemName}>
+                    {item.name} x{item.quantity}
+                  </ThemedText>
+                  
+                  {item.customizations && (
+                    <ThemedView style={styles.customizationsContainer}>
+                      {item.customizations.extras && item.customizations.extras.length > 0 && (
+                        <ThemedText style={styles.customizationText}>
+                          Extras: {item.customizations.extras.join(', ')}
+                        </ThemedText>
+                      )}
+                      
+                      {item.customizations.sauces && item.customizations.sauces.length > 0 && (
+                        <ThemedText style={styles.customizationText}>
+                          Sauces: {item.customizations.sauces.join(', ')}
+                        </ThemedText>
+                      )}
+                      
+                      {item.customizations.toppings && item.customizations.toppings.length > 0 && (
+                        <ThemedText style={styles.customizationText}>
+                          Toppings: {item.customizations.toppings.join(', ')}
+                        </ThemedText>
+                      )}
+                    </ThemedView>
+                  )}
+                </ThemedView>
                 
-                {item.customizations && (
-                  <ThemedView style={styles.customizationsContainer}>
-                    {item.customizations.extras && item.customizations.extras.length > 0 && (
-                      <ThemedText style={styles.customizationText}>
-                        Extras: {item.customizations.extras.join(', ')}
-                      </ThemedText>
-                    )}
-                    
-                    {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                      <ThemedText style={styles.customizationText}>
-                        Sauces: {item.customizations.sauces.join(', ')}
-                      </ThemedText>
-                    )}
-                    
-                    {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                      <ThemedText style={styles.customizationText}>
-                        Toppings: {item.customizations.toppings.join(', ')}
-                      </ThemedText>
-                    )}
-                  </ThemedView>
-                )}
+                <ThemedText style={styles.itemPrice}>
+                  ${(item.price * item.quantity).toFixed(2)}
+                </ThemedText>
               </ThemedView>
-              
-              <ThemedText style={styles.itemPrice}>
-                ${(item.price * item.quantity).toFixed(2)}
-              </ThemedText>
-            </ThemedView>
-          ))
-        ) : (
-          <ThemedText style={styles.noItemsText}>
-            Loading order items...
-          </ThemedText>
-        )}
-        
-        <ThemedView style={styles.totalRow}>
-          <ThemedText style={styles.totalLabel}>Total:</ThemedText>
-          <ThemedText style={styles.totalAmount}>${order.total.toFixed(2)}</ThemedText>
+            ))
+          ) : (
+            <ThemedText style={styles.noItemsText}>
+              Loading order items...
+            </ThemedText>
+          )}
+          
+          <ThemedView style={styles.totalRow}>
+            <ThemedText style={styles.totalLabel}>Total:</ThemedText>
+            <ThemedText style={styles.totalAmount}>${order.total.toFixed(2)}</ThemedText>
+          </ThemedView>
         </ThemedView>
-      </ThemedView>
-      
-      <ThemedView style={styles.instructions}>
-        <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Collection Instructions
-        </ThemedText>
         
-        <ThemedText style={styles.instructionText}>
-          Please show this screen when you arrive to collect your order. 
-          Your order will be ready in approximately 15-20 minutes.
-        </ThemedText>
+        <ThemedView style={styles.instructions}>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>
+            Collection Instructions
+          </ThemedText>
+          
+          <ThemedText style={styles.instructionText}>
+            Please show this screen when you arrive to collect your order. 
+            Your order will be ready in approximately 15-20 minutes.
+          </ThemedText>
+        </ThemedView>
+      </ScrollView>
+
+      <ThemedView style={[styles.buttonContainer, { 
+        paddingBottom: Math.max(insets.bottom, 40) + 30 // Same safe bottom spacing as checkout
+      }]}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => router.push('/(tabs)/menu')}
+        >
+          <ThemedText style={styles.buttonText}>Return to Menu</ThemedText>
+        </TouchableOpacity>
       </ThemedView>
-      
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push('/(tabs)/menu')}
-      >
-        <ThemedText style={styles.buttonText}>Return to Menu</ThemedText>
-      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -270,7 +303,17 @@ export default function OrderConfirmationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 16,
+  },
+  buttonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
   loadingText: {
     marginTop: 16,
@@ -301,10 +344,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   orderInfo: {
-    backgroundColor: '#f9f9f9',
     borderRadius: 12,
     padding: 16,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   orderInfoRow: {
     flexDirection: 'row',
@@ -384,11 +428,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   button: {
-    backgroundColor: '#ff8c00',
+    backgroundColor: '#ff8c00', 
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    marginTop: 'auto',
   },
   buttonText: {
     color: 'white',

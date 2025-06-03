@@ -1,15 +1,22 @@
-import { StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ActivityIndicator, View, Pressable } from 'react-native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useCart } from '@/contexts/CartContext';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { menuAPI } from '@/services/api';
-import { ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 type MenuItem = {
   id: number;
@@ -49,6 +56,7 @@ export default function MenuScreen() {
       id: item.id,
       name: item.name,
       price: item.price,
+      quantity: 1,
     });
   };
 
@@ -56,23 +64,23 @@ export default function MenuScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: '/item-customization',
-      params: { itemId: item.id }
+      params: { itemId: item.id },
     });
   };
 
   if (loading) {
     return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </ThemedView>
+      <View className="flex-1 justify-center items-center bg-black" style={{ paddingTop: insets.top }}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+      </View>
     );
   }
 
   if (error) {
     return (
-      <ThemedView style={styles.errorContainer}>
-        <ThemedText>{error}</ThemedText>
-      </ThemedView>
+      <View className="flex-1 justify-center items-center bg-black" style={{ paddingTop: insets.top }}>
+        <Text className="text-white">{error}</Text>
+      </View>
     );
   }
 
@@ -80,126 +88,48 @@ export default function MenuScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#FFE4B5', dark: '#8B4513' }}
+      headerBackgroundColor={{ light: 'black', dark: 'black' }}
       headerImage={
-        <ThemedView style={styles.headerContainer}>
-          <ThemedText style={[
-            styles.headerText, 
-            { 
-              padding: 20,
-              lineHeight: 48,
-              height: 100
-            }
-          ]}>
+        <View className="h-full justify-center items-center bg-black">
+          <Text className="text-4xl font-bold text-center p-5 leading-tight h-24 text-yellow-400">
             Our Menu
-          </ThemedText>
-        </ThemedView>
+          </Text>
+        </View>
       }>
-      <ThemedView style={[styles.container, { paddingBottom: insets.bottom + 20 }]}>
-        {categories.map(category => (
-          <ThemedView key={category} style={styles.categorySection}>
-            <ThemedText type="subtitle" style={styles.categoryTitle}>
+      <View className="bg-black" style={{ paddingBottom: insets.bottom + 20 }}>
+        {categories.map((category) => (
+          <View key={category} className="mb-5">
+            <Text className="text-2xl font-bold mb-2.5 text-yellow-400">
               {category}s
-            </ThemedText>
+            </Text>
             {menuItems
-              .filter(item => item.category === category)
-              .map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.menuItem}
-                  onPress={() => handleItemPress(item)}
-                >
-                  <ThemedView style={styles.itemInfo}>
-                    <ThemedView style={styles.itemDetails}>
-                      <ThemedText type="subtitle">{item.name}</ThemedText>
-                      <ThemedText>${item.price.toFixed(2)}</ThemedText>
-                      <ThemedText style={styles.description}>{item.description}</ThemedText>
-                    </ThemedView>
-                  </ThemedView>
-                  <TouchableOpacity
-                    style={styles.addButton}
-                    onPress={() => {
-                      handleAddToCart(item);
-                    }}
-                  >
-                    <ThemedText style={styles.addButtonText}>Add to Cart</ThemedText>
-                  </TouchableOpacity>
-                </TouchableOpacity>
+              .filter((item) => item.category === category)
+              .map((item) => (
+                <Card key={item.id} className="mb-2.5 bg-zinc-900 border-zinc-700">
+                  <Pressable onPress={() => handleItemPress(item)}>
+                    <CardHeader>
+                      <CardTitle className="text-white">{item.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Text className="mb-1 text-white">${item.price.toFixed(2)}</Text>
+                      <CardDescription className="text-gray-300">{item.description}</CardDescription>
+                    </CardContent>
+                  </Pressable>
+                  <CardFooter>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full bg-yellow-400 hover:bg-yellow-500"
+                      onPress={() => handleAddToCart(item)}
+                    >
+                      <Text className="text-black font-semibold">Add to Cart</Text>
+                    </Button>
+                  </CardFooter>
+                </Card>
               ))}
-          </ThemedView>
+          </View>
         ))}
-      </ThemedView>
+      </View>
     </ParallaxScrollView>
   );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-    padding: 16,
-  },
-  headerContainer: {
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  burgerCard: {
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  categorySection: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  menuItem: {
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    marginBottom: 10,
-  },
-  itemInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  description: {
-    flex: 1,
-  },
-  itemDetails: {
-    flex: 1,
-    gap: 4,
-  },
-  addButton: {
-    backgroundColor: '#0a7ea4',
-    padding: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  addButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-}); 
+} 

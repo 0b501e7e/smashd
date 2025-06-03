@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { setGuestMode } from '@/services/api';
 import { AnimatedLogo } from '@/components/AnimatedLogo';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { isLoggedIn, loading } = useAuth();
@@ -14,14 +15,14 @@ export default function HomeScreen() {
   // Redirect to menu if already logged in
   useEffect(() => {
     if (isLoggedIn && !loading) {
-      router.replace('/(tabs)/menu');
+      router.replace('/(tabs)/promotions');
     }
   }, [isLoggedIn, loading]);
 
   const handleGuestMode = () => {
     // Enable guest mode and navigate to menu
     setGuestMode(true);
-    router.push('/(tabs)/menu');
+    router.push('/(tabs)/promotions');
   };
 
   // Don't render anything while checking auth status
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   }
 
   return (
+    <SafeAreaProvider>
     <ThemedView style={styles.container}>
       <AnimatedLogo />
       
@@ -58,6 +60,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
     </ThemedView>
+    </SafeAreaProvider>
   );
 }
 

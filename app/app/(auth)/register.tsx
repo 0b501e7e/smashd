@@ -1,17 +1,24 @@
-import { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { Platform } from 'react-native';
 
 export default function RegisterScreen() {
-  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -22,18 +29,34 @@ export default function RegisterScreen() {
     return re.test(email);
   };
 
+  const validatePhoneNumber = (phone: string) => {
+    const re = /^[\+]?[1-9][\d]{0,15}$/;
+    return re.test(phone.replace(/\s/g, ''));
+  };
+
+  const formatDateOfBirth = (date: Date) => {
+    return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      setDateOfBirth(selectedDate);
+    }
+  };
+
   const handleRegister = async () => {
     // Reset error state
     setError('');
 
     // Validate inputs
-    if (!username || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword || !address || !phoneNumber) {
       setError('Please fill in all fields');
       return;
     }
 
-    if (username.length < 3) {
-      setError('Username must be at least 3 characters long');
+    if (name.length < 2) {
+      setError('Name must be at least 2 characters long');
       return;
     }
 
@@ -52,10 +75,46 @@ export default function RegisterScreen() {
       return;
     }
 
+    if (address.length < 5) {
+      setError('Address must be at least 5 characters long');
+      return;
+    }
+
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setError('You must accept the terms and conditions to register');
+      return;
+    }
+
+    // Check age (must be at least 13 years old)
+    const today = new Date();
+    let age = today.getFullYear() - dateOfBirth.getFullYear();
+    const monthDiff = today.getMonth() - dateOfBirth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+      age--;
+    }
+
+    if (age < 13) {
+      setError('You must be at least 13 years old to register');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await register(username, email, password);
+      await register(
+        email, 
+        password, 
+        name, 
+        formatDateOfBirth(dateOfBirth), 
+        address, 
+        phoneNumber, 
+        acceptedTerms
+      );
       router.replace('/'); // Redirect to main app after registration
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -80,16 +139,18 @@ export default function RegisterScreen() {
             paddingBottom: insets.bottom 
           }
         ]}>
+          <ThemedText style={styles.title}>Create Your Account</ThemedText>
+          
           {error ? (
             <ThemedText style={styles.error}>{error}</ThemedText>
           ) : null}
 
           <TextInput
             style={styles.input}
-            placeholder="Username"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
+            placeholder="Full Name"
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="words"
           />
 
           <TextInput
@@ -99,6 +160,42 @@ export default function RegisterScreen() {
             onChangeText={setEmail}
             autoCapitalize="none"
             keyboardType="email-address"
+          />
+
+          <TouchableOpacity 
+            style={styles.dateButton}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <ThemedText style={styles.dateButtonText}>
+              Date of Birth: {dateOfBirth.toLocaleDateString()}
+            </ThemedText>
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={dateOfBirth}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+            />
+          )}
+
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+            keyboardType="phone-pad"
+          />
+
+          <TextInput
+            style={styles.multilineInput}
+            placeholder="Address"
+            value={address}
+            onChangeText={setAddress}
+            multiline
+            numberOfLines={3}
           />
 
           <TextInput
@@ -116,6 +213,18 @@ export default function RegisterScreen() {
             onChangeText={setConfirmPassword}
             secureTextEntry
           />
+
+          <TouchableOpacity 
+            style={styles.checkboxContainer}
+            onPress={() => setAcceptedTerms(!acceptedTerms)}
+          >
+            <ThemedView style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
+              {acceptedTerms && <ThemedText style={styles.checkmark}>✓</ThemedText>}
+            </ThemedView>
+            <ThemedText style={styles.checkboxText}>
+              I accept the Terms and Conditions and Privacy Policy
+            </ThemedText>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={[styles.button, isLoading && styles.buttonDisabled]}
@@ -147,8 +256,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     justifyContent: 'center',
-    gap: 16,
-    minHeight: 500,
+    gap: 12,
+    minHeight: 800,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   input: {
     height: 48,
@@ -158,11 +273,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: 'white',
   },
+  multilineInput: {
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    textAlignVertical: 'top',
+  },
+  dateButton: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+  },
+  dateButtonText: {
+    color: '#333',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#0a7ea4',
+    borderColor: '#0a7ea4',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  checkboxText: {
+    flex: 1,
+    fontSize: 14,
+  },
   button: {
     backgroundColor: '#0a7ea4',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 8,
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -174,6 +340,7 @@ const styles = StyleSheet.create({
   error: {
     color: '#ff4444',
     textAlign: 'center',
+    marginBottom: 10,
   },
   loginContainer: {
     flexDirection: 'row',

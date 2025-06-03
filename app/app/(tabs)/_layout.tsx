@@ -8,6 +8,8 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { ThemedText } from '@/components/ThemedText';
+import { Badge } from '@/components/ui/badge';
+import { Text } from '@/components/ui/text';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -29,17 +31,33 @@ export default function TabLayout() {
         }),
       }}>
       <Tabs.Screen
+        name="promotions"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="menu"
         options={{
           title: 'Menu',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="menucard.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="cart"
         options={{
           title: 'Cart',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="cart" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <View>
+              <IconSymbol size={28} name="cart" color={color} />
+              {itemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-1.5 py-0.5 flex items-center justify-center">
+                  <Text>{itemCount}</Text>
+                </Badge>
+              )}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen

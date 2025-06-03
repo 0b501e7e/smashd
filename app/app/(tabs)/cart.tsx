@@ -1,7 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -50,7 +49,9 @@ export default function CartScreen() {
             key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`} 
             style={styles.cartItem}>
             <ThemedView style={styles.itemInfo}>
-              <ThemedText type="subtitle">{item.name}</ThemedText>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <ThemedText type="subtitle" style={{ flexShrink: 1 }}>{item.name}</ThemedText>
+              </View>
               <ThemedText>${item.price.toFixed(2)}</ThemedText>
             </ThemedView>
             
@@ -80,13 +81,13 @@ export default function CartScreen() {
               <TouchableOpacity
                 onPress={() => updateQuantity(Number(item.id), Math.max(0, item.quantity - 1))}
                 style={styles.quantityButton}>
-                <ThemedText>-</ThemedText>
+                <ThemedText style={{ color: '#333' }}>-</ThemedText>
               </TouchableOpacity>
               <ThemedText>{item.quantity}</ThemedText>
               <TouchableOpacity
                 onPress={() => updateQuantity(Number(item.id), item.quantity + 1)}
                 style={styles.quantityButton}>
-                <ThemedText>+</ThemedText>
+                <ThemedText style={{ color: '#333' }}>+</ThemedText>
               </TouchableOpacity>
             </ThemedView>
 
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
   itemInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
   quantityControls: {

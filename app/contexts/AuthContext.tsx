@@ -4,7 +4,6 @@ import { authAPI, userAPI } from '@/services/api';
 
 type User = {
   id: number;
-  username: string;
   email: string;
   role: 'ADMIN' | 'STAFF' | 'CUSTOMER';
   loyaltyPoints?: number;
@@ -15,7 +14,15 @@ type AuthContextType = {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (username: string, email: string, password: string) => Promise<void>;
+  register: (
+    email: string, 
+    password: string, 
+    name: string, 
+    dateOfBirth: string, 
+    address: string, 
+    phoneNumber: string, 
+    acceptedTerms: boolean
+  ) => Promise<void>;
   loading: boolean;
 };
 
@@ -63,9 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    dateOfBirth: string, 
+    address: string, 
+    phoneNumber: string, 
+    acceptedTerms: boolean
+  ) => {
     try {
-      await authAPI.register(username, email, password);
+      await authAPI.register(email, password, name, dateOfBirth, address, phoneNumber, acceptedTerms);
       // Automatically log in after successful registration
       await login(email, password);
     } catch (error) {

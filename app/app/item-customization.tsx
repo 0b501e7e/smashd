@@ -1,17 +1,15 @@
-import { StyleSheet, ScrollView, Image, View, Animated } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { ScrollView, Image, View, Animated, ActivityIndicator, Platform } from 'react-native';
+import { Text } from '@/components/ui/text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
 import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { menuAPI } from '@/services/api';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { API_URL } from '@/services/api';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Button } from '@/components/ui/button';
 
 // Define customization options
 type CustomizationOption = {
@@ -20,98 +18,101 @@ type CustomizationOption = {
   price: number;
 };
 
+// Define the structure for all customizations fetched from the backend
+type AllCustomizations = {
+  extras: CustomizationOption[];
+  sauces: CustomizationOption[];
+  toppings: CustomizationOption[];
+};
+
 // Define categories of customizations with unique IDs
-const EXTRAS = [
-  { id: 'extra-patty-1', name: 'Extra Patty', price: 2.00 },
-  { id: 'cheese-1', name: 'Cheese', price: 1.00 },
-  { id: 'bacon-1', name: 'Bacon', price: 1.50 },
-  { id: 'avocado-1', name: 'Avocado', price: 1.75 },
-];
+// const EXTRAS = [
+//   { id: 'extra-patty-1', name: 'Extra Patty', price: 2.00 },
+//   { id: 'cheese-1', name: 'Cheese', price: 1.00 },
+//   { id: 'bacon-1', name: 'Bacon', price: 1.50 },
+//   { id: 'avocado-1', name: 'Avocado', price: 1.75 },
+// ];
 
-const SAUCES = [
-  { id: 'ketchup-1', name: 'Ketchup', price: 0 },
-  { id: 'mayo-1', name: 'Mayo', price: 0 },
-  { id: 'bbq-1', name: 'BBQ Sauce', price: 0 },
-  { id: 'special-sauce-1', name: 'Special Sauce', price: 0.50 },
-];
+// const SAUCES = [
+//   { id: 'ketchup-1', name: 'Ketchup', price: 0 },
+//   { id: 'mayo-1', name: 'Mayo', price: 0 },
+//   { id: 'bbq-1', name: 'BBQ Sauce', price: 0 },
+//   { id: 'special-sauce-1', name: 'Special Sauce', price: 0.50 },
+// ];
 
-const TOPPINGS = [
-  { id: 'lettuce-1', name: 'Lettuce', price: 0 },
-  { id: 'tomato-1', name: 'Tomato', price: 0 },
-  { id: 'onion-1', name: 'Onion', price: 0 },
-  { id: 'pickles-1', name: 'Pickles', price: 0 },
-  { id: 'jalapenos-1', name: 'Jalapenos', price: 0.75 },
-];
+// const TOPPINGS = [
+//   { id: 'lettuce-1', name: 'Lettuce', price: 0 },
+//   { id: 'tomato-1', name: 'Tomato', price: 0 },
+//   { id: 'onion-1', name: 'Onion', price: 0 },
+//   { id: 'pickles-1', name: 'Pickles', price: 0 },
+//   { id: 'jalapenos-1', name: 'Jalapenos', price: 0.75 },
+// ];
 
 export default function ItemCustomizationScreen() {
   const { itemId } = useLocalSearchParams();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [customizationsLoading, setCustomizationsLoading] = useState(true);
+  const [allCustomizations, setAllCustomizations] = useState<AllCustomizations | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const [selectedSauces, setSelectedSauces] = useState<string[]>(['ketchup-1', 'mayo-1']);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>(['lettuce-1', 'tomato-1', 'onion-1']);
+  const [selectedSauces, setSelectedSauces] = useState<string[]>([]);
+  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
-  
-  // Add pulse animation
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  
+
+  // Pulse animation ref (keep for footer button)
+  // const pulseAnim = useRef(new Animated.Value(1)).current; // REMOVE PULSE ANIMATION
+
   // Calculate total price based on selections
-  const calculateTotalPrice = () => {
+  const calculateTotalPrice = useCallback(() => {
     let total = item ? item.price * quantity : 0;
-    
-    // Add extras
-    selectedExtras.forEach(extraId => {
-      const extra = EXTRAS.find(e => e.id === extraId);
-      if (extra) {
-        total += extra.price * quantity;
-      }
-    });
-    
-    // Add sauces with price
-    selectedSauces.forEach(sauceId => {
-      const sauce = SAUCES.find(s => s.id === sauceId);
-      if (sauce && sauce.price > 0) {
-        total += sauce.price * quantity;
-      }
-    });
-    
-    // Add toppings with price
-    selectedToppings.forEach(toppingId => {
-      const topping = TOPPINGS.find(t => t.id === toppingId);
-      if (topping && topping.price > 0) {
-        total += topping.price * quantity;
-      }
-    });
-    
+    if (allCustomizations) {
+      selectedExtras.forEach((extraId) => {
+        const extra = allCustomizations.extras.find((e) => e.id === extraId);
+        if (extra) total += extra.price * quantity;
+      });
+      selectedSauces.forEach((sauceId) => {
+        const sauce = allCustomizations.sauces.find((s) => s.id === sauceId);
+        if (sauce && sauce.price > 0) total += sauce.price * quantity;
+      });
+      selectedToppings.forEach((toppingId) => {
+        const topping = allCustomizations.toppings.find((t) => t.id === toppingId);
+        if (topping && topping.price > 0) total += topping.price * quantity;
+      });
+    }
     return total;
-  };
+  }, [item, quantity, selectedExtras, selectedSauces, selectedToppings, allCustomizations]);
 
   useEffect(() => {
     if (itemId) {
-      fetchMenuItem(Number(itemId));
+      const itemIdNumber = Number(itemId);
+      fetchMenuItem(itemIdNumber);
+      fetchItemCustomizations(itemIdNumber);
     }
   }, [itemId]);
 
-  useEffect(() => {
-    // Start pulsing animation for Add to Cart button
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.05,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
+  // useEffect(() => { // REMOVE PULSE ANIMATION EFFECT
+  //   // Start pulsing animation for Add to Cart button
+  //   const animation = Animated.loop(
+  //     Animated.sequence([
+  //       Animated.timing(pulseAnim, {
+  //         toValue: 1.05,
+  //         duration: 800,
+  //         useNativeDriver: true,
+  //       }),
+  //       Animated.timing(pulseAnim, {
+  //         toValue: 1,
+  //         duration: 800,
+  //         useNativeDriver: true,
+  //       }),
+  //     ]),
+  //   );
+  //   animation.start();
+  //   // Cleanup function to stop animation
+  //   return () => animation.stop();
+  // }, [pulseAnim]);
 
   const fetchMenuItem = async (id: number) => {
     try {
@@ -119,540 +120,278 @@ export default function ItemCustomizationScreen() {
       const data = await menuAPI.getMenuItemById(id);
       setItem(data);
     } catch (error) {
-      console.error('Error fetching menu item:', error);
+      console.error("Error fetching menu item:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Calculate the full image URI
-  const baseApiUrl = API_URL?.replace(/\/(v1|api)$/, ''); // Get base URL
-  const imageUri = item?.imageUrl && baseApiUrl ? `${baseApiUrl}${item.imageUrl}` : null;
+  const fetchItemCustomizations = async (id: number) => {
+    try {
+      setCustomizationsLoading(true);
+      const data = await menuAPI.getItemCustomizations(id);
+      // Ensure all expected keys exist, even if the API returns an empty object or partial data
+      setAllCustomizations({
+        extras: data.extras || [],
+        sauces: data.sauces || [],
+        toppings: data.toppings || [],
+      });
+    } catch (error) {
+      console.error("Error fetching item customizations:", error);
+      setAllCustomizations({ extras: [], sauces: [], toppings: [] });
+    } finally {
+      setCustomizationsLoading(false);
+    }
+  };
 
-  const toggleSelection = (id: string, currentSelected: string[], setSelected: React.Dispatch<React.SetStateAction<string[]>>) => {
+  const baseApiUrl = API_URL?.replace(/\/(v1|api)$/, "");
+  const imageUri =
+    item?.imageUrl && baseApiUrl ? `${baseApiUrl}${item.imageUrl}` : null;
+
+  const toggleSelection = (
+    id: string,
+    currentSelected: string[],
+    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => {
+    Haptics.selectionAsync();
     if (currentSelected.includes(id)) {
-      setSelected(currentSelected.filter(item => item !== id));
+      setSelected(currentSelected.filter((item) => item !== id));
     } else {
       setSelected([...currentSelected, id]);
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const handleAddToCart = useCallback(() => {
-    if (!item || addingToCart) return;
-    
-    // Provide haptic feedback for button press
+    if (!item || addingToCart || !allCustomizations) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    // Set loading state
     setAddingToCart(true);
-    
-    // Simulate a small delay for better UX
-    setTimeout(() => {
-      try {
-        const customizations = {
-          extras: selectedExtras.map(id => EXTRAS.find(e => e.id === id)?.name).filter(Boolean) as string[],
-          sauces: selectedSauces.map(id => SAUCES.find(s => s.id === id)?.name).filter(Boolean) as string[],
-          toppings: selectedToppings.map(id => TOPPINGS.find(t => t.id === id)?.name).filter(Boolean) as string[],
-        };
-        
-        addItem({
-          id: item.id,
-          name: item.name,
-          price: calculateTotalPrice() / quantity, // Price per item with customizations
-          quantity,
-          customizations
-        });
-        
-        // Success haptic feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        
-        // Navigate back
-        router.back();
-      } catch (error) {
-        console.error('Error adding item to cart:', error);
-        
-        // Error haptic feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        
-        // Reset loading state in case of error
-        setAddingToCart(false);
-      }
-    }, 300); // Short delay for feedback
-  }, [item, addingToCart, selectedExtras, selectedSauces, selectedToppings, quantity, addItem, router]);
 
-  if (loading || !item) {
+    try {
+      const customizations = {
+        extras: selectedExtras
+          .map((id) => allCustomizations.extras.find((e) => e.id === id)?.name)
+          .filter(Boolean) as string[],
+        sauces: selectedSauces
+          .map((id) => allCustomizations.sauces.find((s) => s.id === id)?.name)
+          .filter(Boolean) as string[],
+        toppings: selectedToppings
+          .map((id) => allCustomizations.toppings.find((t) => t.id === id)?.name)
+          .filter(Boolean) as string[],
+      };
+
+      addItem({
+        id: item.id,
+        name: item.name,
+        price: calculateTotalPrice() / quantity, // Price per item with customizations
+        quantity,
+        customizations,
+      });
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setAddingToCart(false);
+    }
+  }, [
+    item,
+    addingToCart,
+    selectedExtras,
+    selectedSauces,
+    selectedToppings,
+    quantity,
+    addItem,
+    router,
+    calculateTotalPrice,
+    allCustomizations,
+  ]);
+
+  // Function to render customization sections
+  const renderCustomizationSection = (
+    title: string,
+    options: CustomizationOption[],
+    selected: string[],
+    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+  ) => (
+    <View className="px-4 mb-6">
+      <Text className="text-white text-xl font-semibold mb-3">{title}</Text>
+      <View className="flex-wrap flex-row gap-2">
+        {options.map((option) => {
+          const isSelected = selected.includes(option.id);
+          return (
+            <Button
+              key={option.id}
+              variant={isSelected ? "default" : "outline"}
+              size="default"
+              className={`
+                ${isSelected ? "bg-yellow-400 border-yellow-400" : "border-zinc-600"}
+              `}
+              onPress={() => toggleSelection(option.id, selected, setSelected)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text
+                className={`font-medium ${isSelected ? "text-black" : "text-black"}`}
+              >
+                {option.name}{" "}
+                {option.price > 0 && `($${option.price.toFixed(2)})`}
+              </Text>
+            </Button>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  if (loading || customizationsLoading || !item || !allCustomizations) {
     return (
-      <ThemedView style={styles.loadingContainer}>
-        <ThemedText style={styles.loadingText}>Loading item details...</ThemedText>
-      </ThemedView>
+      <SafeAreaView className="flex-1 bg-black justify-center items-center">
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text className="text-white mt-2">Loading item details...</Text>
+      </SafeAreaView>
     );
   }
 
+  // Calculate total price for display
+  const totalPrice = calculateTotalPrice();
+
   return (
-    <ThemedView style={styles.container}>
-      <Stack.Screen 
+    <SafeAreaView className="flex-1 bg-black">
+      <Stack.Screen
         options={{
           headerTitle: item.name,
           headerShown: true,
+          headerStyle: { backgroundColor: "black" },
+          headerTintColor: "white",
+          headerTitleStyle: { color: "white" },
         }}
       />
       
-      {/* Main content container with proper flex layout */}
-      <ThemedView style={styles.mainContainer}>
-        {/* Scrollable content */}
-        <ScrollView 
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={true}
-          contentInsetAdjustmentBehavior="automatic"
-        >
-          <ThemedView style={styles.contentContainer}>
-            <ThemedView style={styles.itemHeader}>
-              {imageUri ? (
-                <Image 
-                  source={{ uri: imageUri }}
-                  style={styles.itemImage} 
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.itemImage, styles.placeholderImage]}>
-                  <IconSymbol name="photo" size={40} color="#666" /> 
-                </View>
-              )}
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.7)', 'rgba(0,0,0,0.9)']}
-                style={styles.gradientOverlay}
-              />
-              <View style={styles.textOverlay}>
-                <ThemedText type="subtitle" style={styles.itemNameOverlay}>{item.name}</ThemedText>
-                <ThemedText style={styles.itemDescriptionOverlay} numberOfLines={2} ellipsizeMode="tail">
-                  {item.description}
-                </ThemedText>
-              </View>
-            </ThemedView>
-
-            <ThemedView style={styles.priceSection}>
-              <ThemedText style={styles.basePrice}>Base price: ${item.price.toFixed(2)}</ThemedText>
-            </ThemedView>
-
-            <ThemedView style={styles.section}>
-              <ThemedText type="subtitle" style={styles.sectionTitle}>Quantity</ThemedText>
-              <ThemedView style={styles.quantitySelector}>
-                <TouchableOpacity
-                  style={[styles.quantityButton, quantity <= 1 && styles.quantityButtonDisabled]}
-                  disabled={quantity <= 1}
-                  onPress={() => {
-                    if (quantity > 1) {
-                      setQuantity(quantity - 1);
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }
-                  }}
-                >
-                  <ThemedText style={styles.quantityButtonText}>-</ThemedText>
-                </TouchableOpacity>
-                <ThemedText style={styles.quantityText}>{quantity}</ThemedText>
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={() => {
-                    setQuantity(quantity + 1);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                >
-                  <ThemedText style={styles.quantityButtonText}>+</ThemedText>
-                </TouchableOpacity>
-              </ThemedView>
-            </ThemedView>
-
-            {item.category === 'BURGER' && (
-              <>
-                <ThemedView style={styles.section}>
-                  <ThemedText type="subtitle" style={styles.sectionTitle}>Extras</ThemedText>
-                  {EXTRAS.map(extra => (
-                    <TouchableOpacity
-                      key={extra.id}
-                      style={[
-                        styles.optionItem,
-                        selectedExtras.includes(extra.id) && styles.optionItemSelected
-                      ]}
-                      onPress={() => toggleSelection(extra.id, selectedExtras, setSelectedExtras)}
-                    >
-                      <View style={styles.optionInfo}>
-                        <ThemedText>{extra.name}</ThemedText>
-                        {extra.price > 0 && (
-                          <ThemedText style={styles.optionPrice}>+${extra.price.toFixed(2)}</ThemedText>
-                        )}
-                      </View>
-                      {selectedExtras.includes(extra.id) && (
-                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ThemedView>
-
-                <ThemedView style={styles.section}>
-                  <ThemedText type="subtitle" style={styles.sectionTitle}>Sauces</ThemedText>
-                  {SAUCES.map(sauce => (
-                    <TouchableOpacity
-                      key={sauce.id}
-                      style={[
-                        styles.optionItem,
-                        selectedSauces.includes(sauce.id) && styles.optionItemSelected
-                      ]}
-                      onPress={() => toggleSelection(sauce.id, selectedSauces, setSelectedSauces)}
-                    >
-                      <View style={styles.optionInfo}>
-                        <ThemedText>{sauce.name}</ThemedText>
-                        {sauce.price > 0 && (
-                          <ThemedText style={styles.optionPrice}>+${sauce.price.toFixed(2)}</ThemedText>
-                        )}
-                      </View>
-                      {selectedSauces.includes(sauce.id) && (
-                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ThemedView>
-
-                <ThemedView style={styles.section}>
-                  <ThemedText type="subtitle" style={styles.sectionTitle}>Toppings</ThemedText>
-                  {TOPPINGS.map(topping => (
-                    <TouchableOpacity
-                      key={topping.id}
-                      style={[
-                        styles.optionItem,
-                        selectedToppings.includes(topping.id) && styles.optionItemSelected
-                      ]}
-                      onPress={() => toggleSelection(topping.id, selectedToppings, setSelectedToppings)}
-                    >
-                      <View style={styles.optionInfo}>
-                        <ThemedText>{topping.name}</ThemedText>
-                        {topping.price > 0 && (
-                          <ThemedText style={styles.optionPrice}>+${topping.price.toFixed(2)}</ThemedText>
-                        )}
-                      </View>
-                      {selectedToppings.includes(topping.id) && (
-                        <IconSymbol name="checkmark" size={20} color="#ff8c00" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ThemedView>
-              </>
-            )}
-            
-            {/* Add a summary at the bottom of scrollable content */}
-            <View style={styles.summaryContainer}>
-              <ThemedText style={styles.summaryTitle}>Order Summary</ThemedText>
-              <View style={styles.summaryRow}>
-                <ThemedText>{item.name} ({quantity})</ThemedText>
-                <ThemedText>${(item.price * quantity).toFixed(2)}</ThemedText>
-              </View>
-              
-              {selectedExtras.length > 0 && (
-                <View style={styles.summaryRow}>
-                  <ThemedText>Extras:</ThemedText>
-                  <ThemedText>
-                    ${selectedExtras.reduce((total, id) => {
-                      const extra = EXTRAS.find(e => e.id === id);
-                      return total + (extra?.price || 0) * quantity;
-                    }, 0).toFixed(2)}
-                  </ThemedText>
-                </View>
-              )}
-              
-              {selectedSauces.filter(id => {
-                const sauce = SAUCES.find(s => s.id === id);
-                return sauce && sauce.price > 0;
-              }).length > 0 && (
-                <View style={styles.summaryRow}>
-                  <ThemedText>Premium Sauces:</ThemedText>
-                  <ThemedText>
-                    ${selectedSauces.reduce((total, id) => {
-                      const sauce = SAUCES.find(s => s.id === id);
-                      return total + ((sauce?.price || 0) > 0 ? (sauce?.price || 0) * quantity : 0);
-                    }, 0).toFixed(2)}
-                  </ThemedText>
-                </View>
-              )}
-              
-              {selectedToppings.filter(id => {
-                const topping = TOPPINGS.find(t => t.id === id);
-                return topping && topping.price > 0;
-              }).length > 0 && (
-                <View style={styles.summaryRow}>
-                  <ThemedText>Premium Toppings:</ThemedText>
-                  <ThemedText>
-                    ${selectedToppings.reduce((total, id) => {
-                      const topping = TOPPINGS.find(t => t.id === id);
-                      return total + ((topping?.price || 0) > 0 ? (topping?.price || 0) * quantity : 0);
-                    }, 0).toFixed(2)}
-                  </ThemedText>
-                </View>
-              )}
-              
-              <View style={styles.summaryTotal}>
-                <ThemedText style={styles.totalLabelInline}>Total:</ThemedText>
-                <ThemedText style={styles.totalPriceInline}>${calculateTotalPrice().toFixed(2)}</ThemedText>
-              </View>
+      <ScrollView
+        className="flex-1" // Takes up available space above the footer
+        contentContainerStyle={{ paddingBottom: 20 }} // Padding for end of scroll content
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Item Header Section */}
+        <View className="relative mb-4">
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              className="w-full h-64"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="w-full h-64 bg-zinc-800 justify-center items-center">
+              <IconSymbol name="photo" size={40} color="#999" />
             </View>
-            
-            {/* Add to Cart Button */}
-            <ThemedView style={styles.scrollAddToCartContainer}>
-              <Animated.View 
-                style={{ 
-                  transform: [{ scale: !addingToCart ? pulseAnim : 1 }], 
-                  width: '100%' 
-                }}
-              >
-                <TouchableOpacity
-                  style={[styles.scrollAddButton, addingToCart && styles.disabledButton]}
-                  onPress={handleAddToCart}
-                  activeOpacity={0.7}
-                  disabled={addingToCart}
-                >
-                  <ThemedView style={styles.addButtonContent}>
-                    <ThemedText style={styles.addButtonText}>
-                      {addingToCart ? 'ADDING TO CART...' : 'ADD TO CART'}
-                    </ThemedText>
-                    {!addingToCart && (
-                      <IconSymbol name="cart.fill.badge.plus" size={28} color="#ffffff" />
-                    )}
-                  </ThemedView>
-                </TouchableOpacity>
-              </Animated.View>
-            </ThemedView>
-            
-            {/* Extra padding at the bottom */}
-            <View style={[styles.bottomPadding, { paddingBottom: Math.max(insets.bottom + 30, 50) }]} />
-          </ThemedView>
-        </ScrollView>
-      </ThemedView>
-    </ThemedView>
-  );
-}
+          )}
+          <View className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent"> 
+            <Text className="text-white text-2xl font-bold mb-1">
+              {item.name}
+            </Text>
+            <Text
+              className="text-gray-300 text-sm"
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {item.description}
+            </Text>
+          </View>
+        </View>
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  mainContainer: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 0,
-    flexGrow: 1,
-  },
-  contentContainer: {
-    flexGrow: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#333',
-    marginTop: 10,
-  },
-  itemHeader: {
-    height: 300,
-    width: '100%',
-    position: 'relative',
-    backgroundColor: '#222',
-  },
-  itemImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-  },
-  placeholderImage: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gradientOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 150,
-  },
-  textOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 50,
-  },
-  itemNameOverlay: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 4,
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 10
-  },
-  itemDescriptionOverlay: {
-    fontSize: 16,
-    color: '#E0E0E0',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: { width: -1, height: 1 },
-    textShadowRadius: 5
-  },
-  priceSection: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  basePrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  section: {
-    padding: 16,
-    borderTopWidth: 0,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  quantitySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quantityButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#ffaf1c',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantityButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  quantityButtonText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  quantityText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginHorizontal: 20,
-  },
-  optionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#eee',
-  },
-  optionItemSelected: {
-    backgroundColor: 'rgba(255, 140, 0, 0.1)',
-    borderColor: '#ff8c00',
-  },
-  optionInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  optionPrice: {
-    color: '#ff8c00',
-    fontWeight: 'bold',
-  },
-  summaryContainer: {
-    padding: 16,
-    marginTop: 16,
-    backgroundColor: 'rgba(255, 140, 0, 0.1)',
-    borderRadius: 8,
-    margin: 16,
-    borderWidth: 1,
-    borderColor: '#ff8c00',
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  summaryTotal: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
-  totalLabelInline: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalPriceInline: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ff8c00',
-  },
-  bottomPadding: {
-    height: 30,
-  },
-  scrollAddToCartContainer: {
-    padding: 16,
-    marginTop: 8,
-    marginHorizontal: 16,
-    marginBottom: 40,
-  },
-  scrollAddButton: {
-    backgroundColor: '#ff8c00',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  addButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    backgroundColor: 'transparent',
-  },
-  addButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 24,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    backgroundColor: 'transparent',
-  },
-  disabledButton: {
-    opacity: 0.6,
-    backgroundColor: '#ccc',
-    borderColor: '#999',
-  },
-}); 
+        {/* Price Section */}
+        <View className="px-4 mb-6">
+          <Text className="text-white text-lg">
+            Base price: ${item.price.toFixed(2)}
+          </Text>
+        </View>
+        
+        {/* Customization Sections */}
+        {allCustomizations && allCustomizations.extras.length > 0 && renderCustomizationSection(
+          "Extras",
+          allCustomizations.extras,
+          selectedExtras,
+          setSelectedExtras,
+        )}
+        {allCustomizations && allCustomizations.sauces.length > 0 && renderCustomizationSection(
+          "Sauces",
+          allCustomizations.sauces,
+          selectedSauces,
+          setSelectedSauces,
+        )}
+        {allCustomizations && allCustomizations.toppings.length > 0 && renderCustomizationSection(
+          "Toppings",
+          allCustomizations.toppings,
+          selectedToppings,
+          setSelectedToppings,
+        )}
+
+      </ScrollView>
+
+      {/* --- Footer Section (Fixed at bottom relative to parent View) --- */}
+      <View 
+        className="px-4 border-t border-zinc-700 pt-4 bg-black" 
+        // Use paddingBottom from safe area insets
+        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15 }} // Add a base padding even without inset
+      >
+        {/* Quantity Controls */}
+        <View className="flex-row items-center justify-between mb-4"> 
+          <Text className="text-white text-lg font-semibold">
+            Quantity
+          </Text>
+          <View className="flex-row items-center gap-3">
+            <Button
+              variant="outline"
+              size="icon"
+              className={`border-yellow-400 rounded-full h-9 w-9 ${quantity <= 1 ? "opacity-50" : ""}`}
+              disabled={quantity <= 1}
+              onPress={() => {
+                if (quantity > 1) {
+                  setQuantity(quantity - 1);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }
+              }}
+            >
+              <Text className="text-yellow-400 text-2xl font-bold">-</Text> 
+            </Button>
+            <Text className="text-white text-xl font-semibold w-10 text-center">
+              {quantity}
+            </Text>
+            <Button
+              variant="outline"
+              size="icon"
+              className="border-yellow-400 rounded-full h-9 w-9"
+              onPress={() => {
+                setQuantity(quantity + 1);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+            >
+              <Text className="text-yellow-400 text-2xl font-bold">+</Text>
+            </Button>
+          </View>
+        </View>
+
+        {/* Add to Cart Button */}
+        <Button
+          variant="default"
+          size="lg"
+          className="w-full bg-yellow-400" 
+          onPress={handleAddToCart}
+          disabled={addingToCart}
+        >
+          {addingToCart ? (
+            <ActivityIndicator size="small" color="#000000" />
+          ) : (
+            <Text className="text-black text-lg font-bold">
+              Add {quantity} to Cart - ${totalPrice.toFixed(2)}
+            </Text>
+          )}
+        </Button>
+      </View>
+      {/* --- End Footer Section --- */}
+      
+    </SafeAreaView>
+  );
+} 

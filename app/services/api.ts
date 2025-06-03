@@ -112,8 +112,24 @@ export const authAPI = {
     return response.data;
   },
 
-  register: async (username: string, email: string, password: string) => {
-    const response = await api.post('/auth/register', { username, email, password });
+  register: async (
+    email: string, 
+    password: string, 
+    name: string, 
+    dateOfBirth: string, 
+    address: string, 
+    phoneNumber: string, 
+    acceptedTerms: boolean
+  ) => {
+    const response = await api.post('/auth/register', { 
+      email, 
+      password, 
+      name, 
+      dateOfBirth, 
+      address, 
+      phoneNumber, 
+      acceptedTerms 
+    });
     setGuestMode(false); // Disable guest mode on registration
     return response.data;
   },
@@ -122,6 +138,19 @@ export const authAPI = {
     await AsyncStorage.removeItem('token');
     setGuestMode(false); // Reset guest mode on logout
   },
+};
+
+// Define the structure for all customizations, mirroring the frontend type
+type CustomizationOption = {
+  id: string;
+  name: string;
+  price: number;
+};
+
+type AllCustomizations = {
+  extras: CustomizationOption[];
+  sauces: CustomizationOption[];
+  toppings: CustomizationOption[];
 };
 
 export const menuAPI = {
@@ -152,6 +181,12 @@ export const menuAPI = {
     const response = await api.get(`/menu/${id}`);
     return response.data;
   },
+
+  // New function to fetch customizations for a menu item
+  getItemCustomizations: async (id: number): Promise<AllCustomizations> => {
+    const response = await api.get(`/menu-items/${id}/customizations`);
+    return response.data;
+  },
 };
 
 export const orderAPI = {
@@ -176,8 +211,9 @@ export const orderAPI = {
     }
   },
 
-  getUserOrders: async () => {
-    const response = await api.get('/users/profile/orders');
+  getUserOrders: async (userId: number) => {
+    console.log(`[api.ts] Fetching orders for userId: ${userId} via /users/:userId/orders`);
+    const response = await api.get(`/users/${userId}/orders`);
     return response.data;
   },
   
@@ -201,11 +237,21 @@ export const orderAPI = {
       throw error;
     }
   },
+  repeatOrder: async (orderId: number) => {
+    // Ensure the endpoint matches your backend route for repeating an order
+    const response = await api.post('/orders/repeat', { orderId });
+    return response.data;
+  },
 };
 
 export const userAPI = {
   getProfile: async () => {
     const response = await api.get('/users/profile');
+    return response.data;
+  },
+  getLastOrder: async (userId: number) => {
+    // Ensure the endpoint matches your backend route for fetching a user's last order
+    const response = await api.get(`/users/${userId}/last-order`);
     return response.data;
   },
 };
@@ -247,20 +293,29 @@ export const paymentAPI = {
    */
   getOrderStatus: async (orderId: number) => {
     try {
+      console.log(`Fetching order status for order ID: ${orderId}`);
       const response = await api.get(`/orders/${orderId}/status`);
-      return response.data;
-    } catch (error: any) {
-      console.error('Error checking order status:', error);
       
-      // Check for specific error messages
-      if (error.response && error.response.status === 404) {
-        throw new Error('Order not found');
+      // Log and validate the response data
+      console.log(`Order status response data:`, response.data);
+      
+      // Check if response data has the expected structure
+      if (!response.data || !response.data.id) {
+        console.warn(`Invalid order status response for order ${orderId}:`, response.data);
+        throw new Error('Invalid order data received');
       }
       
-      // Otherwise, throw a generic error
-      throw new Error('Unable to get order status. Please try again.');
+      return response.data;
+    } catch (error) {
+      console.error(`Error getting order status for order ${orderId}:`, error);
+      throw error;
     }
-  }
+  },
+  repeatOrder: async (orderId: number) => {
+    // Ensure the endpoint matches your backend route for repeating an order
+    const response = await api.post('/orders/repeat', { orderId });
+    return response.data;
+  },
 };
 
 export default api;

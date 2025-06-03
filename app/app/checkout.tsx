@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Alert, View, AppState, AppStateStatus } from 'react-native';
+import { StyleSheet, Alert, View, AppState, AppStateStatus, ScrollView, ActivityIndicator } from 'react-native';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useCart } from '@/contexts/CartContext';
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,12 +12,9 @@ import { orderAPI } from '@/services/api';
 import { sumupService } from '@/services/sumupService';
 import api from '@/services/api';
 
-type CollectionTime = '15mins' | '30mins' | '45mins' | '60mins';
-
 export default function CheckoutScreen() {
   const { orderId: urlOrderId, returnToApp } = useLocalSearchParams();
   const { items, total, clearCart } = useCart();
-  const [selectedTime, setSelectedTime] = useState<CollectionTime>('30mins');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
   const insets = useSafeAreaInsets();
@@ -27,10 +24,10 @@ export default function CheckoutScreen() {
   const appStateListenerRef = useRef<any>(null);
   
   // Helper function to check order payment status
-  const checkOrderStatus = async (orderId: number): Promise<boolean> => {
+  const checkOrderStatus = async (orderIdToCheck: number): Promise<boolean> => {
     try {
-      console.log('Checking status for order:', orderId);
-      const orderStatus = await sumupService.getPaymentStatus(orderId);
+      console.log('Checking status for order:', orderIdToCheck);
+      const orderStatus = await sumupService.getPaymentStatus(orderIdToCheck);
       return orderStatus?.status === 'PAID';
     } catch (error) {
       console.error('Error checking order status:', error);
@@ -38,9 +35,55 @@ export default function CheckoutScreen() {
     }
   };
   
+  // Helper function to handle the outcome of payment status check
+  const processPaymentOutcome = (isPaid: boolean, currentOrderId: number) => {
+    if (isPaid) {
+      Alert.alert(
+        'Payment Successful',
+        'Your payment was processed successfully. Would you like to view your order status?',
+        [
+          {
+            text: 'Not Now',
+            style: 'cancel',
+            onPress: () => {
+              setIsProcessing(false);
+              paymentAttemptedRef.current = false;
+              router.push('/(tabs)/menu');
+            }
+          },
+          {
+            text: 'View Order',
+            onPress: () => {
+              setIsProcessing(false);
+              paymentAttemptedRef.current = false;
+              router.push({
+                pathname: '/order-confirmation',
+                params: { orderId: currentOrderId.toString() }
+              });
+            }
+          }
+        ],
+        { cancelable: false }
+      );
+      clearCart();
+    } else {
+      Alert.alert(
+        'Payment Not Confirmed Yet',
+        'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
+        [{ text: 'OK' }]
+      );
+    }
+    setIsProcessing(false);
+  };
+  
   // Effect for handling app state changes and URL parameters 
   useEffect(() => {
-    // Check if we're returning from payment with orderID
+    const handleStatusCheck = async (orderToCheck: number) => {
+      setIsProcessing(true);
+      const isPaid = await checkOrderStatus(orderToCheck);
+      processPaymentOutcome(isPaid, orderToCheck);
+    };
+
     if (urlOrderId) {
       console.log('URL order ID detected:', urlOrderId);
       try {
@@ -55,51 +98,11 @@ export default function CheckoutScreen() {
           paymentAttemptedRef.current = true;
           
           // Check the order status
-          checkOrderStatus(numOrderId).then(isPaid => {
-            if (isPaid) {
-              // Show success message
-              Alert.alert(
-                'Payment Successful',
-                'Your payment was processed successfully. Would you like to view your order status?',
-                [
-                  {
-                    text: 'Not Now',
-                    style: 'cancel', 
-                    onPress: () => {
-                      setIsProcessing(false);
-                      paymentAttemptedRef.current = false;
-                      router.push('/(tabs)/menu');
-                    }
-                  },
-                  {
-                    text: 'View Order',
-                    onPress: () => {
-                      setIsProcessing(false);
-                      paymentAttemptedRef.current = false;
-                      router.push({
-                        pathname: '/order-confirmation',
-                        params: { orderId: numOrderId.toString() }
-                      });
-                    }
-                  }
-                ],
-                { cancelable: false } // Force the user to make a choice
-              );
-              // Clear cart on success
-              clearCart();
-            } else {
-              // Show a message that payment hasn't been confirmed yet
-              Alert.alert(
-                'Payment Not Confirmed Yet',
-                'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
-                [{ text: 'OK' }]
-              );
-            }
-            setIsProcessing(false);
-          });
+          handleStatusCheck(numOrderId);
         }
       } catch (err) {
         console.error('Error parsing order ID:', err);
+        setIsProcessing(false); // Ensure processing is false if parsing fails
       }
     }
     
@@ -125,62 +128,10 @@ export default function CheckoutScreen() {
           return;
         }
         
-        const orderToCheck = orderId || (
-          urlOrderId ? (
-            typeof urlOrderId === 'string' ? parseInt(urlOrderId) : 
-            Array.isArray(urlOrderId) ? parseInt(urlOrderId[0]) : Number(urlOrderId)
-          ) : null
-        );
+        console.log('App returned to foreground. Checking status for order:', orderId);
         
-        if (orderToCheck && !isNaN(orderToCheck)) {
-          console.log('App returned to foreground. Checking status for order:', orderToCheck);
-          
-          // Check order status
-          setIsProcessing(true);
-          checkOrderStatus(orderToCheck).then(isPaid => {
-            if (isPaid) {
-              // Handle successful payment
-              clearCart();
-              
-              // Show success dialog
-              Alert.alert(
-                'Payment Successful',
-                'Your payment was processed successfully. Would you like to view your order status?',
-                [
-                  {
-                    text: 'Not Now',
-                    style: 'cancel', 
-                    onPress: () => {
-                      setIsProcessing(false);
-                      paymentAttemptedRef.current = false;
-                      router.push('/(tabs)/menu');
-                    }
-                  },
-                  {
-                    text: 'View Order',
-                    onPress: () => {
-                      setIsProcessing(false);
-                      paymentAttemptedRef.current = false;
-                      router.push({
-                        pathname: '/order-confirmation',
-                        params: { orderId: orderToCheck.toString() }
-                      });
-                    }
-                  }
-                ],
-                { cancelable: false }
-              );
-            } else {
-              // Show not confirmed message
-              Alert.alert(
-                'Payment Not Confirmed Yet',
-                'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
-                [{ text: 'OK' }]
-              );
-              setIsProcessing(false);
-            }
-          });
-        }
+        // Check order status
+        handleStatusCheck(orderId);
       }
       
       appState.current = nextAppState;
@@ -192,23 +143,35 @@ export default function CheckoutScreen() {
         appStateListenerRef.current.remove();
       }
     };
-  }, [urlOrderId, returnToApp, orderId, clearCart]);
+  }, [urlOrderId, returnToApp, orderId, clearCart, processPaymentOutcome]);
   
   const handlePlaceOrder = async () => {
+    console.log(`[CheckoutScreen] handlePlaceOrder triggered. Current isProcessing: ${isProcessing}, items count: ${items.length}`);
+
     // Prevent duplicate order submissions by checking if already processing
+    // This check is important if user somehow manages to press again before UI updates
     if (isProcessing) {
+      console.log('[CheckoutScreen] Already processing, returning.');
       Alert.alert('Processing', 'Your order is already being processed. Please wait.');
       return;
     }
 
     if (items.length === 0) {
+      console.log('[CheckoutScreen] Empty cart, returning.');
+      // This alert should ideally not be needed if button is correctly disabled,
+      // but as a safeguard:
       Alert.alert('Empty Cart', 'Please add items to your cart before checking out.');
       return;
     }
     
-    setIsProcessing(true);
+    console.log('[CheckoutScreen] IMMEDIATELY SETTING isProcessing = true');
+    setIsProcessing(true); 
+
+    // Allow state to propagate and UI to update before heavy async work
+    await new Promise(resolve => setTimeout(resolve, 0)); 
+
     try {
-      // First create the order in our backend
+      console.log('[CheckoutScreen] Starting order creation API call. isProcessing should be true now.');
       const orderItems = items.map(item => ({
         menuItemId: typeof item.id === 'string' ? parseInt(item.id) : item.id,
         quantity: item.quantity,
@@ -216,36 +179,44 @@ export default function CheckoutScreen() {
         customizations: item.customizations || {}
       }));
 
-      console.log('Sending order items:', orderItems);
+      console.log('[CheckoutScreen] Attempting to create order with items:', JSON.stringify(orderItems));
+      console.log('[CheckoutScreen] Attempting to create order with total:', total);
 
       const response = await orderAPI.createOrder({
         items: orderItems,
-        collectionTime: selectedTime,
+        collectionTime: "", // Consider if this needs a real value or different handling
         total: total
       });
+      console.log('[CheckoutScreen] orderAPI.createOrder response:', response?.order?.id);
 
-      // Get the order ID from the response
       if (response && response.order && response.order.id) {
         const createdOrderId = response.order.id;
-        setOrderId(createdOrderId);
+        setOrderId(createdOrderId); 
         
-        // Navigate to the webview payment screen with the order ID
+        console.log(`[CheckoutScreen] Navigating to payment-webview for orderId: ${createdOrderId}`);
         router.push({
           pathname: '/payment-webview',
           params: { orderId: createdOrderId.toString() }
         });
         
-        // Clear the cart after creating the order
+        // Clear cart after initiating navigation.
+        // If navigation itself could fail, might need more complex handling.
         clearCart();
+        
+        // If navigation is successful, this screen's "isProcessing" for this action is done.
+        // No need to set setIsProcessing(false) here as we are moving away.
+        // If the user comes back to this screen, isProcessing will be its default false.
       } else {
-        throw new Error('Missing order ID in response');
+        console.error('[CheckoutScreen] Order creation failed: Missing order ID in response', response);
+        Alert.alert('Error', 'Failed to prepare your order (missing order ID). Please try again.');
+        setIsProcessing(false); // Reset on definite failure *before* navigation attempt
       }
-    } catch (error) {
-      console.error('Error creating order:', error);
-      Alert.alert('Error', 'Failed to create your order. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch (error: any) { // Added : any for error.message
+      console.error('[CheckoutScreen] Error during order creation process:', error);
+      Alert.alert('Error', `Failed to create your order. ${error.message || 'Please try again.'}`);
+      setIsProcessing(false); // Reset on error
+    } 
+    // Removed the finally block that unconditionally set setIsProcessing(false)
   };
 
   // Display informative message based on processing state
@@ -316,6 +287,11 @@ export default function CheckoutScreen() {
     });
   };
 
+  console.log('[CheckoutScreen] Rendering - isProcessing:', isProcessing);
+  console.log('[CheckoutScreen] Rendering - items:', JSON.stringify(items));
+  console.log('[CheckoutScreen] Style for minimalButton:', JSON.stringify(styles.minimalButton));
+  console.log('[CheckoutScreen] Style for minimalButtonText:', JSON.stringify(styles.minimalButtonText));
+
   return (
     <>
       <Stack.Screen 
@@ -325,68 +301,53 @@ export default function CheckoutScreen() {
         }}
       />
       
-      <ThemedView style={[styles.container, { paddingBottom: insets.bottom }]}>
-        <ThemedView style={styles.orderSummary}>
-          <ThemedText type="title" style={styles.sectionTitle}>
-            Order Summary
-          </ThemedText>
-          
-          <ThemedView style={styles.itemsList}>
-            {renderItems()}
-          </ThemedView>
-          
-          <ThemedView style={styles.totalRow}>
-            <ThemedText type="subtitle">Total: </ThemedText>
-            <ThemedText type="subtitle" style={styles.totalAmount}>
-              ${total.toFixed(2)}
+      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={[styles.scrollContentContainer, { paddingBottom: 100 }]}
+        >
+          <ThemedView style={styles.orderSummary}>
+            <ThemedText type="title" style={styles.sectionTitle}>
+              Order Summary
             </ThemedText>
+            
+            <ThemedView style={styles.itemsList}>
+              {renderItems()}
+            </ThemedView>
+            
+            <ThemedView style={styles.totalRow}>
+              <ThemedText type="subtitle">Total: </ThemedText>
+              <ThemedText type="subtitle" style={styles.totalAmount}>
+                ${total.toFixed(2)}
+              </ThemedText>
+            </ThemedView>
           </ThemedView>
-        </ThemedView>
-        
-        <ThemedView style={styles.collectSection}>
-          <ThemedText type="title" style={styles.sectionTitle}>
-            Collection Time
-          </ThemedText>
-          
-          <ThemedView style={styles.timeOptions}>
-            {(['15mins', '30mins', '45mins', '60mins'] as CollectionTime[]).map((time) => (
-              <TouchableOpacity
-                key={time}
-                style={[
-                  styles.timeOption,
-                  selectedTime === time && styles.selectedTime
-                ]}
-                onPress={() => setSelectedTime(time)}
-              >
-                <ThemedText
-                  style={[
-                    styles.timeText,
-                    selectedTime === time && styles.selectedTimeText
-                  ]}
-                >
-                  {time}
-                </ThemedText>
-              </TouchableOpacity>
-            ))}
-          </ThemedView>
-        </ThemedView>
-        
-        <ThemedText style={styles.instructionText}>
-          Your order will be ready for collection in approximately {selectedTime}.
-          Please proceed to checkout to confirm your order.
-        </ThemedText>
+        </ScrollView>
 
-        <TouchableOpacity
-          style={[
-            styles.placeOrderButton, 
-            isProcessing && styles.processingButton
-          ]}
-          onPress={handlePlaceOrder}
-          disabled={isProcessing}>
-          <ThemedText style={styles.placeOrderText}>
-            {getButtonText()}
-          </ThemedText>
-        </TouchableOpacity>
+        <ThemedView style={[styles.buttonContainer, { 
+          paddingBottom: Math.max(insets.bottom, 40) + 100
+        }]}>
+          <TouchableOpacity
+            style={[
+              styles.minimalButton,
+              (isProcessing || items.length === 0) && styles.disabledButton,
+            ]}
+            onPress={handlePlaceOrder}
+            disabled={isProcessing || items.length === 0}
+            activeOpacity={0.7}
+          >
+            {isProcessing ? (
+              <View style={styles.processingContainer}> 
+                <ActivityIndicator size="small" color="#ffffff" />
+                <ThemedText style={[styles.minimalButtonText, styles.processingButtonText]}>Processing...</ThemedText>
+              </View>
+            ) : (
+              <ThemedText style={styles.minimalButtonText}> 
+                Place Order
+              </ThemedText>
+            )}
+          </TouchableOpacity>
+        </ThemedView>
       </ThemedView>
     </>
   );
@@ -395,11 +356,22 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  scrollView: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+  },
+  scrollContentContainer: {
+    paddingBottom: 16,
   },
   orderSummary: {
     marginBottom: 24,
     gap: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   itemsList: {
     gap: 8,
@@ -434,48 +406,15 @@ const styles = StyleSheet.create({
   totalAmount: {
     fontWeight: 'bold',
   },
-  collectSection: {
-    marginBottom: 24,
-    gap: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  timeOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  timeOption: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  selectedTime: {
-    backgroundColor: '#0a7ea4',
-    borderColor: '#0a7ea4',
-  },
-  timeText: {
-    color: '#666',
-  },
-  selectedTimeText: {
-    color: 'white',
-  },
-  customizationsContainer: {
-    marginTop: 4,
-  },
-  customizationText: {
-    color: '#666',
-  },
   placeOrderButton: {
     backgroundColor: '#0a7ea4',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    width: '100%',
+  },
+  placeOrderButtonPressed: {
+    backgroundColor: '#e67e00',
   },
   processingButton: {
     backgroundColor: '#cccccc',
@@ -485,14 +424,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  testButton: {
-    backgroundColor: '#FF9800',
-    padding: 10,
+  minimalButton: {
+    backgroundColor: '#2196F3',
+    padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
     width: '100%',
+    flexDirection: 'row',
   },
-  instructionText: {
-    marginBottom: 16,
+  disabledButton: {
+    backgroundColor: '#cccccc',
+    opacity: 0.6,
+  },
+  minimalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  processingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  processingButtonText: {
+    marginLeft: 8,
+  },
+  customizationsContainer: {
+    marginTop: 4,
+  },
+  customizationText: {
+    color: '#666',
+  },
+  buttonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
