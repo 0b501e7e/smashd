@@ -42,9 +42,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         const userData = await userAPI.getProfile();
         setUser(userData);
+      } else {
+        setUser(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Auth check failed:', error);
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        await AsyncStorage.removeItem('token');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -62,10 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await authAPI.logout();
+      await AsyncStorage.removeItem('token');
       setUser(null);
     } catch (error) {
       console.error('Logout failed:', error);
+      await AsyncStorage.removeItem('token');
+      setUser(null);
       throw error;
     }
   };
@@ -81,7 +89,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       await authAPI.register(email, password, name, dateOfBirth, address, phoneNumber, acceptedTerms);
-      // Automatically log in after successful registration
       await login(email, password);
     } catch (error) {
       console.error('Registration failed:', error);

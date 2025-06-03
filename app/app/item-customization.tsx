@@ -1,4 +1,4 @@
-import { ScrollView, Image, View, Animated, ActivityIndicator, Platform } from 'react-native';
+import { ScrollView, Image, View, Animated, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
@@ -374,12 +374,11 @@ export default function ItemCustomizationScreen() {
         </View>
 
         {/* Add to Cart Button */}
-        <Button
-          variant="default"
-          size="lg"
-          className="w-full bg-yellow-400" 
+        <TouchableOpacity
+          className="w-full bg-yellow-400 py-3 items-center justify-center rounded-md" 
           onPress={handleAddToCart}
           disabled={addingToCart}
+          activeOpacity={0.7}
         >
           {addingToCart ? (
             <ActivityIndicator size="small" color="#000000" />
@@ -388,7 +387,7 @@ export default function ItemCustomizationScreen() {
               Add {quantity} to Cart - ${totalPrice.toFixed(2)}
             </Text>
           )}
-        </Button>
+        </TouchableOpacity>
       </View>
       {/* --- End Footer Section --- */}
       
