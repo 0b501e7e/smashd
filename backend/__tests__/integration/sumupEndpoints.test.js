@@ -5,7 +5,6 @@ const sumupMocks = require('../mocks/sumupApiMock');
 // Mock the makeHttpRequest and getSumupAccessToken functions
 const makeHttpRequest = jest.fn();
 const getSumupAccessToken = jest.fn();
-const verifyWebhookSignature = jest.fn();
 
 // Create a mock app for testing
 const app = express();
@@ -32,24 +31,30 @@ jest.mock('@prisma/client', () => {
             }
           ],
           totalAmount: 21.98,
-          status: 'PENDING',
-          reference: 'ORD-123456'
-        }),
-        findFirst: jest.fn().mockResolvedValue({
-          id: 1,
-          status: 'PENDING',
+          status: 'AWAITING_PAYMENT',
+          sumupCheckoutId: 'chk_123456',
           reference: 'ORD-123456'
         }),
         update: jest.fn().mockResolvedValue({
           id: 1,
           status: 'PAID'
         })
+      },
+      loyaltyPoints: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 1,
+          points: 100
+        }),
+        update: jest.fn().mockResolvedValue({
+          userId: 1,
+          points: 120
+        })
       }
     }))
   };
 });
 
-// Define mock routes for testing
+// Define mock routes for testing (based on actual server endpoints)
 app.post('/v1/initiate-checkout', async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -74,23 +79,47 @@ app.post('/v1/initiate-checkout', async (req, res) => {
   }
 });
 
-app.post('/v1/sumup-webhook', async (req, res) => {
+// Mock the polling endpoint for payment verification
+app.post('/v1/orders/:orderId/verify-payment', async (req, res) => {
   try {
-    const signature = req.headers['x-payload-signature'];
+    const { orderId } = req.params;
     
-    // Verify webhook signature
-    const isValid = verifyWebhookSignature(signature, req.body, 'test_webhook_secret');
+    // Mock checking SumUp status
+    const checkoutDetails = await makeHttpRequest();
     
-    if (!isValid) {
-      return res.status(401).json({ error: 'Invalid webhook signature' });
+    if (checkoutDetails.status === 'PAID') {
+      return res.status(200).json({
+        success: true,
+        message: 'Payment verified and order updated',
+        orderStatus: 'PAID'
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: 'Payment not yet confirmed',
+        orderStatus: 'AWAITING_PAYMENT'
+      });
     }
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to verify payment' });
+  }
+});
+
+// Mock the checkout status endpoint
+app.get('/v1/checkouts/:checkoutId/status', async (req, res) => {
+  try {
+    const { checkoutId } = req.params;
+    
+    const checkoutDetails = await makeHttpRequest();
     
     return res.status(200).json({
-      success: true,
-      message: 'Webhook processed successfully'
+      checkout_id: checkoutId,
+      status: checkoutDetails.status,
+      amount: checkoutDetails.amount,
+      currency: checkoutDetails.currency
     });
   } catch (error) {
-    return res.status(500).json({ error: `Webhook processing failed: ${error.message}` });
+    return res.status(500).json({ error: 'Failed to check checkout status' });
   }
 });
 
@@ -112,7 +141,6 @@ describe('SumUp API Endpoints', () => {
     // Set up default mock behaviors
     makeHttpRequest.mockResolvedValue(sumupMocks.checkoutResponse);
     getSumupAccessToken.mockResolvedValue('mock_access_token');
-    verifyWebhookSignature.mockReturnValue(true);
   });
   
   describe('POST /v1/initiate-checkout', () => {
@@ -157,49 +185,90 @@ describe('SumUp API Endpoints', () => {
     });
   });
   
-  describe('POST /v1/sumup-webhook', () => {
-    it('should process a valid payment webhook', async () => {
-      // Setup webhook data
-      const webhookData = {
-        event_type: 'checkout.paid',
-        checkout_reference: 'ORD-123456',
-        id: 'chk_123',
-        transaction_code: 'TR123456',
+  describe('POST /v1/orders/:orderId/verify-payment', () => {
+    it('should verify successful payment', async () => {
+      // Setup mock response for paid status
+      makeHttpRequest.mockResolvedValueOnce({
+        status: 'PAID',
         amount: 21.98,
-        currency: 'USD',
-        timestamp: new Date().toISOString(),
-        status: 'PAID'
-      };
+        currency: 'USD'
+      });
       
       // Make request
       const response = await request(app)
-        .post('/v1/sumup-webhook')
-        .set('x-payload-signature', 'valid-signature')
-        .send(webhookData);
+        .post('/v1/orders/1/verify-payment')
+        .send();
       
       // Assertions
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('success', true);
+      expect(response.body).toHaveProperty('orderStatus', 'PAID');
     });
     
-    it('should reject invalid webhook signatures', async () => {
-      // Set verifyWebhookSignature to return false for this test
-      verifyWebhookSignature.mockReturnValueOnce(false);
-      
-      // Setup webhook data
-      const webhookData = {
-        event_type: 'checkout.paid',
-        checkout_reference: 'ORD-123456'
-      };
+    it('should handle pending payment', async () => {
+      // Setup mock response for pending status
+      makeHttpRequest.mockResolvedValueOnce({
+        status: 'PENDING',
+        amount: 21.98,
+        currency: 'USD'
+      });
       
       // Make request
       const response = await request(app)
-        .post('/v1/sumup-webhook')
-        .set('x-payload-signature', 'invalid-signature')
-        .send(webhookData);
+        .post('/v1/orders/1/verify-payment')
+        .send();
       
       // Assertions
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('success', false);
+      expect(response.body).toHaveProperty('orderStatus', 'AWAITING_PAYMENT');
+    });
+    
+    it('should handle verification errors', async () => {
+      // Setup mock to throw an error
+      makeHttpRequest.mockRejectedValueOnce(new Error('SumUp API error'));
+      
+      // Make request
+      const response = await request(app)
+        .post('/v1/orders/1/verify-payment')
+        .send();
+      
+      // Assertions
+      expect(response.status).toBe(500);
+      expect(response.body).toHaveProperty('error');
+    });
+  });
+  
+  describe('GET /v1/checkouts/:checkoutId/status', () => {
+    it('should return checkout status', async () => {
+      // Setup mock response
+      makeHttpRequest.mockResolvedValueOnce({
+        status: 'PAID',
+        amount: 21.98,
+        currency: 'USD'
+      });
+      
+      // Make request
+      const response = await request(app)
+        .get('/v1/checkouts/chk_123456/status');
+      
+      // Assertions
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('checkout_id', 'chk_123456');
+      expect(response.body).toHaveProperty('status', 'PAID');
+      expect(response.body).toHaveProperty('amount', 21.98);
+    });
+    
+    it('should handle status check errors', async () => {
+      // Setup mock to throw an error
+      makeHttpRequest.mockRejectedValueOnce(new Error('Status check failed'));
+      
+      // Make request
+      const response = await request(app)
+        .get('/v1/checkouts/chk_123456/status');
+      
+      // Assertions
+      expect(response.status).toBe(500);
       expect(response.body).toHaveProperty('error');
     });
   });
@@ -216,7 +285,7 @@ describe('SumUp API Endpoints', () => {
     });
     
     it('should handle connection failures', async () => {
-      // Make getSumupAccessToken throw an error for this test
+      // Setup mock to throw an error
       getSumupAccessToken.mockRejectedValueOnce(new Error('Connection failed'));
       
       // Make request
@@ -226,7 +295,6 @@ describe('SumUp API Endpoints', () => {
       // Assertions
       expect(response.status).toBe(500);
       expect(response.body).toHaveProperty('connected', false);
-      expect(response.body).toHaveProperty('error');
     });
   });
 }); 

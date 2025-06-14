@@ -1,14 +1,33 @@
 # SMASHD Monorepo
 
-A full-stack application comprised of a Next.js website, React Native mobile app, and Node.js backend. [**Add a brief description of the application's purpose here.**]
+A full-stack application comprised of a Next.js website, React Native mobile app, and Node.js backend. This monorepo contains all the code needed to run the complete SMASHD platform, including the mobile app, web interface, and backend services.
 
-## �� Project Structure
+## 📁 Project Structure
 
 This monorepo contains three main components:
 
 - **`/app`** - React Native mobile application built with Expo
+  - Mobile-first user interface
+  - Native device features integration
+  - Offline capabilities
+  - Push notifications
+  - TypeScript support
+  - NativeWind for styling
+
 - **`/frontend`** - Web application built with Next.js
+  - Responsive web interface
+  - Server-side rendering
+  - SEO optimization
+  - Progressive Web App (PWA) support
+  - TypeScript support
+  - Tailwind CSS styling
+
 - **`/backend`** - API server built with Express and Prisma
+  - RESTful API endpoints
+  - Database management
+  - Authentication services
+  - Business logic implementation
+  - Jest testing setup
 
 ## 🚀 Getting Started
 
@@ -104,21 +123,58 @@ Follow the instructions in the terminal to run on iOS, Android, or web.
 ### Backend
 - **Framework**: Express.js
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT
-- **Testing**: Jest
+- **Authentication**: JWT with bcrypt
+- **Testing**: Jest and Supertest
+- **Validation**: Express Validator
+- **File Upload**: Multer with image filtering
+- **Scheduling**: Node Cron (for loyalty points)
+- **API Integration**: Axios for external services
+- **Type Safety**: TypeScript
 
 ### Frontend
-- **Framework**: Next.js 14
+- **Framework**: Next.js 14 with App Router
 - **Styling**: Tailwind CSS
 - **UI Components**: Radix UI
 - **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **Build Tools**: PostCSS, ESLint
+- **Type Safety**: TypeScript
+- **Features**:
+  - Admin Dashboard
+  - Payment Processing
+  - Menu Management
+  - User Profiles
+  - Order Management
 
 ### Mobile App
-- **Framework**: React Native with Expo
-- **Navigation**: Expo Router
+- **Framework**: React Native with Expo SDK 53
+- **Navigation**: Expo Router with file-based routing
 - **State Management**: React Context
 - **Storage**: AsyncStorage, SecureStore
 - **Network**: Axios
+- **Styling**: NativeWind (Tailwind for React Native)
+- **UI Features**: 
+  - Expo Blur
+  - Expo Linear Gradient
+  - Expo Haptics
+  - Expo Web Browser
+  - Expo Constants
+  - Expo Linking
+  - Expo Status Bar
+- **Features**:
+  - Tab-based Navigation
+  - Authentication Flow
+  - Payment Processing
+  - Order Customization
+  - Order Confirmation
+- **Type Safety**: TypeScript
+- **Testing**: Jest with Jest Expo
+
+### Shared
+- **TypeScript**: Across all projects
+- **Tailwind CSS**: Shared styling system
+- **ESLint**: Code quality
+- **Testing**: Jest
 
 ## 📱 Mobile App Features
 

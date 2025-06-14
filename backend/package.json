@@ -9,6 +9,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:unit": "jest __tests__/unit",
+    "test:integration": "jest __tests__/integration",
+    "test:auth": "jest __tests__/integration/auth.test.js",
+    "test:menu": "jest __tests__/integration/menu.test.js",
+    "test:orders": "jest __tests__/integration/orders.test.js",
+    "test:sumup": "jest __tests__/integration/sumupEndpoints.test.js",
     "seed": "node prisma/seed.js",
     "seed:customizations": "node prisma/seedCustomizations.js"
   },
