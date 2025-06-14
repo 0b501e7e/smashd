@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Smash'd",
-    "slug": "smashd",
+    "slug": "smashd-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -17,14 +17,21 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.smashd"
+      "bundleIdentifier": "com.smashd.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.yourcompany.smashd"
+      "package": "com.smashd.app",
+      "versionCode": 1,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
