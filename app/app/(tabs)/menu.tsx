@@ -79,7 +79,7 @@ export default function MenuScreen() {
   if (error) {
     return (
       <View className="flex-1 justify-center items-center bg-black" style={{ paddingTop: insets.top }}>
-        <Text className="text-white">{error}</Text>
+        <Text className="text-white">Error al cargar la carta</Text>
       </View>
     );
   }
@@ -92,7 +92,7 @@ export default function MenuScreen() {
       headerImage={
         <View className="h-full justify-center items-center bg-black">
           <Text className="text-4xl font-bold text-center p-5 leading-tight h-24 text-yellow-400">
-            Our Menu
+            Nuestra Carta
           </Text>
         </View>
       }>
@@ -100,7 +100,9 @@ export default function MenuScreen() {
         {categories.map((category) => (
           <View key={category} className="mb-5">
             <Text className="text-2xl font-bold mb-2.5 text-yellow-400">
-              {category}s
+              {category === 'BURGER' ? 'HAMBURGUESAS' : 
+               category === 'SIDE' ? 'ACOMPAÑAMIENTOS' : 
+               category === 'DRINK' ? 'BEBIDAS' : category}
             </Text>
             {menuItems
               .filter((item) => item.category === category)
@@ -111,7 +113,7 @@ export default function MenuScreen() {
                       <CardTitle className="text-white">{item.name}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <Text className="mb-1 text-white">${item.price.toFixed(2)}</Text>
+                      <Text className="mb-1 text-white">€{item.price.toFixed(2)}</Text>
                       <CardDescription className="text-gray-300">{item.description}</CardDescription>
                     </CardContent>
                   </Pressable>
@@ -122,7 +124,7 @@ export default function MenuScreen() {
                       className="w-full bg-yellow-400 hover:bg-yellow-500"
                       onPress={() => handleAddToCart(item)}
                     >
-                      <Text className="text-black font-semibold">Add to Cart</Text>
+                      <Text className="text-black font-semibold">Añadir al Carrito</Text>
                     </Button>
                   </CardFooter>
                 </Card>

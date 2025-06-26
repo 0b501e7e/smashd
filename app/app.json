@@ -33,6 +33,9 @@
         "android.permission.ACCESS_NETWORK_STATE"
       ]
     },
+    "locales": {
+      "es": "español"
+    },
     "web": {
       "bundler": "metro",
       "output": "static",

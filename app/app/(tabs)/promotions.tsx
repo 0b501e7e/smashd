@@ -214,7 +214,7 @@ export default function PromotionsScreen() {
       key={deal.id}
       style={styles.carouselCardWrapper}
       activeOpacity={0.8}
-      onPress={() => Alert.alert("Deal Selected", `You selected ${deal.title}. Add to cart functionality TBD.`)}
+      onPress={() => Alert.alert("Oferta Seleccionada", `Has seleccionado ${deal.title}. Funcionalidad de agregar al carrito próximamente.`)}
     >
       <Card className="bg-zinc-900 border-zinc-700 flex-1">
         {deal.imageUrl && (
@@ -228,7 +228,7 @@ export default function PromotionsScreen() {
             {deal.description}
           </CardDescription>
           <CardDescription className="text-yellow-500 font-bold text-xl text-right mt-auto">
-            Just €{deal.price.toFixed(2)}
+            Solo €{deal.price.toFixed(2)}
           </CardDescription>
         </CardContent>
       </Card>
@@ -248,7 +248,7 @@ export default function PromotionsScreen() {
           <AnimatedLogo />
           <ThemedText style={styles.brandTitle}>SMASHD</ThemedText>
           <ThemedText style={styles.welcomeText}>
-            {user ? `Welcome back, ${user.email}!` : 'Welcome to SMASHD!'}
+            {user ? `¡Hola de nuevo, ${user.email}!` : '¡Bienvenidos a SMASHD!'}
           </ThemedText>
         </View>
 
@@ -256,24 +256,24 @@ export default function PromotionsScreen() {
         <View style={styles.benefitsSection}>
           <View style={styles.benefitItem}>
             <IconSymbol name="gift" size={28} color={Colors.dark.text} />
-            <ThemedText style={styles.benefitText}>Earn points with every order</ThemedText>
+            <ThemedText style={styles.benefitText}>Gana puntos con cada pedido</ThemedText>
           </View>
           
           <View style={styles.benefitItem}>
             <IconSymbol name="fork.knife" size={28} color={Colors.dark.text} />
-            <ThemedText style={styles.benefitText}>Redeem points for free food</ThemedText>
+            <ThemedText style={styles.benefitText}>Canjea puntos por comida gratis</ThemedText>
           </View>
           
           <View style={styles.benefitItem}>
             <IconSymbol name="star" size={28} color={Colors.dark.text} />
-            <ThemedText style={styles.benefitText}>Receive exclusive discounts</ThemedText>
+            <ThemedText style={styles.benefitText}>Recibe descuentos exclusivos</ThemedText>
           </View>
         </View>
 
         {/* Repeat Last Order Section */}
         {user && lastOrder && (
           <View style={styles.lastOrderContainer}>
-            <ThemedText style={styles.lastOrderTitle}>Quick Reorder</ThemedText>
+            <ThemedText style={styles.lastOrderTitle}>Repetir Pedido</ThemedText>
             <TouchableOpacity 
               style={styles.repeatOrderButton} 
               onPress={handleRepeatOrder}
@@ -281,7 +281,7 @@ export default function PromotionsScreen() {
             >
               <IconSymbol name="repeat" size={28} color="#000" />
               <ThemedText style={styles.repeatOrderButtonText}>
-                Repeat Last Order ({new Date(lastOrder.createdAt).toLocaleDateString()})
+                Repetir Último Pedido ({new Date(lastOrder.createdAt).toLocaleDateString('es-ES')})
               </ThemedText>
               {loading && <ActivityIndicator color="#000" style={{ marginLeft: 15}} />}
             </TouchableOpacity>
@@ -295,21 +295,21 @@ export default function PromotionsScreen() {
               style={styles.primaryButton}
               onPress={() => router.push('/(auth)/register')}
             >
-              <ThemedText style={styles.primaryButtonText}>Sign Up</ThemedText>
+              <ThemedText style={styles.primaryButtonText}>Registrarse</ThemedText>
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.secondaryButton}
               onPress={() => router.push('/(auth)/login')}
             >
-              <ThemedText style={styles.secondaryButtonText}>Log In</ThemedText>
+              <ThemedText style={styles.secondaryButtonText}>Iniciar Sesión</ThemedText>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Promotions Section */}
         <View style={styles.promotionsSection}>
-          <ThemedText style={styles.sectionTitle}>Today's Deals</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Ofertas de Hoy</ThemedText>
 
           {promotionsLoading ? (
             <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} style={{ marginVertical: 20 }}/>
@@ -329,7 +329,7 @@ export default function PromotionsScreen() {
                 </ScrollView>
               ) : (
                 <ThemedText style={styles.noPromotionsText}>
-                  No special deals at the moment. Check back soon!
+                  No hay ofertas especiales en este momento. ¡Vuelve pronto!
                 </ThemedText>
               )}
             </>

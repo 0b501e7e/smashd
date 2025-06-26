@@ -77,10 +77,10 @@ export default function ProfileScreen() {
     return (
       <ThemedView style={{ flex: 1, padding: 16, paddingTop: insets.top }}>
         <ThemedText style={styles.message}>
-          Please log in to view your profile and order history
+          Por favor, inicia sesión para ver tu perfil e historial de pedidos
         </ThemedText>
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <ThemedText style={styles.buttonText}>Login</ThemedText>
+          <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     );
@@ -89,14 +89,14 @@ export default function ProfileScreen() {
   const renderOrderItem = ({ item }: { item: OrderItem }) => (
     <View style={styles.orderItemContainer}>
       <ThemedText style={styles.orderItemText}>
-        {item.quantity} x {item.menuItem?.name || `Item ID: ${item.menuItemId}`}
+        {item.quantity} x {item.menuItem?.name || `Producto ID: ${item.menuItemId}`}
       </ThemedText>
       <ThemedText style={styles.orderItemPrice}>
-        Price: ${(item.price * item.quantity).toFixed(2)}
+        Precio: €{(item.price * item.quantity).toFixed(2)}
       </ThemedText>
       {item.customizations && (
         <ThemedText style={styles.orderItemCustomizations}>
-          Customizations: {typeof item.customizations === 'string' ? item.customizations : JSON.stringify(item.customizations)}
+          Personalizaciones: {typeof item.customizations === 'string' ? item.customizations : JSON.stringify(item.customizations)}
         </ThemedText>
       )}
     </View>
@@ -111,9 +111,9 @@ export default function ProfileScreen() {
       }
     ]}>
       <View style={styles.orderHeader}>
-        <ThemedText style={styles.orderId}>Order #{item.id}</ThemedText>
+        <ThemedText style={styles.orderId}>Pedido #{item.id}</ThemedText>
         <ThemedText style={styles.orderDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
+          {new Date(item.createdAt).toLocaleDateString('es-ES')}
         </ThemedText>
       </View>
       <View style={styles.orderItemsList}>
@@ -124,8 +124,8 @@ export default function ProfileScreen() {
         ))}
       </View>
       <View style={styles.orderFooter}>
-        <ThemedText style={styles.orderStatus}>Status: {item.status}</ThemedText>
-        <ThemedText style={styles.orderTotal}>Total: ${item.total.toFixed(2)}</ThemedText>
+        <ThemedText style={styles.orderStatus}>Estado: {item.status}</ThemedText>
+        <ThemedText style={styles.orderTotal}>Total: €{item.total.toFixed(2)}</ThemedText>
       </View>
     </ThemedView>
   );
@@ -142,18 +142,18 @@ export default function ProfileScreen() {
       </ThemedView>
 
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">Account Details</ThemedText>
+        <ThemedText type="subtitle">Detalles de la Cuenta</ThemedText>
         {user && <ThemedText>Email: {user.email}</ThemedText>}
         {/* Add other user details here once we have them from the backend */}
       </ThemedView>
 
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">Loyalty Points</ThemedText>
-        <ThemedText>You have {user?.loyaltyPoints || 0} points</ThemedText>
+        <ThemedText type="subtitle">Puntos de Fidelidad</ThemedText>
+        <ThemedText>Tienes {user?.loyaltyPoints || 0} puntos</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.section}>
-        <ThemedText type="subtitle">Order History</ThemedText>
+        <ThemedText type="subtitle">Historial de Pedidos</ThemedText>
       </ThemedView>
     </ThemedView>
   );
@@ -161,7 +161,7 @@ export default function ProfileScreen() {
   const ListFooter = () => (
     <ThemedView style={styles.listHeaderFooterContainer}>
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <ThemedText style={styles.buttonText}>Logout</ThemedText>
+        <ThemedText style={styles.buttonText}>Cerrar Sesión</ThemedText>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -173,7 +173,7 @@ export default function ProfileScreen() {
       ) : orderError ? (
         <ThemedText style={styles.errorText}>{orderError}</ThemedText>
       ) : (
-        <ThemedText>You haven't placed any orders yet.</ThemedText>
+        <ThemedText>Aún no has hecho ningún pedido.</ThemedText>
       )}
     </ThemedView>
   );

@@ -17,7 +17,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please fill in all fields');
+      setError('Por favor completa todos los campos');
       return;
     }
 
@@ -29,9 +29,9 @@ export default function LoginScreen() {
       router.replace('/'); // Redirect to main app after login
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err && 'response' in (err as any) && (err as any).response?.status === 401) {
-        setError('Invalid email or password');
+        setError('Email o contraseña incorrectos');
       } else {
-        setError('An error occurred. Please try again.');
+        setError('Ocurrió un error. Por favor intenta de nuevo.');
       }
     } finally {
       setIsLoading(false);
@@ -40,7 +40,7 @@ export default function LoginScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Login' }} />
+      <Stack.Screen options={{ headerShown: true, title: 'Iniciar Sesión' }} />
       <ThemedView style={[
         styles.container, 
         { 
@@ -63,7 +63,7 @@ export default function LoginScreen() {
 
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Contraseña"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -76,15 +76,15 @@ export default function LoginScreen() {
           {isLoading ? (
             <ActivityIndicator color="white" />
           ) : (
-            <ThemedText style={styles.buttonText}>Login</ThemedText>
+            <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
           )}
         </TouchableOpacity>
 
         <ThemedView style={styles.registerContainer}>
-          <ThemedText>Don't have an account? </ThemedText>
+          <ThemedText>¿No tienes cuenta? </ThemedText>
           <Link href="/register" asChild>
             <TouchableOpacity>
-              <ThemedText style={styles.registerLink}>Register</ThemedText>
+              <ThemedText style={styles.registerLink}>Registrarse</ThemedText>
             </TouchableOpacity>
           </Link>
         </ThemedView>

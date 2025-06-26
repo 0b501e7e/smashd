@@ -236,7 +236,7 @@ export default function ItemCustomizationScreen() {
                 className={`font-medium ${isSelected ? "text-black" : "text-black"}`}
               >
                 {option.name}{" "}
-                {option.price > 0 && `($${option.price.toFixed(2)})`}
+                {option.price > 0 && `(€${option.price.toFixed(2)})`}
               </Text>
             </Button>
           );
@@ -249,7 +249,7 @@ export default function ItemCustomizationScreen() {
     return (
       <SafeAreaView className="flex-1 bg-black justify-center items-center">
         <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text className="text-white mt-2">Loading item details...</Text>
+        <Text className="text-white mt-2">Cargando detalles del producto...</Text>
       </SafeAreaView>
     );
   }
@@ -304,7 +304,7 @@ export default function ItemCustomizationScreen() {
         {/* Price Section */}
         <View className="px-4 mb-6">
           <Text className="text-white text-lg">
-            Base price: ${item.price.toFixed(2)}
+            Precio base: €{item.price.toFixed(2)}
           </Text>
         </View>
         
@@ -316,13 +316,13 @@ export default function ItemCustomizationScreen() {
           setSelectedExtras,
         )}
         {allCustomizations && allCustomizations.sauces.length > 0 && renderCustomizationSection(
-          "Sauces",
+          "Salsas",
           allCustomizations.sauces,
           selectedSauces,
           setSelectedSauces,
         )}
         {allCustomizations && allCustomizations.toppings.length > 0 && renderCustomizationSection(
-          "Toppings",
+          "Ingredientes",
           allCustomizations.toppings,
           selectedToppings,
           setSelectedToppings,
@@ -339,7 +339,7 @@ export default function ItemCustomizationScreen() {
         {/* Quantity Controls */}
         <View className="flex-row items-center justify-between mb-4"> 
           <Text className="text-white text-lg font-semibold">
-            Quantity
+            Cantidad
           </Text>
           <View className="flex-row items-center gap-3">
             <Button
@@ -384,7 +384,7 @@ export default function ItemCustomizationScreen() {
             <ActivityIndicator size="small" color="#000000" />
           ) : (
             <Text className="text-black text-lg font-bold">
-              Add {quantity} to Cart - ${totalPrice.toFixed(2)}
+              Añadir {quantity} al Carrito - €{totalPrice.toFixed(2)}
             </Text>
           )}
         </TouchableOpacity>

@@ -30,7 +30,7 @@ export default function HomeScreen() {
     return (
       <ThemedView style={styles.container}>
         <AnimatedLogo />
-        <ThemedText style={styles.loadingText}>Loading...</ThemedText>
+        <ThemedText style={styles.loadingText}>Cargando...</ThemedText>
       </ThemedView>
     );
   }
@@ -44,19 +44,19 @@ export default function HomeScreen() {
         <TouchableOpacity 
           style={styles.button}
           onPress={() => router.push('/(auth)/login')}>
-          <ThemedText style={styles.buttonText}>LOGIN</ThemedText>
+          <ThemedText style={styles.buttonText}>INICIAR SESIÓN</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={styles.button}
           onPress={() => router.push('/(auth)/register')}>
-          <ThemedText style={styles.buttonText}>REGISTER</ThemedText>
+          <ThemedText style={styles.buttonText}>REGISTRARSE</ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity 
           style={[styles.button, styles.guestButton]}
           onPress={handleGuestMode}>
-          <ThemedText style={styles.buttonText}>CONTINUE AS GUEST</ThemedText>
+          <ThemedText style={styles.buttonText}>CONTINUAR COMO INVITADO</ThemedText>
         </TouchableOpacity>
       </View>
     </ThemedView>

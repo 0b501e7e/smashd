@@ -21,7 +21,7 @@ export default function CartScreen() {
   if (items.length === 0) {
     return (
       <ThemedView style={styles.emptyContainer}>
-        <ThemedText style={styles.emptyText}>Your cart is empty</ThemedText>
+        <ThemedText style={styles.emptyText}>Tu carrito está vacío</ThemedText>
       </ThemedView>
     );
   }
@@ -39,7 +39,7 @@ export default function CartScreen() {
               height: 100
             }
           ]}>
-            Your Cart
+            Tu Carrito
           </ThemedText>
         </ThemedView>
       }>
@@ -52,7 +52,7 @@ export default function CartScreen() {
               <View style={{ flex: 1, marginRight: 8 }}>
                 <ThemedText type="subtitle" style={{ flexShrink: 1 }}>{item.name}</ThemedText>
               </View>
-              <ThemedText>${item.price.toFixed(2)}</ThemedText>
+              <ThemedText>€{item.price.toFixed(2)}</ThemedText>
             </ThemedView>
             
             {item.customizations && (
@@ -65,13 +65,13 @@ export default function CartScreen() {
                 
                 {item.customizations.sauces && item.customizations.sauces.length > 0 && (
                   <ThemedText style={styles.customizationText}>
-                    Sauces: {item.customizations.sauces.join(', ')}
+                    Salsas: {item.customizations.sauces.join(', ')}
                   </ThemedText>
                 )}
                 
                 {item.customizations.toppings && item.customizations.toppings.length > 0 && (
                   <ThemedText style={styles.customizationText}>
-                    Toppings: {item.customizations.toppings.join(', ')}
+                    Ingredientes: {item.customizations.toppings.join(', ')}
                   </ThemedText>
                 )}
               </ThemedView>
@@ -94,18 +94,18 @@ export default function CartScreen() {
             <TouchableOpacity
               onPress={() => removeItem(Number(item.id))}
               style={styles.removeButton}>
-              <ThemedText style={styles.removeButtonText}>Remove</ThemedText>
+              <ThemedText style={styles.removeButtonText}>Eliminar</ThemedText>
             </TouchableOpacity>
           </ThemedView>
         ))}
 
         <ThemedView style={styles.totalContainer}>
-          <ThemedText type="subtitle">Total: ${total.toFixed(2)}</ThemedText>
+          <ThemedText type="subtitle">Total: €{total.toFixed(2)}</ThemedText>
           <TouchableOpacity 
             style={styles.checkoutButton}
             onPress={handleCheckout}>
             <ThemedText style={styles.checkoutButtonText}>
-              {isLoggedIn ? 'Proceed to Checkout' : 'Login to Checkout'}
+              {isLoggedIn ? 'Proceder al Pago' : 'Iniciar Sesión para Pagar'}
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>

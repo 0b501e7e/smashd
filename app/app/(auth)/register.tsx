@@ -51,42 +51,42 @@ export default function RegisterScreen() {
 
     // Validate inputs
     if (!name || !email || !password || !confirmPassword || !address || !phoneNumber) {
-      setError('Please fill in all fields');
+      setError('Por favor completa todos los campos');
       return;
     }
 
     if (name.length < 2) {
-      setError('Name must be at least 2 characters long');
+      setError('El nombre debe tener al menos 2 caracteres');
       return;
     }
 
     if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
+      setError('Por favor ingresa un email válido');
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Las contraseñas no coinciden');
       return;
     }
 
     if (address.length < 5) {
-      setError('Address must be at least 5 characters long');
+      setError('La dirección debe tener al menos 5 caracteres');
       return;
     }
 
     if (!validatePhoneNumber(phoneNumber)) {
-      setError('Please enter a valid phone number');
+      setError('Por favor ingresa un número de teléfono válido');
       return;
     }
 
     if (!acceptedTerms) {
-      setError('You must accept the terms and conditions to register');
+      setError('Debes aceptar los términos y condiciones para registrarte');
       return;
     }
 
@@ -99,7 +99,7 @@ export default function RegisterScreen() {
     }
 
     if (age < 13) {
-      setError('You must be at least 13 years old to register');
+      setError('Debes tener al menos 13 años para registrarte');
       return;
     }
 
@@ -119,9 +119,9 @@ export default function RegisterScreen() {
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const apiError = (err as any).response?.data?.error;
-        setError(apiError || 'Registration failed. Please try again.');
+        setError(apiError || 'El registro falló. Por favor intenta de nuevo.');
       } else {
-        setError('An error occurred. Please try again.');
+        setError('Ocurrió un error. Por favor intenta de nuevo.');
       }
     } finally {
       setIsLoading(false);
@@ -130,7 +130,7 @@ export default function RegisterScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerShown: true, title: 'Register' }} />
+      <Stack.Screen options={{ headerShown: true, title: 'Registrarse' }} />
       <ScrollView>
         <ThemedView style={[
           styles.container, 
@@ -139,7 +139,7 @@ export default function RegisterScreen() {
             paddingBottom: insets.bottom 
           }
         ]}>
-          <ThemedText style={styles.title}>Create Your Account</ThemedText>
+          <ThemedText style={styles.title}>Crea tu Cuenta</ThemedText>
           
           {error ? (
             <ThemedText style={styles.error}>{error}</ThemedText>
@@ -147,7 +147,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Full Name"
+            placeholder="Nombre Completo"
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -167,7 +167,7 @@ export default function RegisterScreen() {
             onPress={() => setShowDatePicker(true)}
           >
             <ThemedText style={styles.dateButtonText}>
-              Date of Birth: {dateOfBirth.toLocaleDateString()}
+              Fecha de Nacimiento: {dateOfBirth.toLocaleDateString('es-ES')}
             </ThemedText>
           </TouchableOpacity>
 
@@ -183,7 +183,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Phone Number"
+            placeholder="Número de Teléfono"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
@@ -191,7 +191,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={styles.multilineInput}
-            placeholder="Address"
+            placeholder="Dirección"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -200,7 +200,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Contraseña"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -208,7 +208,7 @@ export default function RegisterScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Confirm Password"
+            placeholder="Confirmar Contraseña"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -218,11 +218,12 @@ export default function RegisterScreen() {
             style={styles.checkboxContainer}
             onPress={() => setAcceptedTerms(!acceptedTerms)}
           >
-            <ThemedView style={[styles.checkbox, acceptedTerms && styles.checkboxChecked]}>
-              {acceptedTerms && <ThemedText style={styles.checkmark}>✓</ThemedText>}
-            </ThemedView>
+            <ThemedView style={[
+              styles.checkbox, 
+              acceptedTerms && styles.checkboxChecked
+            ]} />
             <ThemedText style={styles.checkboxText}>
-              I accept the Terms and Conditions and Privacy Policy
+              Acepto los términos y condiciones
             </ThemedText>
           </TouchableOpacity>
           
@@ -233,15 +234,15 @@ export default function RegisterScreen() {
             {isLoading ? (
               <ActivityIndicator color="white" />
             ) : (
-              <ThemedText style={styles.buttonText}>Register</ThemedText>
+              <ThemedText style={styles.buttonText}>Registrarse</ThemedText>
             )}
           </TouchableOpacity>
 
           <ThemedView style={styles.loginContainer}>
-            <ThemedText>Already have an account? </ThemedText>
+            <ThemedText>¿Ya tienes cuenta? </ThemedText>
             <Link href="/login" asChild>
               <TouchableOpacity>
-                <ThemedText style={styles.loginLink}>Login</ThemedText>
+                <ThemedText style={styles.loginLink}>Iniciar Sesión</ThemedText>
               </TouchableOpacity>
             </Link>
           </ThemedView>

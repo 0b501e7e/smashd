@@ -123,23 +123,23 @@ export default function OrderConfirmationScreen() {
   
   // Get status color and icon based on order status
   const getStatusInfo = () => {
-    if (!order) return { color: '#ccc', icon: 'clock', text: 'Unknown' };
+    if (!order) return { color: '#ccc', icon: 'clock', text: 'Desconocido' };
     
     switch (order.status) {
       case 'PAID':
-        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Payment Confirmed' };
+        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Pago Confirmado' };
       case 'CONFIRMED':
-        return { color: '#ff9800', icon: 'flame.fill', text: 'Order Confirmed, Preparing!' };
+        return { color: '#ff9800', icon: 'flame.fill', text: 'Pedido Confirmado, ¡Preparándose!' };
       case 'PREPARING':
-        return { color: '#ff9800', icon: 'flame.fill', text: 'Preparing Your Order' };
+        return { color: '#ff9800', icon: 'flame.fill', text: 'Preparando tu Pedido' };
       case 'READY':
-        return { color: '#2196f3', icon: 'bell.fill', text: 'Ready for Collection' };
+        return { color: '#2196f3', icon: 'bell.fill', text: 'Listo para Recoger' };
       case 'COMPLETED':
-        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Order Completed' };
+        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Pedido Completado' };
       case 'CANCELLED':
-        return { color: '#f44336', icon: 'xmark.circle.fill', text: 'Order Cancelled' };
+        return { color: '#f44336', icon: 'xmark.circle.fill', text: 'Pedido Cancelado' };
       default:
-        return { color: '#ff9800', icon: 'clock', text: 'Processing' };
+        return { color: '#ff9800', icon: 'clock', text: 'Procesando' };
     }
   };
   
@@ -147,9 +147,9 @@ export default function OrderConfirmationScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerTitle: 'Order Confirmation' }} />
+        <Stack.Screen options={{ headerTitle: 'Confirmación de Pedido' }} />
         <ActivityIndicator size="large" color="#ff8c00" />
-        <ThemedText style={styles.loadingText}>Loading order details...</ThemedText>
+        <ThemedText style={styles.loadingText}>Cargando detalles del pedido...</ThemedText>
       </ThemedView>
     );
   }
@@ -158,16 +158,16 @@ export default function OrderConfirmationScreen() {
   if (error || !order) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerTitle: 'Order Error' }} />
+        <Stack.Screen options={{ headerTitle: 'Error del Pedido' }} />
         <IconSymbol name="exclamationmark.triangle.fill" size={60} color="#f44336" />
         <ThemedText style={styles.errorText}>
-          {error || 'Could not load order details'}
+          {error || 'No se pudieron cargar los detalles del pedido'}
         </ThemedText>
         <TouchableOpacity
           style={styles.button}
           onPress={() => router.push('/(tabs)/menu')}
         >
-          <ThemedText style={styles.buttonText}>Return to Menu</ThemedText>
+          <ThemedText style={styles.buttonText}>Volver a la Carta</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     );
@@ -178,7 +178,7 @@ export default function OrderConfirmationScreen() {
   
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: 'Order Confirmation' }} />
+      <Stack.Screen options={{ headerTitle: 'Confirmación de Pedido' }} />
       
       <ScrollView 
         style={styles.scrollView}
@@ -188,23 +188,30 @@ export default function OrderConfirmationScreen() {
         <ThemedView style={styles.header}>
           <IconSymbol name="checkmark.circle.fill" size={80} color="#4caf50" />
           <ThemedText type="title" style={styles.headerTitle}>
-            Thank You for Your Order!
+            ¡Gracias por tu Pedido!
           </ThemedText>
           <ThemedText style={styles.headerSubtitle}>
-            Your order has been confirmed and paid.
+            Tu pedido ha sido confirmado y pagado.
           </ThemedText>
         </ThemedView>
         
         <ThemedView style={styles.orderInfo}>
           <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Order Number:</ThemedText>
+            <ThemedText style={styles.orderInfoLabel}>Número de Pedido:</ThemedText>
             <ThemedText style={styles.orderInfoValue}>#{order.id}</ThemedText>
           </ThemedView>
           
+          {transactionId && (
+            <ThemedView style={styles.orderInfoRow}>
+              <ThemedText style={styles.orderInfoLabel}>ID de Transacción:</ThemedText>
+              <ThemedText style={styles.orderInfoValue}>{transactionId}</ThemedText>
+            </ThemedView>
+          )}
+          
           <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Status:</ThemedText>
-            <ThemedView style={styles.statusBadge}>
-              <IconSymbol name={statusInfo.icon as any} size={16} color={statusInfo.color} />
+            <ThemedText style={styles.orderInfoLabel}>Estado:</ThemedText>
+            <ThemedView style={styles.statusContainer}>
+              <IconSymbol name={statusInfo.icon} size={20} color={statusInfo.color} />
               <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
                 {statusInfo.text}
               </ThemedText>
@@ -212,90 +219,62 @@ export default function OrderConfirmationScreen() {
           </ThemedView>
           
           <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Collection Time:</ThemedText>
+            <ThemedText style={styles.orderInfoLabel}>Tiempo Estimado:</ThemedText>
             <ThemedText style={styles.orderInfoValue}>
-              {order.status === 'CONFIRMED' || order.status === 'PREPARING' || order.status === 'READY' ? 
-                `Approximately ${getEstimatedReadyTime()}` : 
-                'Will be updated upon confirmation'}
+              {getEstimatedReadyTime()}
             </ThemedText>
           </ThemedView>
         </ThemedView>
-        
-        <ThemedView style={styles.orderSummary}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Order Summary
+
+        <ThemedView style={styles.itemsContainer}>
+          <ThemedText type="subtitle" style={styles.itemsTitle}>
+            Productos Pedidos
           </ThemedText>
           
-          {order.items && order.items.length > 0 ? (
-            order.items.map((item, index) => (
-              <ThemedView key={index} style={styles.itemRow}>
-                <ThemedView style={styles.itemInfo}>
-                  <ThemedText style={styles.itemName}>
-                    {item.name} x{item.quantity}
-                  </ThemedText>
-                  
-                  {item.customizations && (
-                    <ThemedView style={styles.customizationsContainer}>
-                      {item.customizations.extras && item.customizations.extras.length > 0 && (
-                        <ThemedText style={styles.customizationText}>
-                          Extras: {item.customizations.extras.join(', ')}
-                        </ThemedText>
-                      )}
-                      
-                      {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                        <ThemedText style={styles.customizationText}>
-                          Sauces: {item.customizations.sauces.join(', ')}
-                        </ThemedText>
-                      )}
-                      
-                      {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                        <ThemedText style={styles.customizationText}>
-                          Toppings: {item.customizations.toppings.join(', ')}
-                        </ThemedText>
-                      )}
-                    </ThemedView>
-                  )}
-                </ThemedView>
-                
+          {order.items.map((item, index) => (
+            <ThemedView key={index} style={styles.item}>
+              <ThemedView style={styles.itemHeader}>
+                <ThemedText style={styles.itemName}>
+                  {item.quantity}x {item.name}
+                </ThemedText>
                 <ThemedText style={styles.itemPrice}>
-                  ${(item.price * item.quantity).toFixed(2)}
+                  €{(item.price * item.quantity).toFixed(2)}
                 </ThemedText>
               </ThemedView>
-            ))
-          ) : (
-            <ThemedText style={styles.noItemsText}>
-              Loading order items...
-            </ThemedText>
-          )}
+              
+              {item.customizations && Object.keys(item.customizations).length > 0 && (
+                <ThemedView style={styles.customizations}>
+                  <ThemedText style={styles.customizationText}>
+                    Personalizaciones: {JSON.stringify(item.customizations)}
+                  </ThemedText>
+                </ThemedView>
+              )}
+            </ThemedView>
+          ))}
           
-          <ThemedView style={styles.totalRow}>
-            <ThemedText style={styles.totalLabel}>Total:</ThemedText>
-            <ThemedText style={styles.totalAmount}>${order.total.toFixed(2)}</ThemedText>
+          <ThemedView style={styles.totalContainer}>
+            <ThemedText type="subtitle" style={styles.totalText}>
+              Total: €{order.total.toFixed(2)}
+            </ThemedText>
           </ThemedView>
         </ThemedView>
         
-        <ThemedView style={styles.instructions}>
-          <ThemedText type="subtitle" style={styles.sectionTitle}>
-            Collection Instructions
-          </ThemedText>
+        <ThemedView style={styles.actionContainer}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push('/(tabs)/profile')}
+          >
+            <ThemedText style={styles.primaryButtonText}>Ver Historial de Pedidos</ThemedText>
+          </TouchableOpacity>
           
-          <ThemedText style={styles.instructionText}>
-            Please show this screen when you arrive to collect your order. 
-            Your order will be ready in approximately 15-20 minutes.
-          </ThemedText>
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => router.push('/(tabs)/menu')}
+          >
+            <ThemedText style={styles.secondaryButtonText}>Hacer Otro Pedido</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
       </ScrollView>
-
-      <ThemedView style={[styles.buttonContainer, { 
-        paddingBottom: Math.max(insets.bottom, 40) + 30 // Same safe bottom spacing as checkout
-      }]}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/(tabs)/menu')}
-        >
-          <ThemedText style={styles.buttonText}>Return to Menu</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
     </ThemedView>
   );
 }
@@ -442,5 +421,73 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  itemsContainer: {
+    marginBottom: 24,
+  },
+  itemsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  item: {
+    borderWidth: 1,
+    borderColor: '#333',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  totalContainer: {
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    paddingTop: 12,
+  },
+  totalText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  primaryButton: {
+    backgroundColor: '#ff8c00',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#2196f3',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

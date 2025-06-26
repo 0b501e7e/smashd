@@ -39,11 +39,11 @@ export default function CheckoutScreen() {
   const processPaymentOutcome = (isPaid: boolean, currentOrderId: number) => {
     if (isPaid) {
       Alert.alert(
-        'Payment Successful',
-        'Your payment was processed successfully. Would you like to view your order status?',
+        'Pago Exitoso',
+        'Tu pago fue procesado exitosamente. ¿Te gustaría ver el estado de tu pedido?',
         [
           {
-            text: 'Not Now',
+            text: 'Ahora No',
             style: 'cancel',
             onPress: () => {
               setIsProcessing(false);
@@ -52,7 +52,7 @@ export default function CheckoutScreen() {
             }
           },
           {
-            text: 'View Order',
+            text: 'Ver Pedido',
             onPress: () => {
               setIsProcessing(false);
               paymentAttemptedRef.current = false;
@@ -68,8 +68,8 @@ export default function CheckoutScreen() {
       clearCart();
     } else {
       Alert.alert(
-        'Payment Not Confirmed Yet',
-        'We couldn\'t confirm your payment yet. This may take a few moments to update. Try checking again in a few seconds, or check your order history later.',
+        'Pago Aún No Confirmado',
+        'No pudimos confirmar tu pago todavía. Esto puede tardar unos momentos en actualizarse. Intenta verificar de nuevo en unos segundos, o revisa tu historial de pedidos más tarde.',
         [{ text: 'OK' }]
       );
     }
@@ -152,7 +152,7 @@ export default function CheckoutScreen() {
     // This check is important if user somehow manages to press again before UI updates
     if (isProcessing) {
       console.log('[CheckoutScreen] Already processing, returning.');
-      Alert.alert('Processing', 'Your order is already being processed. Please wait.');
+      Alert.alert('Procesando', 'Tu pedido ya está siendo procesado. Por favor espera.');
       return;
     }
 
@@ -160,7 +160,7 @@ export default function CheckoutScreen() {
       console.log('[CheckoutScreen] Empty cart, returning.');
       // This alert should ideally not be needed if button is correctly disabled,
       // but as a safeguard:
-      Alert.alert('Empty Cart', 'Please add items to your cart before checking out.');
+      Alert.alert('Carrito Vacío', 'Por favor agrega productos a tu carrito antes de proceder al pago.');
       return;
     }
     
@@ -207,24 +207,31 @@ export default function CheckoutScreen() {
         // No need to set setIsProcessing(false) here as we are moving away.
         // If the user comes back to this screen, isProcessing will be its default false.
       } else {
-        console.error('[CheckoutScreen] Order creation failed: Missing order ID in response', response);
-        Alert.alert('Error', 'Failed to prepare your order (missing order ID). Please try again.');
-        setIsProcessing(false); // Reset on definite failure *before* navigation attempt
+        console.error('[CheckoutScreen] Invalid response from orderAPI.createOrder:', response);
+        throw new Error('Respuesta inválida del servidor');
       }
-    } catch (error: any) { // Added : any for error.message
-      console.error('[CheckoutScreen] Error during order creation process:', error);
-      Alert.alert('Error', `Failed to create your order. ${error.message || 'Please try again.'}`);
-      setIsProcessing(false); // Reset on error
-    } 
-    // Removed the finally block that unconditionally set setIsProcessing(false)
+    } catch (error: any) {
+      console.error('[CheckoutScreen] Error in handlePlaceOrder:', error);
+      
+      // Show user-friendly error message
+      const errorMessage = error.response?.data?.error || error.message || 'Error desconocido al crear el pedido';
+      Alert.alert(
+        'Error al Procesar Pedido',
+        `Hubo un problema al procesar tu pedido: ${errorMessage}. Por favor intenta de nuevo.`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      console.log('[CheckoutScreen] Setting isProcessing = false in finally block');
+      setIsProcessing(false);
+    }
   };
 
   // Display informative message based on processing state
   const getButtonText = () => {
     if (isProcessing) {
-      return 'Processing...';
+      return 'Procesando...';
     }
-    return 'Place Order';
+    return 'Realizar Pedido';
   }
 
   // Helper to go to confirmation screen for testing
@@ -261,13 +268,13 @@ export default function CheckoutScreen() {
                 
                 {item.customizations.sauces && item.customizations.sauces.length > 0 && (
                   <ThemedText style={styles.customizationText}>
-                    Sauces: {item.customizations.sauces.join(', ')}
+                    Salsas: {item.customizations.sauces.join(', ')}
                   </ThemedText>
                 )}
                 
                 {item.customizations.toppings && item.customizations.toppings.length > 0 && (
                   <ThemedText style={styles.customizationText}>
-                    Toppings: {item.customizations.toppings.join(', ')}
+                    Ingredientes: {item.customizations.toppings.join(', ')}
                   </ThemedText>
                 )}
               </View>
@@ -279,7 +286,7 @@ export default function CheckoutScreen() {
               x{item.quantity}
             </ThemedText>
             <ThemedText type="subtitle" style={styles.price}>
-              ${(item.price * item.quantity).toFixed(2)}
+              €{(item.price * item.quantity).toFixed(2)}
             </ThemedText>
           </View>
         </ThemedView>
@@ -296,7 +303,7 @@ export default function CheckoutScreen() {
     <>
       <Stack.Screen 
         options={{
-          headerTitle: 'Checkout',
+          headerTitle: 'Pagar',
           headerShown: true,
         }}
       />
@@ -308,7 +315,7 @@ export default function CheckoutScreen() {
         >
           <ThemedView style={styles.orderSummary}>
             <ThemedText type="title" style={styles.sectionTitle}>
-              Order Summary
+              Resumen del Pedido
             </ThemedText>
             
             <ThemedView style={styles.itemsList}>
@@ -318,32 +325,27 @@ export default function CheckoutScreen() {
             <ThemedView style={styles.totalRow}>
               <ThemedText type="subtitle">Total: </ThemedText>
               <ThemedText type="subtitle" style={styles.totalAmount}>
-                ${total.toFixed(2)}
+                €{total.toFixed(2)}
               </ThemedText>
             </ThemedView>
           </ThemedView>
         </ScrollView>
 
-        <ThemedView style={[styles.buttonContainer, { 
-          paddingBottom: Math.max(insets.bottom, 40) + 100
-        }]}>
+        <ThemedView style={styles.checkoutButtonContainer}>
           <TouchableOpacity
-            style={[
-              styles.minimalButton,
-              (isProcessing || items.length === 0) && styles.disabledButton,
-            ]}
+            style={[styles.minimalButton, isProcessing && styles.disabledButton]}
             onPress={handlePlaceOrder}
-            disabled={isProcessing || items.length === 0}
-            activeOpacity={0.7}
+            disabled={isProcessing}
           >
             {isProcessing ? (
-              <View style={styles.processingContainer}> 
-                <ActivityIndicator size="small" color="#ffffff" />
-                <ThemedText style={[styles.minimalButtonText, styles.processingButtonText]}>Processing...</ThemedText>
-              </View>
+              <ActivityIndicator color="#000" />
+            ) : null}
+            
+            {isProcessing ? (
+              <ThemedText style={[styles.minimalButtonText, styles.processingButtonText]}>Procesando...</ThemedText>
             ) : (
-              <ThemedText style={styles.minimalButtonText}> 
-                Place Order
+              <ThemedText style={styles.minimalButtonText}>
+                {getButtonText()}
               </ThemedText>
             )}
           </TouchableOpacity>
@@ -458,6 +460,11 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   buttonContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  checkoutButtonContainer: {
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',

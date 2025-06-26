@@ -33,21 +33,21 @@ export default function TabLayout() {
       <Tabs.Screen
         name="promotions"
         options={{
-          title: 'Home',
+          title: 'Inicio',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="menu"
         options={{
-          title: 'Menu',
+          title: 'Carta',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="menucard.fill" color={color} />,
         }}
       />
       <Tabs.Screen
         name="cart"
         options={{
-          title: 'Cart',
+          title: 'Carrito',
           tabBarIcon: ({ color }) => (
             <View>
               <IconSymbol size={28} name="cart" color={color} />
@@ -63,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Perfil',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.circle" color={color} />,
         }}
       />
