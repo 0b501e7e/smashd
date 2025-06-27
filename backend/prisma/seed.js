@@ -30,40 +30,31 @@ async function main() {
   // Seed Menu Items (Keep existing logic)
   console.log('Seeding Menu Items...');
   const menuItemsData = [
-    { name: "Barbacoa", price: 9.00, category: "BURGER", imageUrl: "/barbacoa.jpeg", description: "Delicious barbecue burger" },
-    { name: "Andalu", price: 7.00, category: "BURGER", imageUrl: "/andalu.jpeg", description: "Andalusian style burger" },
-    { name: "Cheeseburger", price: 9.00, category: "BURGER", imageUrl: "/cheeseburger.jpeg", description: "Classic cheeseburger" },
-    { name: "Pimento", price: 8.50, category: "BURGER", imageUrl: "/pimento.jpeg", description: "Pimento cheese burger" },
-    { name: "Oklahoma 2.0", price: 10.00, category: "BURGER", imageUrl: "/oklahoma.jpeg", description: "Oklahoma style burger" },
-    { name: "El pollo", price: 8.00, category: "BURGER", imageUrl: "/elpollo.jpeg", description: "Chicken burger" },
-    { name: "Pollo kimchi", price: 10.00, category: "BURGER", imageUrl: "/pollokimchi.jpeg", description: "Chicken kimchi burger" },
-    { name: "Pollo sucio", price: 12.50, category: "BURGER", imageUrl: "/pollosucio.jpeg", description: "Dirty chicken burger" },
-    { name: "Bacon jam fries", price: 5.00, category: "SIDE", imageUrl: "/bacon_jam_fries.jpeg", description: "Fries with bacon jam" },
-    { name: "Chilli cheese fries", price: 5.00, category: "SIDE", imageUrl: "/chilli_cheese_fries.jpeg", description: "Fries with chili and cheese" },
-    { name: "Shop string fries", price: 2.20, category: "SIDE", imageUrl: "/shoestring-fries.jpeg", description: "Thin cut fries" },
-    { name: "Coca cola", price: 1.10, category: "DRINK", imageUrl: "/coke.jpg", description: "Classic Coca-Cola" },
-    { name: "Coke 00", price: 1.10, category: "DRINK", imageUrl: "/coke00.jpg", description: "Sugar-free Coca-Cola" },
-    { name: "Fanta orange", price: 1.10, category: "DRINK", imageUrl: "/fanta.jpg", description: "Orange Fanta" },
-    { name: "Fanta lemon", price: 1.10, category: "DRINK", imageUrl: "/fantalemon.jpeg", description: "Lemon Fanta" },
-    { name: "Sprite", price: 1.10, category: "DRINK", imageUrl: "/sprite.jpg", description: "Sprite" },
-    { name: "Aquarius", price: 1.10, category: "DRINK", imageUrl: "/aquarius.png", description: "Aquarius sports drink" },
-    { name: "Aquarius orange", price: 1.10, category: "DRINK", imageUrl: "/aquariuso.jpeg", description: "Orange flavored Aquarius" },
-    { name: "Nestlé ice tea normal", price: 1.10, category: "DRINK", imageUrl: "/nestleicetea.jpeg", description: "Nestlé Ice Tea" },
-    { name: "Nestlé lemon", price: 1.10, category: "DRINK", imageUrl: "/nestealemon.jpeg", description: "Nestlé Lemon Tea" },
-    { name: "Fanta Nestlé passion fruit", price: 1.10, category: "DRINK", imageUrl: "/nestea-passionfruit.jpg", description: "Nestlé Passion Fruit Fanta" },
+    { name: "Barbacoa", price: 9.00, category: "BURGER", imageUrl: "/images/barbacoa.jpeg", description: "Delicious barbecue burger" },
+    { name: "Andalu", price: 7.00, category: "BURGER", imageUrl: "/images/andalu.jpeg", description: "Andalusian style burger" },
+    { name: "Cheeseburger", price: 9.00, category: "BURGER", imageUrl: "/images/cheeseburger.jpeg", description: "Classic cheeseburger" },
+    { name: "Pimento", price: 8.50, category: "BURGER", imageUrl: "/images/pimento.jpeg", description: "Pimento cheese burger" },
+    { name: "Oklahoma 2.0", price: 10.00, category: "BURGER", imageUrl: "/images/oklahoma.jpeg", description: "Oklahoma style burger" },
+    { name: "El pollo", price: 8.00, category: "BURGER", imageUrl: "/images/elpollo.jpeg", description: "Chicken burger" },
+    { name: "Pollo kimchi", price: 10.00, category: "BURGER", imageUrl: "/images/pollokimchi.jpeg", description: "Chicken kimchi burger" },
+    { name: "Pollo sucio", price: 12.50, category: "BURGER", imageUrl: "/images/pollosucio.jpeg", description: "Dirty chicken burger" },
+    { name: "Bacon jam fries", price: 5.00, category: "SIDE", imageUrl: "/images/bacon_jam_fries.jpeg", description: "Fries with bacon jam" },
+    { name: "Chilli cheese fries", price: 5.00, category: "SIDE", imageUrl: "/images/chilli_cheese_fries.jpeg", description: "Fries with chili and cheese" },
+    { name: "Shop string fries", price: 2.20, category: "SIDE", imageUrl: "/images/shoestring-fries.jpeg", description: "Thin cut fries" },
+    { name: "Coca cola", price: 1.10, category: "DRINK", imageUrl: "/images/coke.jpg", description: "Classic Coca-Cola" },
+    { name: "Coke 00", price: 1.10, category: "DRINK", imageUrl: "/images/coke00.jpg", description: "Sugar-free Coca-Cola" },
+    { name: "Fanta orange", price: 1.10, category: "DRINK", imageUrl: "/images/fanta.jpg", description: "Orange Fanta" },
+    { name: "Fanta lemon", price: 1.10, category: "DRINK", imageUrl: "/images/fantalemon.jpeg", description: "Lemon Fanta" },
+    { name: "Sprite", price: 1.10, category: "DRINK", imageUrl: "/images/sprite.jpg", description: "Sprite" },
+    { name: "Aquarius", price: 1.10, category: "DRINK", imageUrl: "/images/aquarius.png", description: "Aquarius sports drink" },
+    { name: "Aquarius orange", price: 1.10, category: "DRINK", imageUrl: "/images/aquariuso.jpeg", description: "Orange flavored Aquarius" },
+    { name: "Nestlé ice tea normal", price: 1.10, category: "DRINK", imageUrl: "/images/nestleicetea.jpeg", description: "Nestlé Ice Tea" },
+    { name: "Nestlé lemon", price: 1.10, category: "DRINK", imageUrl: "/images/nestealemon.jpeg", description: "Nestlé Lemon Tea" },
+    { name: "Fanta Nestlé passion fruit", price: 1.10, category: "DRINK", imageUrl: "/images/nestea-passionfruit.jpg", description: "Nestlé Passion Fruit Fanta" },
   ];
   for (const item of menuItemsData) {
-    await prisma.menuItem.upsert({
-      where: { name: item.name },
-      update: {
-        name: item.name,
-        price: item.price,
-        category: item.category,
-        imageUrl: item.imageUrl,
-        description: item.description,
-        isAvailable: true // Ensure items are available
-      },
-      create: {
+    await prisma.menuItem.create({
+      data: {
         name: item.name,
         price: item.price,
         category: item.category,
@@ -79,7 +70,7 @@ async function main() {
 
   // 1. Clear existing customization data
   console.log('Deleting existing customization relations...');
-  await prisma.menuItemCustomization.deleteMany({});
+  await prisma.menuItemCustomizationCategory.deleteMany({});
   console.log('Deleting existing customization options...');
   await prisma.customizationOption.deleteMany({});
   console.log('Deleting existing customization categories...');
@@ -107,7 +98,6 @@ async function main() {
         categoryId: extrasCategory.id,
         name: option.name,
         price: option.price || 0,
-        isDefaultSelected: option.isDefaultSelected || false,
       },
     });
   }
@@ -117,7 +107,6 @@ async function main() {
         categoryId: saucesCategory.id,
         name: option.name,
         price: option.price || 0,
-        isDefaultSelected: option.isDefaultSelected || false,
       },
     });
   }
@@ -127,7 +116,6 @@ async function main() {
         categoryId: toppingsCategory.id,
         name: option.name,
         price: option.price || 0,
-        isDefaultSelected: option.isDefaultSelected || false,
       },
     });
   }
@@ -144,11 +132,11 @@ async function main() {
   } else {
     for (const burger of burgerItems) {
       console.log(`Linking customizations for: ${burger.name}`);
-      await prisma.menuItemCustomization.createMany({
+      await prisma.menuItemCustomizationCategory.createMany({
         data: [
-          { menuItemId: burger.id, customizationCategoryId: extrasCategory.id },
-          { menuItemId: burger.id, customizationCategoryId: saucesCategory.id },
-          { menuItemId: burger.id, customizationCategoryId: toppingsCategory.id },
+          { menuItemId: burger.id, categoryId: extrasCategory.id },
+          { menuItemId: burger.id, categoryId: saucesCategory.id },
+          { menuItemId: burger.id, categoryId: toppingsCategory.id },
         ],
         skipDuplicates: true, // Avoid errors if relation already exists
       });

@@ -37,3 +37,6 @@ yarn-error.*
 
 app-example
 .env
+
+# Google Service Account (sensitive)
+google-service-account.json
