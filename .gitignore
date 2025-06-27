@@ -47,3 +47,5 @@ app/public/sw.js
 app/public/workbox-*.js
 app/public/workbox-*.map
 app/package-lock.json
+app/app.json
+app/eas.json

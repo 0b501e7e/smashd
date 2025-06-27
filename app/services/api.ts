@@ -10,9 +10,22 @@ const getLocalHost = () => {
   return host;
 };
 
-export const API_URL = Platform.OS === 'web' 
-  ? process.env.EXPO_PUBLIC_API_URL 
-  : process.env.EXPO_PUBLIC_API_URL?.replace('localhost', getLocalHost());
+// Get API URL with fallback for production
+const getApiUrl = () => {
+  const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
+  
+  if (!envApiUrl) {
+    console.error('EXPO_PUBLIC_API_URL is not defined! This will cause app to crash.');
+    // Fallback to your production URL
+    return 'https://backend-production-e9ac.up.railway.app';
+  }
+  
+  return Platform.OS === 'web' 
+    ? envApiUrl 
+    : envApiUrl.replace('localhost', getLocalHost());
+};
+
+export const API_URL = getApiUrl();
 console.log('Using API URL:', API_URL);
 
 // Create axios instance with proper error handling
@@ -35,11 +48,18 @@ export const setGuestMode = (enabled: boolean) => {
   AsyncStorage.setItem('guestMode', enabled ? 'true' : 'false');
 };
 
-// Function to check if in guest mode
+// Function to check if in guest mode with better error handling
 export const checkGuestMode = async () => {
-  const guestMode = await AsyncStorage.getItem('guestMode');
-  isGuestMode = guestMode === 'true';
-  return isGuestMode;
+  try {
+    const guestMode = await AsyncStorage.getItem('guestMode');
+    isGuestMode = guestMode === 'true';
+    return isGuestMode;
+  } catch (error) {
+    console.error('Error checking guest mode:', error);
+    // Default to guest mode if there's an error
+    isGuestMode = true;
+    return isGuestMode;
+  }
 };
 
 // Add a request interceptor to add the auth token to requests

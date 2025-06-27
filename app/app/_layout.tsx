@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
 
 // Import useColorScheme from NativeWind
 import { useColorScheme as useNativeWindColorScheme } from "nativewind";
@@ -18,6 +19,57 @@ import { RootStoreProvider } from '../contexts/RootStoreContext';
 import { checkGuestMode } from '../services/api';
 import '../global.css';
 
+// Initialize Sentry for crash reporting (CRITICAL for debugging production crashes)
+try {
+  Sentry.init({
+    dsn: 'https://8416e6426e3e2c2216029e65ac188669@o4509569219821568.ingest.de.sentry.io/4509569221525584', // Set to empty string to disable Sentry for now
+    debug: __DEV__, // Enable debug mode in development
+    environment: __DEV__ ? 'development' : 'production',
+    beforeSend(event) {
+      // Log crashes to console in development
+      if (__DEV__) {
+        console.error('SENTRY CRASH REPORT:', event);
+      }
+      return event;
+    },
+    beforeBreadcrumb(breadcrumb) {
+      // Log breadcrumbs in development
+      if (__DEV__) {
+        console.log('SENTRY BREADCRUMB:', breadcrumb);
+      }
+      return breadcrumb;
+    }
+  });
+  
+  // Add custom context
+  Sentry.setTag('app.version', '1.0.3');
+  Sentry.setTag('app.environment', __DEV__ ? 'development' : 'production');
+  
+  console.log('✅ Sentry initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize Sentry:', error);
+}
+
+// Enhanced error boundary and global error handler
+const originalConsoleError = console.error;
+console.error = (...args) => {
+  // Log to Sentry
+  Sentry.captureException(new Error(args.join(' ')));
+  
+  // Call original console.error
+  originalConsoleError(...args);
+};
+
+// Global unhandled promise rejection handler
+const handleUnhandledRejection = (event: any) => {
+  console.error('🚨 UNHANDLED PROMISE REJECTION:', event.reason);
+  Sentry.captureException(new Error(`Unhandled Promise Rejection: ${event.reason}`));
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', handleUnhandledRejection);
+}
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -27,91 +79,131 @@ export {
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const systemColorScheme = useColorScheme();
-  const { colorScheme, setColorScheme, toggleColorScheme } = useNativeWindColorScheme();
-
+  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  // Sync NativeWind scheme with system scheme initially or if needed
   useEffect(() => {
-    // Provide default value if systemColorScheme is nullish
-    setColorScheme(systemColorScheme ?? 'light'); 
-  }, [systemColorScheme, setColorScheme]);
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
 
   useEffect(() => {
-    async function prepare() {
+    // Initialize guest mode check with error handling
+    const initializeApp = async () => {
       try {
-        // Check for guest mode on app startup
+        console.log('🚀 App initializing...');
+        
+        // Add breadcrumb for app initialization
+        Sentry.addBreadcrumb({
+          message: 'App initialization started',
+          level: 'info',
+          category: 'app'
+        });
+        
         await checkGuestMode();
         
-        // Only hide splash screen once fonts are loaded
-        if (loaded) {
-          await SplashScreen.hideAsync();
-        }
-      } catch (e) {
-        console.warn('Error during app initialization:', e);
-        if (loaded) {
-          await SplashScreen.hideAsync();
-        }
+        console.log('✅ App initialized successfully');
+        Sentry.addBreadcrumb({
+          message: 'App initialization completed',
+          level: 'info',
+          category: 'app'
+        });
+      } catch (error) {
+        console.error('❌ App initialization failed:', error);
+        Sentry.captureException(error, {
+          tags: {
+            section: 'app_initialization'
+          }
+        });
       }
-    }
+    };
 
-    prepare();
-  }, [loaded]);
+    initializeApp();
+  }, []);
 
   if (!loaded) {
     return null;
   }
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }} className={colorScheme === 'dark' ? 'dark' : ''}>
-        <RootStoreProvider>
-            <AuthProvider>
-              <CartProvider>
-                <ThemeProvider value={systemColorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack 
-                    screenOptions={{
-                      headerShown: false,
-                    }}>
-                    <Stack.Screen name="index" />
-                    <Stack.Screen 
-                      name="(tabs)" 
-                      options={{
-                        headerShown: false,
-                        animation: 'slide_from_right',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="(auth)"
-                      options={{
-                        headerShown: false,
-                        animation: 'slide_from_bottom',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="checkout"
-                      options={{
-                        headerShown: true,
-                        animation: 'slide_from_right',
-                      }}
-                    />
-                    <Stack.Screen 
-                      name="order-confirmation"
-                      options={{
-                        headerShown: true,
-                        animation: 'slide_from_right',
-                      }}
-                    />
+    <Sentry.ErrorBoundary
+      fallback={({ error, resetError }) => {
+        console.error('🚨 ROOT ERROR BOUNDARY TRIGGERED:', error);
+        
+        return (
+          <SafeAreaProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <div style={{ 
+                  flex: 1, 
+                  justifyContent: 'center', 
+                  alignItems: 'center',
+                  backgroundColor: '#FAB10A',
+                  padding: 20
+                }}>
+                  <text style={{ 
+                    fontSize: 20, 
+                    fontWeight: 'bold', 
+                    marginBottom: 20,
+                    textAlign: 'center',
+                    color: '#000'
+                  }}>
+                    ¡Oops! Algo salió mal
+                  </text>
+                  <text style={{ 
+                    fontSize: 16, 
+                    marginBottom: 30,
+                    textAlign: 'center',
+                    color: '#333'
+                  }}>
+                    La aplicación encontró un error. Por favor reinicia la app.
+                  </text>
+                  <button 
+                    style={{
+                      backgroundColor: '#000',
+                      color: '#FAB10A',
+                      padding: '10px 20px',
+                      borderRadius: 5,
+                      border: 'none',
+                      fontSize: 16
+                    }}
+                    onClick={resetError}
+                  >
+                    Reintentar
+                  </button>
+                </div>
+                <StatusBar style="auto" />
+              </ThemeProvider>
+            </GestureHandlerRootView>
+          </SafeAreaProvider>
+        );
+      }}
+      beforeCapture={(scope, error) => {
+        console.error('🚨 CAPTURING ERROR TO SENTRY:', error);
+        scope.setTag('errorBoundary', 'root');
+        return scope;
+      }}
+    >
+      <RootStoreProvider>
+        <AuthProvider>
+          <CartProvider>
+            <SafeAreaProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
                   </Stack>
-                  <StatusBar style={systemColorScheme === 'dark' ? 'light' : 'dark'} />
+                  <StatusBar style="auto" />
                 </ThemeProvider>
-              </CartProvider>
-            </AuthProvider>
-        </RootStoreProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+              </GestureHandlerRootView>
+            </SafeAreaProvider>
+          </CartProvider>
+        </AuthProvider>
+      </RootStoreProvider>
+    </Sentry.ErrorBoundary>
   );
 }
