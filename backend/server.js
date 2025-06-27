@@ -83,6 +83,31 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
+// Health check route
+app.get('/', (req, res) => {
+  res.json({ status: 'Backend is running', timestamp: new Date().toISOString() });
+});
+
+app.get('/v1/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ 
+      status: 'healthy', 
+      database: 'connected',
+      timestamp: new Date().toISOString() 
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'unhealthy', 
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString() 
+    });
+  }
+});
+
 // Authentication routes
 app.post('/v1/auth/register', [
   body('email').trim().isEmail().normalizeEmail().withMessage('Must be a valid email address'),

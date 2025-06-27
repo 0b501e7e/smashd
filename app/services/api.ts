@@ -92,7 +92,7 @@ api.interceptors.response.use(
     // In guest mode, we don't care about 401 errors for certain endpoints
     if (isGuestMode && error.response?.status === 401) {
       // For public endpoints like menu, just continue without auth
-      if (error.config?.url?.includes('/menu')) {
+      if (error.config?.url?.includes('/v1/menu')) {
         return { data: [] }; // Return empty data instead of error
       }
     } else if (error.response?.status === 401) {
@@ -106,7 +106,7 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/v1/auth/login', { email, password });
     await AsyncStorage.setItem('token', response.data.token);
     setGuestMode(false); // Disable guest mode on login
     return response.data;
@@ -121,7 +121,7 @@ export const authAPI = {
     phoneNumber: string, 
     acceptedTerms: boolean
   ) => {
-    const response = await api.post('/auth/register', { 
+    const response = await api.post('/v1/auth/register', { 
       email, 
       password, 
       name, 
@@ -156,8 +156,8 @@ type AllCustomizations = {
 export const menuAPI = {
   getMenu: async () => {
     try {
-      console.log('Getting menu from', `${API_URL}/menu`);
-      const response = await api.get('/menu');
+      console.log('Getting menu from', `${API_URL}/v1/menu`);
+      const response = await api.get('/v1/menu');
       console.log('Menu response data:', response.data);
       return response.data;
     } catch (error: any) {
@@ -178,13 +178,13 @@ export const menuAPI = {
   },
   
   getMenuItemById: async (id: number) => {
-    const response = await api.get(`/menu/${id}`);
+    const response = await api.get(`/v1/menu/${id}`);
     return response.data;
   },
 
   // New function to fetch customizations for a menu item
   getItemCustomizations: async (id: number): Promise<AllCustomizations> => {
-    const response = await api.get(`/menu-items/${id}/customizations`);
+    const response = await api.get(`/v1/menu-items/${id}/customizations`);
     return response.data;
   },
 };
@@ -195,32 +195,27 @@ export const orderAPI = {
     collectionTime: string;
     total: number;
   }) => {
-    const response = await api.post('/orders', orderData);
+    const response = await api.post('/v1/orders', orderData);
     return response.data;
   },
 
-  confirmPayment: async (orderId: number, transactionId: string) => {
-    try {
-      const response = await api.post(`/orders/${orderId}/payment-confirm`, {
-        transactionId
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error confirming payment:', error);
-      throw error;
-    }
+  confirmPayment: async (orderId: number, paymentData: any) => {
+    const response = await api.post(`/v1/orders/${orderId}/payment-confirm`, {
+      ...paymentData
+    });
+    return response.data;
   },
 
   getUserOrders: async (userId: number) => {
     console.log(`[api.ts] Fetching orders for userId: ${userId} via /users/:userId/orders`);
-    const response = await api.get(`/users/${userId}/orders`);
+    const response = await api.get(`/v1/users/${userId}/orders`);
     return response.data;
   },
   
   getOrderStatus: async (orderId: number) => {
     try {
       console.log(`Fetching order status for order ID: ${orderId}`);
-      const response = await api.get(`/orders/${orderId}/status`);
+      const response = await api.get(`/v1/orders/${orderId}/status`);
       
       // Log and validate the response data
       console.log(`Order status response data:`, response.data);
@@ -239,19 +234,19 @@ export const orderAPI = {
   },
   repeatOrder: async (orderId: number) => {
     // Ensure the endpoint matches your backend route for repeating an order
-    const response = await api.post('/orders/repeat', { orderId });
+    const response = await api.post('/v1/orders/repeat', { orderId });
     return response.data;
   },
 };
 
 export const userAPI = {
   getProfile: async () => {
-    const response = await api.get('/users/profile');
+    const response = await api.get('/v1/users/profile');
     return response.data;
   },
   getLastOrder: async (userId: number) => {
     // Ensure the endpoint matches your backend route for fetching a user's last order
-    const response = await api.get(`/users/${userId}/last-order`);
+    const response = await api.get(`/v1/users/${userId}/last-order`);
     return response.data;
   },
 };
@@ -270,7 +265,7 @@ export const paymentAPI = {
       if (redirectUrl) {
         Object.assign(payload, { redirectUrl });
       }
-      const response = await api.post('/initiate-checkout', payload);
+      const response = await api.post('/v1/initiate-checkout', payload);
       return response.data;
     } catch (error: any) {
       console.error('Error initiating checkout:', error);
@@ -294,7 +289,7 @@ export const paymentAPI = {
   getOrderStatus: async (orderId: number) => {
     try {
       console.log(`Fetching order status for order ID: ${orderId}`);
-      const response = await api.get(`/orders/${orderId}/status`);
+      const response = await api.get(`/v1/orders/${orderId}/status`);
       
       // Log and validate the response data
       console.log(`Order status response data:`, response.data);
@@ -313,7 +308,7 @@ export const paymentAPI = {
   },
   repeatOrder: async (orderId: number) => {
     // Ensure the endpoint matches your backend route for repeating an order
-    const response = await api.post('/orders/repeat', { orderId });
+    const response = await api.post('/v1/orders/repeat', { orderId });
     return response.data;
   },
 };
