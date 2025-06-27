@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 
 // Import useColorScheme from NativeWind
@@ -22,7 +23,7 @@ import '../global.css';
 // Initialize Sentry for crash reporting (CRITICAL for debugging production crashes)
 try {
   Sentry.init({
-    dsn: 'https://8416e6426e3e2c2216029e65ac188669@o4509569219821568.ingest.de.sentry.io/4509569221525584', // Set to empty string to disable Sentry for now
+    dsn: 'https://8416e6426e3e2c2216029e65ac188669@o4509569219821568.ingest.de.sentry.io/4509569221525584', // Your real Sentry DSN
     debug: __DEV__, // Enable debug mode in development
     environment: __DEV__ ? 'development' : 'production',
     beforeSend(event) {
@@ -137,14 +138,14 @@ export default function RootLayout() {
           <SafeAreaProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <div style={{ 
+                <View style={{ 
                   flex: 1, 
                   justifyContent: 'center', 
                   alignItems: 'center',
                   backgroundColor: '#FAB10A',
                   padding: 20
                 }}>
-                  <text style={{ 
+                  <Text style={{ 
                     fontSize: 20, 
                     fontWeight: 'bold', 
                     marginBottom: 20,
@@ -152,29 +153,29 @@ export default function RootLayout() {
                     color: '#000'
                   }}>
                     ¡Oops! Algo salió mal
-                  </text>
-                  <text style={{ 
+                  </Text>
+                  <Text style={{ 
                     fontSize: 16, 
                     marginBottom: 30,
                     textAlign: 'center',
                     color: '#333'
                   }}>
                     La aplicación encontró un error. Por favor reinicia la app.
-                  </text>
-                  <button 
+                  </Text>
+                  <TouchableOpacity 
                     style={{
                       backgroundColor: '#000',
-                      color: '#FAB10A',
-                      padding: '10px 20px',
-                      borderRadius: 5,
-                      border: 'none',
-                      fontSize: 16
+                      paddingVertical: 10,
+                      paddingHorizontal: 20,
+                      borderRadius: 5
                     }}
-                    onClick={resetError}
+                    onPress={resetError}
                   >
-                    Reintentar
-                  </button>
-                </div>
+                    <Text style={{ color: '#FAB10A', fontSize: 16 }}>
+                      Reintentar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <StatusBar style="auto" />
               </ThemeProvider>
             </GestureHandlerRootView>
