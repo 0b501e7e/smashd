@@ -34,7 +34,7 @@ export function AnimatedLogo() {
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <Image
-        source={require('@/assets/images/smashd.jpg')} // Assuming assets path alias is configured
+        source={require('@/assets/images/smashd.png')} // Assuming assets path alias is configured
         style={styles.logo}
         resizeMode="contain"
       />
