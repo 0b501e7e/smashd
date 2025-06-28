@@ -18,6 +18,9 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "cache": {
+        "disabled": true
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://backend-production-e9ac.up.railway.app",
         "EXPO_PUBLIC_APP_ENV": "production",
