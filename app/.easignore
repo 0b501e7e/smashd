@@ -1,0 +1,21 @@
+# Exclude everything from parent directories
+../backend/
+../frontend/
+../docs/
+../README.md
+../ROLLOUT_GUIDE.md
+../things-to-do.md
+../.gitignore
+../package.json
+../package-lock.json
+
+# Also exclude the downloaded .aab files in app directory
+*.aab
+
+# Keep standard ignores
+node_modules/
+.expo/
+dist/
+web-build/
+.DS_Store
+*.log 

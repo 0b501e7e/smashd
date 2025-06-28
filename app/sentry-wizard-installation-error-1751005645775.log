@@ -1,0 +1,90 @@
+npm WARN ERESOLVE overriding peer dependency
+npm WARN While resolving: react-localization@1.0.19
+npm WARN Found: react@19.0.0
+npm WARN node_modules/react
+npm WARN   peer react@"*" from @expo/vector-icons@14.1.0
+npm WARN   node_modules/@expo/vector-icons
+npm WARN     @expo/vector-icons@"^14.0.0" from expo@53.0.13
+npm WARN     node_modules/expo
+npm WARN     1 more (the root project)
+npm WARN   39 more (@radix-ui/react-compose-refs, @radix-ui/react-slot, ...)
+npm WARN 
+npm WARN Could not resolve dependency:
+npm WARN peer react@"^18.0.0 || ^17.0.0 || ^16.0.0 || ^15.6.0" from react-localization@1.0.19
+npm WARN node_modules/react-localization
+npm WARN   react-localization@"^1.0.17" from react-native-localization@2.3.2
+npm WARN   node_modules/react-native-localization
+npm WARN 
+npm WARN Conflicting peer dependency: react@18.3.1
+npm WARN node_modules/react
+npm WARN   peer react@"^18.0.0 || ^17.0.0 || ^16.0.0 || ^15.6.0" from react-localization@1.0.19
+npm WARN   node_modules/react-localization
+npm WARN     react-localization@"^1.0.17" from react-native-localization@2.3.2
+npm WARN     node_modules/react-native-localization
+npm WARN ERESOLVE overriding peer dependency
+npm WARN While resolving: react-shallow-renderer@16.15.0
+npm WARN Found: react@19.0.0
+npm WARN node_modules/react
+npm WARN   peer react@"*" from @expo/vector-icons@14.1.0
+npm WARN   node_modules/@expo/vector-icons
+npm WARN     @expo/vector-icons@"^14.0.0" from expo@53.0.13
+npm WARN     node_modules/expo
+npm WARN     1 more (the root project)
+npm WARN   39 more (@radix-ui/react-compose-refs, @radix-ui/react-slot, ...)
+npm WARN 
+npm WARN Could not resolve dependency:
+npm WARN peer react@"^16.0.0 || ^17.0.0 || ^18.0.0" from react-shallow-renderer@16.15.0
+npm WARN node_modules/react-shallow-renderer
+npm WARN   react-shallow-renderer@"^16.15.0" from react-test-renderer@18.3.1
+npm WARN   node_modules/react-test-renderer
+npm WARN 
+npm WARN Conflicting peer dependency: react@18.3.1
+npm WARN node_modules/react
+npm WARN   peer react@"^16.0.0 || ^17.0.0 || ^18.0.0" from react-shallow-renderer@16.15.0
+npm WARN   node_modules/react-shallow-renderer
+npm WARN     react-shallow-renderer@"^16.15.0" from react-test-renderer@18.3.1
+npm WARN     node_modules/react-test-renderer
+npm ERR! code ERESOLVE
+npm ERR! ERESOLVE could not resolve
+npm ERR! 
+npm ERR! While resolving: react-test-renderer@18.3.1
+npm ERR! Found: react@19.0.0
+npm ERR! node_modules/react
+npm ERR!   peer react@"*" from @expo/vector-icons@14.1.0
+npm ERR!   node_modules/@expo/vector-icons
+npm ERR!     @expo/vector-icons@"^14.0.0" from expo@53.0.13
+npm ERR!     node_modules/expo
+npm ERR!       peer expo@"*" from expo-asset@11.1.5
+npm ERR!       node_modules/expo-asset
+npm ERR!         expo-asset@"~11.1.5" from expo@53.0.13
+npm ERR!       23 more (expo-blur, expo-constants, expo-dev-client, ...)
+npm ERR!     @expo/vector-icons@"^14.0.2" from the root project
+npm ERR!   peer react@"^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" from @radix-ui/react-compose-refs@1.1.2
+npm ERR!   node_modules/@radix-ui/react-compose-refs
+npm ERR!     @radix-ui/react-compose-refs@"1.1.2" from @radix-ui/react-slot@1.2.0
+npm ERR!     node_modules/@radix-ui/react-slot
+npm ERR!       @radix-ui/react-slot@"1.2.0" from expo-router@5.1.1
+npm ERR!       node_modules/expo-router
+npm ERR!         expo-router@"~5.1.1" from the root project
+npm ERR!   38 more (@radix-ui/react-slot, @react-navigation/bottom-tabs, ...)
+npm ERR! 
+npm ERR! Could not resolve dependency:
+npm ERR! peer react@"^18.3.1" from react-test-renderer@18.3.1
+npm ERR! node_modules/react-test-renderer
+npm ERR!   dev react-test-renderer@"18.3.1" from the root project
+npm ERR! 
+npm ERR! Conflicting peer dependency: react@18.3.1
+npm ERR! node_modules/react
+npm ERR!   peer react@"^18.3.1" from react-test-renderer@18.3.1
+npm ERR!   node_modules/react-test-renderer
+npm ERR!     dev react-test-renderer@"18.3.1" from the root project
+npm ERR! 
+npm ERR! Fix the upstream dependency conflict, or retry
+npm ERR! this command with --force or --legacy-peer-deps
+npm ERR! to accept an incorrect (and potentially broken) dependency resolution.
+npm ERR! 
+npm ERR! 
+npm ERR! For a full report see:
+npm ERR! /Users/senan/.npm/_logs/2025-06-27T06_27_21_751Z-eresolve-report.txt
+
+npm ERR! A complete log of this run can be found in: /Users/senan/.npm/_logs/2025-06-27T06_27_21_751Z-debug-0.log
