@@ -861,7 +861,7 @@ app.post('/v1/initiate-checkout', async (req, res) => {
       console.log(`Creating checkout with reference: ${uniqueReference}`);
       
       // Define the redirect URL
-      const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; // Use env var or default
+      const frontendBaseUrl = process.env.FRONTEND_URL || 'https://example.com'; // Use dummy URL for mobile
       // Test: Remove query param for now
       const redirectUrl = `${frontendBaseUrl}/order-confirmation`;
       console.log(`Setting redirect URL (test): ${redirectUrl}`);

@@ -149,7 +149,7 @@ export default function PaymentWebviewScreen() {
     // We don't need to do an immediate router.push here as it might be premature.
 
     // FIXME: This should ideally come from a shared config or environment variable
-    const REDIRECT_URL_BASE = 'http://localhost:3000/order-confirmation'; 
+    const REDIRECT_URL_BASE = 'https://example.com/order-confirmation'; 
 
     const isRedirectUrl = navState.url.startsWith(REDIRECT_URL_BASE);
 
