@@ -12,17 +12,24 @@ const getLocalHost = () => {
 
 // Get API URL with fallback for production
 const getApiUrl = () => {
+  // Try to get from expo config extra first (for app.config.js)
+  const extraApiUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
+  // Then try from process.env (for .env files)
   const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
   
-  if (!envApiUrl) {
+  const apiUrl = extraApiUrl || envApiUrl;
+  
+  if (!apiUrl) {
     console.error('EXPO_PUBLIC_API_URL is not defined! This will cause app to crash.');
     // Fallback to your production URL
     return 'https://backend-production-e9ac.up.railway.app';
   }
   
+  console.log('🌐 Found API URL:', apiUrl);
+  
   return Platform.OS === 'web' 
-    ? envApiUrl 
-    : envApiUrl.replace('localhost', getLocalHost());
+    ? apiUrl 
+    : apiUrl.replace('localhost', getLocalHost());
 };
 
 export const API_URL = getApiUrl();

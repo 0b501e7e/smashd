@@ -860,11 +860,18 @@ app.post('/v1/initiate-checkout', async (req, res) => {
       const uniqueReference = `ORDER-${order.id}-${timestamp}-${randomStr}`;
       console.log(`Creating checkout with reference: ${uniqueReference}`);
       
-      // Define the redirect URL
-      const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; // Use env var or default
-      // Test: Remove query param for now
-      const redirectUrl = `${frontendBaseUrl}/order-confirmation`;
-      console.log(`Setting redirect URL (test): ${redirectUrl}`);
+      // Define the redirect URL based on the request context
+      // For mobile app requests, use deep link; for web requests, use HTTP URL
+      let redirectUrl;
+      if (req.headers['user-agent']?.includes('Expo') || req.headers['x-expo-tunnel-type']) {
+        // This is a request from the React Native/Expo app
+        redirectUrl = 'smashd://order-confirmation';
+      } else {
+        // This is a web request
+        const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        redirectUrl = `${frontendBaseUrl}/order-confirmation`;
+      }
+      console.log(`Setting redirect URL: ${redirectUrl}`);
 
       // Prepare checkout data
       const checkoutData = JSON.stringify({

@@ -24,7 +24,7 @@ export default function PaymentWebviewScreen() {
       statusCheckInterval = setInterval(async () => {
         try {
           // Check SumUp checkout status directly
-          const response = await api.get(`/checkouts/${checkoutId}/status`);
+          const response = await api.get(`/v1/checkouts/${checkoutId}/status`);
           const status = response.data;
           console.log('SumUp payment status poll:', status);
           
@@ -35,7 +35,7 @@ export default function PaymentWebviewScreen() {
             if (orderId) {
               try {
                 // Call the verify-payment endpoint. It doesn't require a body.
-                await api.post(`/orders/${orderId}/verify-payment`); 
+                await api.post(`/v1/orders/${orderId}/verify-payment`); 
                 console.log(`payment-webview: Successfully called /verify-payment for order ${orderId}`);
                 
                 // Now, instead of going to order-confirmation, go to waiting-for-confirmation
@@ -85,21 +85,49 @@ export default function PaymentWebviewScreen() {
       
       try {
         setIsLoading(true);
+        setError(''); // Clear previous errors
+        
+        console.log('🚀 Initializing checkout for order:', orderId);
         const checkout = await sumupService.createCheckout(orderId);
         
-        if (!checkout || !checkout.checkoutId || !checkout.checkoutUrl) {
-          throw new Error('Invalid checkout response');
+        console.log('📦 Received checkout response:', checkout);
+        
+        // Validate the response structure
+        if (!checkout) {
+          console.error('❌ No checkout response received');
+          throw new Error('No response from checkout service');
         }
+        
+        if (!checkout.checkoutId) {
+          console.error('❌ Missing checkoutId in response:', checkout);
+          throw new Error('Missing checkout ID in response');
+        }
+        
+        if (!checkout.checkoutUrl) {
+          console.error('❌ Missing checkoutUrl in response:', checkout);
+          throw new Error('Missing checkout URL in response');
+        }
+        
+        console.log('✅ Checkout validation passed:', {
+          checkoutId: checkout.checkoutId,
+          checkoutUrl: checkout.checkoutUrl
+        });
         
         setCheckoutId(checkout.checkoutId);
         setPaymentUrl(checkout.checkoutUrl);
         setIsLoading(false);
+        
       } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to initialize payment');
+        console.error('❌ Checkout initialization failed:', error);
+        
+        const errorMessage = error instanceof Error ? error.message : 'Failed to initialize payment';
+        console.error('❌ Error message:', errorMessage);
+        
+        setError(errorMessage);
         setIsLoading(false);
       }
     };
-    
+
     initializeCheckout();
   }, [orderId]);
   

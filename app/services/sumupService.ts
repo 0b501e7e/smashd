@@ -12,16 +12,53 @@ export const sumupService = {
    */
   createCheckout: async (orderId: number) => {
     try {
+      if (__DEV__) {
+        console.log('🔄 Initiating checkout for order ID:', orderId);
+        console.log('🌐 API base URL:', api.defaults.baseURL);
+      }
+      
       // Use the correct v1 API endpoint
       const response = await api.post('/v1/initiate-checkout', { orderId });
-      // Only log in development to avoid cluttering logs
+      
       if (__DEV__) {
-        console.log('Initiating checkout for order ID:', orderId);
+        console.log('✅ Checkout response received:', response.data);
       }
-      return response.data;
-    } catch (error) {
-      console.error('Error creating checkout:', error);
-      throw new Error('Failed to create checkout. Please try again.');
+      
+      // Validate the response has the required fields
+      const { checkoutId, checkoutUrl, orderId: responseOrderId } = response.data;
+      
+      if (!checkoutId || !checkoutUrl) {
+        console.error('❌ Invalid checkout response - missing required fields');
+        console.error('Expected: checkoutId and checkoutUrl');
+        console.error('Received:', response.data);
+        throw new Error('Invalid checkout response from server');
+      }
+      
+      return {
+        checkoutId,
+        checkoutUrl,
+        orderId: responseOrderId || orderId
+      };
+      
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('❌ Checkout creation failed:', error);
+        console.error('Status:', error.response?.status);
+        console.error('Response:', error.response?.data);
+      }
+      
+      // Handle specific error cases
+      if (error.response?.status === 409) {
+        throw new Error('Checkout already in progress. Please wait and try again.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Order not found. Please try creating a new order.');
+      } else if (error.response?.status === 400) {
+        throw new Error('Invalid order data. Please try again.');
+      } else if (error.response?.status >= 500) {
+        throw new Error('Server error. Please try again later.');
+      } else {
+        throw new Error('Failed to create checkout. Please try again.');
+      }
     }
   },
   
