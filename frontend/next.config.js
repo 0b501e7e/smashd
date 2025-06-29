@@ -9,12 +9,12 @@ const nextConfig = {
         port: '5001', // Specify the port your backend is running on
         pathname: '/images/**', // Allow any image path under /images
       },
-      // Add other allowed domains here if needed for production, e.g.:
-      // {
-      //   protocol: 'https',
-      //   hostname: 'your-production-api-domain.com',
-      //   pathname: '/images/**',
-      // },
+      // Production backend domain
+      {
+        protocol: 'https',
+        hostname: 'backend-production-e9ac.up.railway.app',
+        pathname: '/images/**',
+      },
     ],
   },
 };
