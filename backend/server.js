@@ -860,18 +860,11 @@ app.post('/v1/initiate-checkout', async (req, res) => {
       const uniqueReference = `ORDER-${order.id}-${timestamp}-${randomStr}`;
       console.log(`Creating checkout with reference: ${uniqueReference}`);
       
-      // Define the redirect URL based on the request context
-      // For mobile app requests, use deep link; for web requests, use HTTP URL
-      let redirectUrl;
-      if (req.headers['x-app-platform'] === 'react-native') {
-        // This is a request from the React Native app
-        redirectUrl = 'smashd://order-confirmation';
-      } else {
-        // This is a web request
-        const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-        redirectUrl = `${frontendBaseUrl}/order-confirmation`;
-      }
-      console.log(`Setting redirect URL: ${redirectUrl}`);
+      // Define the redirect URL
+      const frontendBaseUrl = process.env.FRONTEND_URL || 'http://localhost:3000'; // Use env var or default
+      // Test: Remove query param for now
+      const redirectUrl = `${frontendBaseUrl}/order-confirmation`;
+      console.log(`Setting redirect URL (test): ${redirectUrl}`);
 
       // Prepare checkout data
       const checkoutData = JSON.stringify({
@@ -998,7 +991,7 @@ app.post('/v1/initiate-checkout', async (req, res) => {
             pay_to_email: process.env.SUMUP_MERCHANT_EMAIL,
             description: `Order #${order.id}`,
             hosted_checkout: { enabled: true },
-            redirect_url: `smashd://order-confirmation?orderId=${order.id}`,
+            redirect_url: redirectUrl,
             custom_fields: {
               order_id: order.id.toString()
             }
