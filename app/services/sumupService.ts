@@ -12,8 +12,8 @@ export const sumupService = {
    */
   createCheckout: async (orderId: number) => {
     try {
-      // Note: API base URL already includes /v1 so we don't need it in the path
-      const response = await api.post('/initiate-checkout', { orderId });
+      // Use the correct v1 API endpoint
+      const response = await api.post('/v1/initiate-checkout', { orderId });
       // Only log in development to avoid cluttering logs
       if (__DEV__) {
         console.log('Initiating checkout for order ID:', orderId);
@@ -33,7 +33,7 @@ export const sumupService = {
    */
   getOrderStatus: async (orderId: number) => {
     try {
-      const response = await api.get(`/orders/${orderId}`);
+      const response = await api.get(`/v1/orders/${orderId}`);
       return response.data;
     } catch (error) {
       console.error('Error getting order status:', error);
@@ -50,7 +50,7 @@ export const sumupService = {
   getPaymentStatus: async (orderId: number) => {
     try {
       console.log('Fetching order status for order ID:', orderId);
-      const response = await api.get(`/orders/${orderId}/status`);
+      const response = await api.get(`/v1/orders/${orderId}/status`);
       console.log('Order status response data:', response.data);
       return response.data;
     } catch (error) {
@@ -68,7 +68,7 @@ export const sumupService = {
   getSumupCheckoutStatus: async (checkoutId: string) => {
     try {
       console.log('Fetching SumUp checkout status for ID:', checkoutId);
-      const response = await api.get(`/checkouts/${checkoutId}/status`);
+      const response = await api.get(`/v1/checkouts/${checkoutId}/status`);
       console.log('SumUp checkout status response:', response.data);
       return response.data;
     } catch (error) {
