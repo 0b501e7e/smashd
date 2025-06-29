@@ -273,6 +273,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     backgroundColor: 'white',
+    color: '#333', // Explicit text color
+    fontSize: 16, // Consistent font size
   },
   multilineInput: {
     minHeight: 80,
@@ -283,6 +285,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: 'white',
     textAlignVertical: 'top',
+    color: '#333', // Explicit text color
+    fontSize: 16, // Consistent font size
   },
   dateButton: {
     height: 48,

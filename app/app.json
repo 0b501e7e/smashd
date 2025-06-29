@@ -2,7 +2,7 @@
   "expo": {
     "name": "Smash'd",
     "slug": "smashd-app",
-          "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "smashd",
@@ -25,7 +25,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.smashd.app",
-      "versionCode": 7,
+      "versionCode": 9,
       "permissions": [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"

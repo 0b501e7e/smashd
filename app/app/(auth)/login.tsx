@@ -107,6 +107,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     backgroundColor: 'white',
+    color: '#333', // Explicit text color
+    fontSize: 16, // Consistent font size
   },
   button: {
     backgroundColor: '#0a7ea4',
