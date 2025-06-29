@@ -5,7 +5,6 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -39,15 +38,13 @@ export default function LoginScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: true, title: 'Iniciar Sesión' }} />
-      <ThemedView style={[
-        styles.container, 
-        { 
-          paddingTop: insets.top,
-          paddingBottom: insets.bottom 
-        }
-      ]}>
+    <ThemedView style={[
+      styles.container, 
+      { 
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom 
+      }
+    ]}>
         {error ? (
           <ThemedText style={styles.error}>{error}</ThemedText>
         ) : null}
@@ -89,8 +86,7 @@ export default function LoginScreen() {
           </Link>
         </ThemedView>
       </ThemedView>
-    </>
-  );
+    );
 }
 
 const styles = StyleSheet.create({

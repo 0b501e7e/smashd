@@ -19,10 +19,14 @@ export default function HomeScreen() {
     }
   }, [isLoggedIn, loading]);
 
-  const handleGuestMode = () => {
+  const handleGuestMode = async () => {
     // Enable guest mode and navigate to menu
     setGuestMode(true);
-    router.push('/(tabs)/promotions');
+    
+    // Add a small delay to ensure guest mode is properly set
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    router.replace('/(tabs)/promotions');
   };
 
   // Don't render anything while checking auth status

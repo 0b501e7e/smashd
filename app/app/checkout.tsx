@@ -303,8 +303,8 @@ export default function CheckoutScreen() {
     <>
       <Stack.Screen 
         options={{
-          headerTitle: 'Pagar',
-          headerShown: true,
+          title: 'Pagar',
+          headerBackTitleVisible: false,
         }}
       />
       

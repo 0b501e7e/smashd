@@ -62,9 +62,27 @@ export default function RootLayout() {
           <SafeAreaProvider>
             <GestureHandlerRootView style={{ flex: 1 }}>
               <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="+not-found" />
+                <Stack screenOptions={{ 
+                  headerShown: false,
+                  headerStyle: {
+                    backgroundColor: '#000',
+                  },
+                  headerTintColor: '#fff',
+                  headerTitleStyle: {
+                    color: '#fff',
+                    fontWeight: 'bold',
+                  },
+                  headerBackTitleVisible: false,
+                }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="checkout" options={{ headerShown: true, title: 'Finalizar Pedido' }} />
+                  <Stack.Screen name="item-customization" options={{ headerShown: true, title: 'Personalizar' }} />
+                  <Stack.Screen name="order-confirmation" options={{ headerShown: true, title: 'Pedido Confirmado' }} />
+                  <Stack.Screen name="payment-webview" options={{ headerShown: true, title: 'Pagar' }} />
+                  <Stack.Screen name="waiting-for-confirmation" options={{ headerShown: true, title: 'Procesando...' }} />
+                  <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Página No Encontrada' }} />
                 </Stack>
                 <StatusBar style="auto" />
               </ThemeProvider>

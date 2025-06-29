@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ActivityIndicator, View } from 'react-native';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { orderAPI } from '@/services/api';
@@ -71,7 +71,6 @@ export default function WaitingForConfirmationScreen() {
 
   return (
     <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <Stack.Screen options={{ title: 'Confirming Order', headerBackVisible: false }} />
       <View style={styles.content}>
         <ActivityIndicator size="large" color="#ff8c00" style={styles.activityIndicator} />
         <ThemedText type="subtitle" style={styles.messageText}>

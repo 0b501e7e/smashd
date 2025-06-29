@@ -261,8 +261,8 @@ export default function ItemCustomizationScreen() {
     <SafeAreaView className="flex-1 bg-black">
       <Stack.Screen
         options={{
-          headerTitle: item.name,
-          headerShown: true,
+          title: item.name,
+          headerBackTitleVisible: false,
           headerStyle: { backgroundColor: "black" },
           headerTintColor: "white",
           headerTitleStyle: { color: "white" },

@@ -5,7 +5,6 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Platform } from 'react-native';
 
@@ -129,9 +128,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: true, title: 'Registrarse' }} />
-      <ScrollView>
+    <ScrollView>
         <ThemedView style={[
           styles.container, 
           { 
@@ -248,8 +245,7 @@ export default function RegisterScreen() {
           </ThemedView>
         </ThemedView>
       </ScrollView>
-    </>
-  );
+    );
 }
 
 const styles = StyleSheet.create({

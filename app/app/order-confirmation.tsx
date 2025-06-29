@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ActivityIndicator, View, ScrollView, Pressable, TouchableOpacity } from 'react-native';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -147,7 +147,6 @@ export default function OrderConfirmationScreen() {
   if (loading) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerTitle: 'Confirmación de Pedido' }} />
         <ActivityIndicator size="large" color="#ff8c00" />
         <ThemedText style={styles.loadingText}>Cargando detalles del pedido...</ThemedText>
       </ThemedView>
@@ -158,7 +157,6 @@ export default function OrderConfirmationScreen() {
   if (error || !order) {
     return (
       <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerTitle: 'Error del Pedido' }} />
         <IconSymbol name="exclamationmark.triangle.fill" size={60} color="#f44336" />
         <ThemedText style={styles.errorText}>
           {error || 'No se pudieron cargar los detalles del pedido'}
@@ -178,8 +176,6 @@ export default function OrderConfirmationScreen() {
   
   return (
     <ThemedView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: 'Confirmación de Pedido' }} />
-      
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContentContainer}

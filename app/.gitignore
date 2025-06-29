@@ -40,3 +40,8 @@ app-example
 
 # Google Service Account (sensitive)
 google-service-account.json
+
+android/
+ios/
+
+credentials.json

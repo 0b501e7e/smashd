@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, BackHandler } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { sumupService } from '@/services/sumupService';
@@ -160,7 +160,6 @@ export default function PaymentWebviewScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <Stack.Screen options={{ headerTitle: 'Processing Payment' }} />
         <ActivityIndicator size="large" color="#0a7ea4" />
         <ThemedText style={styles.loadingText}>Preparing your payment...</ThemedText>
       </View>
@@ -170,7 +169,6 @@ export default function PaymentWebviewScreen() {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Stack.Screen options={{ headerTitle: 'Payment Error' }} />
         <ThemedText style={styles.errorText}>{error}</ThemedText>
         <ThemedText 
           style={styles.backButton}
@@ -184,20 +182,6 @@ export default function PaymentWebviewScreen() {
   
   return (
     <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
-      <Stack.Screen 
-        options={{ 
-          headerTitle: 'SumUp Payment',
-          headerLeft: () => (
-            <ThemedText 
-              style={styles.navButton}
-              onPress={() => router.back()}
-            >
-              Cancel
-            </ThemedText>
-          ),
-        }} 
-      />
-      
       {paymentUrl && (
         <WebView
           source={{ uri: paymentUrl }}
