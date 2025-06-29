@@ -102,9 +102,9 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 16,
-    backgroundColor: 'white',
-    color: '#333', // Explicit text color
-    fontSize: 16, // Consistent font size
+    backgroundColor: '#ffffff', // Explicit white background
+    color: '#000000', // Explicit black text
+    fontSize: 16,
   },
   button: {
     backgroundColor: '#0a7ea4',

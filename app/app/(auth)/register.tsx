@@ -145,6 +145,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Nombre Completo"
+            placeholderTextColor="#999"
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -153,6 +154,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor="#999"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -181,6 +183,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Número de Teléfono"
+            placeholderTextColor="#999"
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
@@ -189,6 +192,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.multilineInput}
             placeholder="Dirección"
+            placeholderTextColor="#999"
             value={address}
             onChangeText={setAddress}
             multiline
@@ -198,6 +202,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
+            placeholderTextColor="#999"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -206,6 +211,7 @@ export default function RegisterScreen() {
           <TextInput
             style={styles.input}
             placeholder="Confirmar Contraseña"
+            placeholderTextColor="#999"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -268,9 +274,9 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     paddingHorizontal: 16,
-    backgroundColor: 'white',
-    color: '#333', // Explicit text color
-    fontSize: 16, // Consistent font size
+    backgroundColor: '#ffffff', // Explicit white background
+    color: '#000000', // Explicit black text
+    fontSize: 16,
   },
   multilineInput: {
     minHeight: 80,
@@ -279,10 +285,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#ffffff', // Explicit white background
     textAlignVertical: 'top',
-    color: '#333', // Explicit text color
-    fontSize: 16, // Consistent font size
+    color: '#000000', // Explicit black text
+    fontSize: 16,
   },
   dateButton: {
     height: 48,
