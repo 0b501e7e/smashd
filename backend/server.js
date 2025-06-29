@@ -863,8 +863,8 @@ app.post('/v1/initiate-checkout', async (req, res) => {
       // Define the redirect URL based on the request context
       // For mobile app requests, use deep link; for web requests, use HTTP URL
       let redirectUrl;
-      if (req.headers['user-agent']?.includes('Expo') || req.headers['x-expo-tunnel-type']) {
-        // This is a request from the React Native/Expo app
+      if (req.headers['x-app-platform'] === 'react-native') {
+        // This is a request from the React Native app
         redirectUrl = 'smashd://order-confirmation';
       } else {
         // This is a web request

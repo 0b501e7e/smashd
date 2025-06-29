@@ -45,6 +45,9 @@ export const sumupService = {
         console.error('❌ Checkout creation failed:', error);
         console.error('Status:', error.response?.status);
         console.error('Response:', error.response?.data);
+        console.error('Request URL:', error.config?.url);
+        console.error('Request method:', error.config?.method);
+        console.error('Request headers:', error.config?.headers);
       }
       
       // Handle specific error cases
@@ -53,11 +56,18 @@ export const sumupService = {
       } else if (error.response?.status === 404) {
         throw new Error('Order not found. Please try creating a new order.');
       } else if (error.response?.status === 400) {
-        throw new Error('Invalid order data. Please try again.');
+        const errorMsg = error.response?.data?.error || 'Invalid order data';
+        throw new Error(`Bad request: ${errorMsg}`);
       } else if (error.response?.status >= 500) {
-        throw new Error('Server error. Please try again later.');
+        const errorMsg = error.response?.data?.error || 'Server error';
+        throw new Error(`Server error: ${errorMsg}`);
+      } else if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout. Please check your internet connection and try again.');
+      } else if (error.code === 'NETWORK_ERROR') {
+        throw new Error('Network error. Please check your internet connection and try again.');
       } else {
-        throw new Error('Failed to create checkout. Please try again.');
+        const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+        throw new Error(`Failed to create checkout: ${errorMsg}`);
       }
     }
   },

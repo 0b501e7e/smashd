@@ -40,6 +40,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'X-App-Platform': 'react-native', // Identify React Native requests
   },
   // Set timeout to avoid long-running requests
   timeout: 10000,
