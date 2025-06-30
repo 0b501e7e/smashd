@@ -38,19 +38,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
+      // Only check for authentication with JWT token
       const token = await AsyncStorage.getItem('token');
       if (token) {
-        const userData = await userAPI.getProfile();
-        setUser(userData);
+        try {
+          const userData = await userAPI.getProfile();
+          setUser(userData);
+        } catch (profileError: any) {
+          // If profile fetch fails, token is likely invalid
+          console.log('Token invalid, removing:', profileError.response?.status);
+          await AsyncStorage.removeItem('token');
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
     } catch (error: any) {
       console.error('Auth check failed:', error);
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        await AsyncStorage.removeItem('token');
-        setUser(null);
-      }
+      setUser(null);
     } finally {
       setLoading(false);
     }

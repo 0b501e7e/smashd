@@ -3,7 +3,7 @@ module.exports = {
   // NOTE: Update this to include the paths to all of your component files.
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"], // Added components path
   presets: [require("nativewind/preset")],
-  darkMode: "class", // Enable class-based dark mode like frontend
+  darkMode: "media", // Use media queries for automatic dark mode detection
   theme: {
     extend: {
       colors: {
@@ -40,42 +40,10 @@ module.exports = {
           DEFAULT: "hsl(0 0% 100%)",
           foreground: "hsl(240 10% 3.9%)",
         },
-        // Dark mode colors (can be applied using 'dark:' prefix)
-        dark: {
-          border: "hsl(45 50% 30%)",
-          input: "hsl(240 4% 15%)",
-          ring: "hsl(45 90% 50%)",
-          background: "hsl(0 0% 0%)",
-          foreground: "hsl(0 0% 98%)",
-          primary: {
-            DEFAULT: "hsl(45 90% 50%)", // Yellow
-            foreground: "hsl(0 0% 5%)",   // Dark text for yellow bg
-          },
-          secondary: {
-            DEFAULT: "hsl(45 90% 20%)", // Darker yellow/brown
-            foreground: "hsl(0 0% 98%)",
-          },
-          destructive: {
-            DEFAULT: "hsl(40 90% 35%)", // Adjusted destructive for dark
-            foreground: "hsl(45 90% 85%)",
-          },
-          muted: {
-            DEFAULT: "hsl(240 4% 15%)",
-            foreground: "hsl(240 5% 65%)",
-          },
-          accent: {
-            DEFAULT: "hsl(45 90% 50%)", // Yellow
-            foreground: "hsl(0 0% 5%)",   // Dark text for yellow bg
-          },
-          popover: {
-            DEFAULT: "hsl(240 10% 3.9%)",
-            foreground: "hsl(0 0% 98%)",
-          },
-          card: {
-            DEFAULT: "hsl(240 5% 10%)",
-            foreground: "hsl(0 0% 98%)",
-          },
-        }
+      },
+      // Dark mode color overrides
+      screens: {
+        dark: { raw: "(prefers-color-scheme: dark)" },
       },
       borderRadius: {
         lg: "0.5rem", // Directly using value from --radius
@@ -84,5 +52,49 @@ module.exports = {
       },
     },
   },
-  plugins: [], // Keeping plugins minimal for now
+  plugins: [
+    // Add plugin to handle dark mode colors
+    function({ addUtilities }) {
+      addUtilities({
+        '@media (prefers-color-scheme: dark)': {
+          '.dark\\:bg-background': {
+            'background-color': 'hsl(240 10% 3.9%)',
+          },
+          '.dark\\:text-foreground': {
+            color: 'hsl(0 0% 98%)',
+          },
+          '.dark\\:border-border': {
+            'border-color': 'hsl(240 3.7% 15.9%)',
+          },
+          '.dark\\:bg-card': {
+            'background-color': 'hsl(240 10% 3.9%)',
+          },
+          '.dark\\:text-card-foreground': {
+            color: 'hsl(0 0% 98%)',
+          },
+          '.dark\\:bg-muted': {
+            'background-color': 'hsl(240 3.7% 15.9%)',
+          },
+          '.dark\\:text-muted-foreground': {
+            color: 'hsl(240 5% 64.9%)',
+          },
+          '.dark\\:bg-primary': {
+            'background-color': 'hsl(0 0% 98%)',
+          },
+          '.dark\\:text-primary-foreground': {
+            color: 'hsl(240 5.9% 10%)',
+          },
+          '.dark\\:border-input': {
+            'border-color': 'hsl(240 3.7% 15.9%)',
+          },
+          '.dark\\:bg-destructive\\/10': {
+            'background-color': 'hsl(0 62.8% 30.6% / 0.1)',
+          },
+          '.dark\\:border-destructive\\/50': {
+            'border-color': 'hsl(0 62.8% 30.6% / 0.5)',
+          },
+        }
+      })
+    }
+  ],
 }
