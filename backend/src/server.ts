@@ -1,6 +1,12 @@
 import express, { Request, Response } from 'express';
 import { APP_CONFIG, HTTP_STATUS } from './config/constants';
 import testRoutes from './routes/test.routes';
+import authRoutes from './routes/auth.routes';
+import menuRoutes from './routes/menu.routes';
+import userRoutes from './routes/user.routes';
+import orderRoutes from './routes/order.routes';
+import adminRoutes from './routes/admin.routes';
+import paymentRoutes from './routes/payment.routes';
 import {
   corsMiddleware,
   logCorsConfiguration,
@@ -34,6 +40,14 @@ app.get('/health', (_req: Request, res: Response) => {
     version: '1.0.0'
   });
 });
+
+// API Routes
+app.use('/v1/auth', authRoutes);
+app.use('/v1/menu', menuRoutes);
+app.use('/v1/users', userRoutes);
+app.use('/v1/orders', orderRoutes);
+app.use('/v1/admin', adminRoutes);
+app.use('/v1/payment', paymentRoutes);
 
 // Test routes for validation and authentication middleware
 app.use('/test', testRoutes);
