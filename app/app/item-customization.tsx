@@ -6,10 +6,15 @@ import * as Haptics from 'expo-haptics';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import React from 'react';
 import { menuAPI } from '@/services/api';
-import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_URL } from '@/services/api';
+import { ImageIcon, Plus, Minus, ShoppingCart } from 'lucide-react-native';
+
+// RNR Components
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 // Define customization options
 type CustomizationOption = {
@@ -216,40 +221,50 @@ export default function ItemCustomizationScreen() {
     selected: string[],
     setSelected: React.Dispatch<React.SetStateAction<string[]>>,
   ) => (
-    <View className="px-4 mb-6">
-      <Text className="text-white text-xl font-semibold mb-3">{title}</Text>
-      <View className="flex-wrap flex-row gap-2">
-        {options.map((option) => {
-          const isSelected = selected.includes(option.id);
-          return (
-            <Button
-              key={option.id}
-              variant={isSelected ? "default" : "outline"}
-              size="default"
-              className={`
-                ${isSelected ? "bg-yellow-400 border-yellow-400" : "border-zinc-600"}
-              `}
-              onPress={() => toggleSelection(option.id, selected, setSelected)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Text
-                className={`font-medium ${isSelected ? "text-black" : "text-black"}`}
+    <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+      <CardHeader>
+        <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+          {title}
+        </Text>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <View className="flex-wrap flex-row gap-2">
+          {options.map((option) => {
+            const isSelected = selected.includes(option.id);
+            return (
+              <Button
+                key={option.id}
+                className={`h-10 ${isSelected ? '' : 'border'}`}
+                style={{
+                  backgroundColor: isSelected ? '#FAB10A' : 'transparent',
+                  borderColor: isSelected ? '#FAB10A' : '#333333',
+                }}
+                onPress={() => toggleSelection(option.id, selected, setSelected)}
               >
-                {option.name}{" "}
-                {option.price > 0 && `(€${option.price.toFixed(2)})`}
-              </Text>
-            </Button>
-          );
-        })}
-      </View>
-    </View>
+                <Text
+                  className="font-medium text-sm"
+                  style={{ color: isSelected ? '#000000' : '#FFFFFF' }}
+                >
+                  {option.name}{" "}
+                  {option.price > 0 && `(€${option.price.toFixed(2)})`}
+                </Text>
+              </Button>
+            );
+          })}
+        </View>
+      </CardContent>
+    </Card>
   );
 
   if (loading || customizationsLoading || !item || !allCustomizations) {
     return (
-      <SafeAreaView className="flex-1 bg-black justify-center items-center">
-        <ActivityIndicator size="large" color="#FFFFFF" />
-        <Text className="text-white mt-2">Cargando detalles del producto...</Text>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#FAB10A" className="mb-4" />
+          <Text className="text-lg font-medium" style={{ color: '#FFFFFF' }}>
+            Cargando detalles del producto...
+          </Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -258,23 +273,23 @@ export default function ItemCustomizationScreen() {
   const totalPrice = calculateTotalPrice();
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
       <Stack.Screen
         options={{
           title: item.name,
-          headerStyle: { backgroundColor: "black" },
-          headerTintColor: "white",
-          headerTitleStyle: { color: "white" },
+          headerStyle: { backgroundColor: '#000000' },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: { color: '#FFFFFF' },
         }}
       />
       
       <ScrollView
-        className="flex-1" // Takes up available space above the footer
-        contentContainerStyle={{ paddingBottom: 20 }} // Padding for end of scroll content
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Item Header Section */}
-        <View className="relative mb-4">
+        <View className="relative mb-6">
           {imageUri ? (
             <Image
               source={{ uri: imageUri }}
@@ -282,16 +297,17 @@ export default function ItemCustomizationScreen() {
               resizeMode="cover"
             />
           ) : (
-            <View className="w-full h-64 bg-zinc-800 justify-center items-center">
-              <IconSymbol name="photo" size={40} color="#999" />
+            <View className="w-full h-64 justify-center items-center" style={{ backgroundColor: '#111111' }}>
+              <ImageIcon size={40} color="#666666" />
             </View>
           )}
-          <View className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/50 to-transparent"> 
-            <Text className="text-white text-2xl font-bold mb-1">
+          <View className="absolute inset-x-0 bottom-0 p-6" style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}>
+            <Text className="text-2xl font-bold mb-2" style={{ color: '#FFFFFF' }}>
               {item.name}
             </Text>
             <Text
-              className="text-gray-300 text-sm"
+              className="text-sm leading-5"
+              style={{ color: '#CCCCCC' }}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
@@ -300,96 +316,117 @@ export default function ItemCustomizationScreen() {
           </View>
         </View>
 
-        {/* Price Section */}
-        <View className="px-4 mb-6">
-          <Text className="text-white text-lg">
-            Precio base: €{item.price.toFixed(2)}
-          </Text>
+        <View className="px-6">
+          {/* Price Section */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardContent className="p-4">
+              <Text className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>
+                Precio base: 
+                <Text style={{ color: '#FAB10A' }}> €{item.price.toFixed(2)}</Text>
+              </Text>
+            </CardContent>
+          </Card>
+          
+          {/* Customization Sections */}
+          {allCustomizations && allCustomizations.extras.length > 0 && renderCustomizationSection(
+            "Extras",
+            allCustomizations.extras,
+            selectedExtras,
+            setSelectedExtras,
+          )}
+          {allCustomizations && allCustomizations.sauces.length > 0 && renderCustomizationSection(
+            "Salsas",
+            allCustomizations.sauces,
+            selectedSauces,
+            setSelectedSauces,
+          )}
+          {allCustomizations && allCustomizations.toppings.length > 0 && renderCustomizationSection(
+            "Ingredientes",
+            allCustomizations.toppings,
+            selectedToppings,
+            setSelectedToppings,
+          )}
         </View>
-        
-        {/* Customization Sections */}
-        {allCustomizations && allCustomizations.extras.length > 0 && renderCustomizationSection(
-          "Extras",
-          allCustomizations.extras,
-          selectedExtras,
-          setSelectedExtras,
-        )}
-        {allCustomizations && allCustomizations.sauces.length > 0 && renderCustomizationSection(
-          "Salsas",
-          allCustomizations.sauces,
-          selectedSauces,
-          setSelectedSauces,
-        )}
-        {allCustomizations && allCustomizations.toppings.length > 0 && renderCustomizationSection(
-          "Ingredientes",
-          allCustomizations.toppings,
-          selectedToppings,
-          setSelectedToppings,
-        )}
-
       </ScrollView>
 
-      {/* --- Footer Section (Fixed at bottom relative to parent View) --- */}
+      {/* Fixed Footer Section */}
       <View 
-        className="px-4 border-t border-zinc-700 pt-4 bg-black" 
-        // Use paddingBottom from safe area insets
-        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom + 5 : 15 }} // Add a base padding even without inset
+        className="px-6 pt-4" 
+        style={{ 
+          backgroundColor: '#000000', 
+          borderTopWidth: 1, 
+          borderTopColor: '#333333',
+          paddingBottom: Math.max(insets.bottom + 8, 16)
+        }}
       >
         {/* Quantity Controls */}
-        <View className="flex-row items-center justify-between mb-4"> 
-          <Text className="text-white text-lg font-semibold">
-            Cantidad
-          </Text>
-          <View className="flex-row items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className={`border-yellow-400 rounded-full h-9 w-9 ${quantity <= 1 ? "opacity-50" : ""}`}
-              disabled={quantity <= 1}
-              onPress={() => {
-                if (quantity > 1) {
-                  setQuantity(quantity - 1);
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }
-              }}
-            >
-              <Text className="text-yellow-400 text-2xl font-bold">-</Text> 
-            </Button>
-            <Text className="text-white text-xl font-semibold w-10 text-center">
-              {quantity}
-            </Text>
-            <Button
-              variant="outline"
-              size="icon"
-              className="border-yellow-400 rounded-full h-9 w-9"
-              onPress={() => {
-                setQuantity(quantity + 1);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            >
-              <Text className="text-yellow-400 text-2xl font-bold">+</Text>
-            </Button>
-          </View>
-        </View>
+        <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+          <CardContent className="p-4">
+            <View className="flex-row items-center justify-between"> 
+              <Text className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>
+                Cantidad
+              </Text>
+              <View className="flex-row items-center gap-3">
+                <Button
+                  className={`w-10 h-10 rounded-full border ${quantity <= 1 ? 'opacity-50' : ''}`}
+                  style={{ 
+                    backgroundColor: 'transparent',
+                    borderColor: '#FAB10A'
+                  }}
+                  disabled={quantity <= 1}
+                  onPress={() => {
+                    if (quantity > 1) {
+                      setQuantity(quantity - 1);
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }
+                  }}
+                >
+                  <Minus size={16} color="#FAB10A" />
+                </Button>
+                
+                <Badge style={{ backgroundColor: '#FAB10A', minWidth: 40 }}>
+                  <Text className="text-lg font-bold" style={{ color: '#000000' }}>
+                    {quantity}
+                  </Text>
+                </Badge>
+                
+                <Button
+                  className="w-10 h-10 rounded-full border"
+                  style={{ 
+                    backgroundColor: 'transparent',
+                    borderColor: '#FAB10A'
+                  }}
+                  onPress={() => {
+                    setQuantity(quantity + 1);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                >
+                  <Plus size={16} color="#FAB10A" />
+                </Button>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
 
         {/* Add to Cart Button */}
-        <TouchableOpacity
-          className="w-full bg-yellow-400 py-3 items-center justify-center rounded-md" 
+        <Button
+          className="w-full h-14"
+          style={{ backgroundColor: '#FAB10A' }}
           onPress={handleAddToCart}
           disabled={addingToCart}
-          activeOpacity={0.7}
         >
           {addingToCart ? (
             <ActivityIndicator size="small" color="#000000" />
           ) : (
-            <Text className="text-black text-lg font-bold">
-              Añadir {quantity} al Carrito - €{totalPrice.toFixed(2)}
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <ShoppingCart size={20} color="#000000" />
+              <Text className="text-lg font-bold" style={{ color: '#000000' }}>
+                Añadir {quantity} al Carrito - €{totalPrice.toFixed(2)}
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
+        </Button>
       </View>
-      {/* --- End Footer Section --- */}
-      
     </SafeAreaView>
   );
 } 

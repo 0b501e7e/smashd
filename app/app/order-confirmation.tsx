@@ -1,12 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ActivityIndicator, View, ScrollView, Pressable, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { orderAPI } from '@/services/api';
 import * as Haptics from 'expo-haptics';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { 
+  CheckCircle, 
+  Clock, 
+  Flame, 
+  Bell, 
+  XCircle, 
+  AlertTriangle,
+  Package,
+  User,
+  CreditCard,
+  Plus,
+  ArrowRight,
+  RefreshCw
+} from 'lucide-react-native';
+
+// RNR Components
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED';
 
@@ -85,13 +103,8 @@ export default function OrderConfirmationScreen() {
         console.log(`Polling for status update on order ${numOrderId}`);
         const updatedOrderDetails = await orderAPI.getOrderStatus(numOrderId);
         setOrder(updatedOrderDetails);
-        // Optional: Haptic feedback for significant status changes if desired
-        // if (order && updatedOrderDetails.status !== order.status && (updatedOrderDetails.status === 'PREPARING' || updatedOrderDetails.status === 'READY')) {
-        //   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        // }
       } catch (error) {
         console.error('Error polling order status:', error);
-        // Decide if we want to show a non-blocking error to the user, e.g., a small toast
       }
     }, 15000); // Poll every 15 seconds
 
@@ -100,7 +113,7 @@ export default function OrderConfirmationScreen() {
   
   // Format estimated ready time
   const getEstimatedReadyTime = () => {
-    if (!order || !order.createdAt) return 'Unknown';
+    if (!order || !order.createdAt) return 'Desconocido';
     
     try {
       // Use estimatedReadyTime if available
@@ -117,368 +130,256 @@ export default function OrderConfirmationScreen() {
       return readyDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch (error) {
       console.error('Error calculating ready time:', error);
-      return 'Unknown';
+      return 'Desconocido';
     }
   };
   
   // Get status color and icon based on order status
   const getStatusInfo = () => {
-    if (!order) return { color: '#ccc', icon: 'clock', text: 'Desconocido' };
+    if (!order) return { color: '#CCCCCC', icon: Clock, text: 'Desconocido' };
     
     switch (order.status) {
       case 'PAID':
-        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Pago Confirmado' };
+        return { color: '#4CAF50', icon: CheckCircle, text: 'Pago Confirmado' };
       case 'CONFIRMED':
-        return { color: '#ff9800', icon: 'flame.fill', text: 'Pedido Confirmado, ¡Preparándose!' };
+        return { color: '#FAB10A', icon: Flame, text: 'Pedido Confirmado, ¡Preparándose!' };
       case 'PREPARING':
-        return { color: '#ff9800', icon: 'flame.fill', text: 'Preparando tu Pedido' };
+        return { color: '#FAB10A', icon: Flame, text: 'Preparando tu Pedido' };
       case 'READY':
-        return { color: '#2196f3', icon: 'bell.fill', text: 'Listo para Recoger' };
+        return { color: '#2196F3', icon: Bell, text: 'Listo para Recoger' };
       case 'COMPLETED':
-        return { color: '#4caf50', icon: 'checkmark.circle.fill', text: 'Pedido Completado' };
+        return { color: '#4CAF50', icon: CheckCircle, text: 'Pedido Completado' };
       case 'CANCELLED':
-        return { color: '#f44336', icon: 'xmark.circle.fill', text: 'Pedido Cancelado' };
+        return { color: '#F44336', icon: XCircle, text: 'Pedido Cancelado' };
       default:
-        return { color: '#ff9800', icon: 'clock', text: 'Procesando' };
+        return { color: '#FAB10A', icon: Clock, text: 'Procesando' };
     }
   };
   
   // Loading state
   if (loading) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#ff8c00" />
-        <ThemedText style={styles.loadingText}>Cargando detalles del pedido...</ThemedText>
-      </ThemedView>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
+        <View className="flex-1 justify-center items-center px-6">
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-6" style={{ backgroundColor: '#FAB10A' }}>
+            <RefreshCw size={32} color="#000000" />
+          </View>
+          <ActivityIndicator size="large" color="#FAB10A" className="mb-4" />
+          <Text className="text-lg font-medium text-center" style={{ color: '#FFFFFF' }}>
+            Cargando detalles del pedido...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
   
   // Error state
   if (error || !order) {
     return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-        <IconSymbol name="exclamationmark.triangle.fill" size={60} color="#f44336" />
-        <ThemedText style={styles.errorText}>
-          {error || 'No se pudieron cargar los detalles del pedido'}
-        </ThemedText>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => router.push('/(tabs)/menu')}
-        >
-          <ThemedText style={styles.buttonText}>Volver a la Carta</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
+        <View className="flex-1 justify-center items-center px-6">
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-6" style={{ backgroundColor: 'rgba(255, 68, 68, 0.2)' }}>
+            <AlertTriangle size={32} color="#FF4444" />
+          </View>
+          <Text className="text-lg font-medium text-center mb-4" style={{ color: '#FF4444' }}>
+            {error || 'No se pudieron cargar los detalles del pedido'}
+          </Text>
+          <Button
+            className="h-12 px-6"
+            style={{ backgroundColor: '#FAB10A' }}
+            onPress={() => router.push('/(tabs)/menu')}
+          >
+            <Text className="text-base font-semibold" style={{ color: '#000000' }}>
+              Volver a la Carta
+            </Text>
+          </Button>
+        </View>
+      </SafeAreaView>
     );
   }
   
   // Success state - order details
   const statusInfo = getStatusInfo();
+  const StatusIcon = statusInfo.icon;
   
   return (
-    <ThemedView style={styles.container}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
       <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContentContainer, { paddingBottom: insets.bottom }]}
+        className="flex-1"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom + 24, 48) }}
       >
-        <ThemedView style={styles.header}>
-          <IconSymbol name="checkmark.circle.fill" size={80} color="#4caf50" />
-          <ThemedText type="title" style={styles.headerTitle}>
-            ¡Gracias por tu Pedido!
-          </ThemedText>
-          <ThemedText style={styles.headerSubtitle}>
-            Tu pedido ha sido confirmado y pagado.
-          </ThemedText>
-        </ThemedView>
-        
-        <ThemedView style={styles.orderInfo}>
-          <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Número de Pedido:</ThemedText>
-            <ThemedText style={styles.orderInfoValue}>#{order.id}</ThemedText>
-          </ThemedView>
+        <View className="p-6">
+          {/* Success Header */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardContent className="p-8">
+              <View className="items-center">
+                <View className="w-20 h-20 rounded-full items-center justify-center mb-4" style={{ backgroundColor: '#4CAF50' }}>
+                  <CheckCircle size={40} color="#FFFFFF" />
+                </View>
+                <Text className="text-2xl font-bold text-center mb-2" style={{ color: '#FFFFFF' }}>
+                  ¡Gracias por tu Pedido!
+                </Text>
+                <Text className="text-base text-center leading-6" style={{ color: '#CCCCCC' }}>
+                  Tu pedido ha sido confirmado y pagado.
+                </Text>
+              </View>
+            </CardContent>
+          </Card>
           
-          {transactionId && (
-            <ThemedView style={styles.orderInfoRow}>
-              <ThemedText style={styles.orderInfoLabel}>ID de Transacción:</ThemedText>
-              <ThemedText style={styles.orderInfoValue}>{transactionId}</ThemedText>
-            </ThemedView>
-          )}
-          
-          <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Estado:</ThemedText>
-            <ThemedView style={styles.statusContainer}>
-              <IconSymbol name={statusInfo.icon as any} size={20} color={statusInfo.color} />
-              <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
-                {statusInfo.text}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
-          
-          <ThemedView style={styles.orderInfoRow}>
-            <ThemedText style={styles.orderInfoLabel}>Tiempo Estimado:</ThemedText>
-            <ThemedText style={styles.orderInfoValue}>
-              {getEstimatedReadyTime()}
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
+          {/* Order Information */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardHeader>
+              <View className="flex-row items-center">
+                <View className="w-12 h-12 rounded-full items-center justify-center mr-3" style={{ backgroundColor: '#FAB10A' }}>
+                  <Package size={24} color="#000000" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                    Información del Pedido
+                  </Text>
+                </View>
+              </View>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <View className="gap-4">
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-sm font-medium" style={{ color: '#CCCCCC' }}>
+                    Número de Pedido:
+                  </Text>
+                  <Text className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
+                    #{order.id}
+                  </Text>
+                </View>
+                
+                {transactionId && (
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-sm font-medium" style={{ color: '#CCCCCC' }}>
+                      ID de Transacción:
+                    </Text>
+                    <Text className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
+                      {transactionId}
+                    </Text>
+                  </View>
+                )}
+                
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-sm font-medium" style={{ color: '#CCCCCC' }}>
+                    Estado:
+                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <StatusIcon size={16} color={statusInfo.color} />
+                    <Text className="text-sm font-bold" style={{ color: statusInfo.color }}>
+                      {statusInfo.text}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-sm font-medium" style={{ color: '#CCCCCC' }}>
+                    Tiempo Estimado:
+                  </Text>
+                  <Text className="text-sm font-bold" style={{ color: '#FFFFFF' }}>
+                    {getEstimatedReadyTime()}
+                  </Text>
+                </View>
+              </View>
+            </CardContent>
+          </Card>
 
-        <ThemedView style={styles.itemsContainer}>
-          <ThemedText type="subtitle" style={styles.itemsTitle}>
-            Productos Pedidos
-          </ThemedText>
+          {/* Order Items */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardHeader>
+              <View className="flex-row items-center">
+                <View className="w-12 h-12 rounded-full items-center justify-center mr-3" style={{ backgroundColor: '#FAB10A' }}>
+                  <Package size={24} color="#000000" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                    Productos Pedidos
+                  </Text>
+                </View>
+              </View>
+            </CardHeader>
+            <CardContent className="p-6 pt-0">
+              <View className="gap-4">
+                {order.items.map((item, index) => (
+                  <View key={index}>
+                    <View className="flex-row justify-between items-start">
+                      <View className="flex-1 mr-3">
+                        <Text className="font-semibold text-base mb-1" style={{ color: '#FFFFFF' }}>
+                          {item.quantity}x {item.name}
+                        </Text>
+                        
+                        {item.customizations && Object.keys(item.customizations).length > 0 && (
+                          <View className="mt-2">
+                            {Object.entries(item.customizations).map(([key, value]) => (
+                              <View key={key} className="flex-row items-center mb-1">
+                                <Plus size={12} color="#FAB10A" />
+                                <Text className="text-xs ml-1" style={{ color: '#CCCCCC' }}>
+                                  {key}: {Array.isArray(value) ? value.join(', ') : String(value)}
+                                </Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                      
+                      <Text className="font-bold text-lg" style={{ color: '#FAB10A' }}>
+                        €{(item.price * item.quantity).toFixed(2)}
+                      </Text>
+                    </View>
+                    
+                    {index < order.items.length - 1 && (
+                      <Separator style={{ backgroundColor: '#333333', marginTop: 16 }} />
+                    )}
+                  </View>
+                ))}
+                
+                <Separator style={{ backgroundColor: '#333333', marginVertical: 16 }} />
+                
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                    Total:
+                  </Text>
+                  <Text className="text-xl font-bold" style={{ color: '#FAB10A' }}>
+                    €{order.total.toFixed(2)}
+                  </Text>
+                </View>
+              </View>
+            </CardContent>
+          </Card>
           
-          {order.items.map((item, index) => (
-            <ThemedView key={index} style={styles.item}>
-              <ThemedView style={styles.itemHeader}>
-                <ThemedText style={styles.itemName}>
-                  {item.quantity}x {item.name}
-                </ThemedText>
-                <ThemedText style={styles.itemPrice}>
-                  €{(item.price * item.quantity).toFixed(2)}
-                </ThemedText>
-              </ThemedView>
-              
-              {item.customizations && Object.keys(item.customizations).length > 0 && (
-                <ThemedView style={styles.customizations}>
-                  <ThemedText style={styles.customizationText}>
-                    Personalizaciones: {JSON.stringify(item.customizations)}
-                  </ThemedText>
-                </ThemedView>
-              )}
-            </ThemedView>
-          ))}
-          
-          <ThemedView style={styles.totalContainer}>
-            <ThemedText type="subtitle" style={styles.totalText}>
-              Total: €{order.total.toFixed(2)}
-            </ThemedText>
-          </ThemedView>
-        </ThemedView>
-        
-        <ThemedView style={styles.actionContainer}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <ThemedText style={styles.primaryButtonText}>Ver Historial de Pedidos</ThemedText>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => router.push('/(tabs)/menu')}
-          >
-            <ThemedText style={styles.secondaryButtonText}>Hacer Otro Pedido</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+          {/* Action Buttons */}
+          <View className="gap-4">
+            <Button 
+              className="h-14"
+              style={{ backgroundColor: '#FAB10A' }}
+              onPress={() => router.push('/(tabs)/profile')}
+            >
+              <View className="flex-row items-center gap-2">
+                <User size={20} color="#000000" />
+                <Text className="text-base font-semibold" style={{ color: '#000000' }}>
+                  Ver Historial de Pedidos
+                </Text>
+              </View>
+            </Button>
+            
+            <Button 
+              className="h-14"
+              style={{ backgroundColor: '#333333', borderColor: '#FAB10A', borderWidth: 1 }}
+              onPress={() => router.push('/(tabs)/menu')}
+            >
+              <View className="flex-row items-center gap-2">
+                <ArrowRight size={20} color="#FAB10A" />
+                <Text className="text-base font-semibold" style={{ color: '#FAB10A' }}>
+                  Hacer Otro Pedido
+                </Text>
+              </View>
+            </Button>
+          </View>
+        </View>
       </ScrollView>
-    </ThemedView>
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContentContainer: {
-    padding: 16,
-  },
-  buttonContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#f44336',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  orderInfo: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#333',
-  },
-  orderInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  orderInfoLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  orderInfoValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  orderSummary: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  customizationsContainer: {
-    marginTop: 4,
-  },
-  customizationText: {
-    fontSize: 12,
-    color: '#666',
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    marginTop: 12,
-    paddingTop: 12,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ff8c00',
-  },
-  instructions: {
-    marginBottom: 24,
-  },
-  instructionText: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  button: {
-    backgroundColor: '#ff8c00', 
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  noItemsText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  itemsContainer: {
-    marginBottom: 24,
-  },
-  itemsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  item: {
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-  itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  customizations: {
-    marginTop: 4,
-  },
-  totalContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-    paddingTop: 12,
-  },
-  totalText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  actionContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  primaryButton: {
-    backgroundColor: '#ff8c00',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  secondaryButton: {
-    backgroundColor: '#2196f3',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});

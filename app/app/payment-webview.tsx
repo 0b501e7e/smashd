@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, BackHandler } from 'react-native';
+import { View, ActivityIndicator, BackHandler, TouchableOpacity } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ThemedText } from '@/components/ThemedText';
+import { Text } from '@/components/ui/text';
 import { sumupService } from '@/services/sumupService';
 import api from '@/services/api';
 
@@ -46,7 +46,7 @@ export default function PaymentWebviewScreen() {
 
               } catch (orderUpdateError) {
                 console.error('payment-webview: Error calling /verify-payment for order', orderId, orderUpdateError);
-                setError('Failed to verify payment with the restaurant. Please contact support.');
+                setError('Error al verificar el pago con el restaurante. Por favor contacta al soporte.');
                 // Potentially navigate to an error screen or back to cart
               }
             }
@@ -78,7 +78,7 @@ export default function PaymentWebviewScreen() {
   useEffect(() => {
     const initializeCheckout = async () => {
       if (!orderId) {
-        setError('Invalid order ID');
+        setError('ID de pedido inválido');
         setIsLoading(false);
         return;
       }
@@ -95,17 +95,17 @@ export default function PaymentWebviewScreen() {
         // Validate the response structure
         if (!checkout) {
           console.error('❌ No checkout response received');
-          throw new Error('No response from checkout service');
+          throw new Error('No se recibió respuesta del servicio de pago');
         }
         
         if (!checkout.checkoutId) {
           console.error('❌ Missing checkoutId in response:', checkout);
-          throw new Error('Missing checkout ID in response');
+          throw new Error('Falta el ID de pago en la respuesta');
         }
         
         if (!checkout.checkoutUrl) {
           console.error('❌ Missing checkoutUrl in response:', checkout);
-          throw new Error('Missing checkout URL in response');
+          throw new Error('Falta la URL de pago en la respuesta');
         }
         
         console.log('✅ Checkout validation passed:', {
@@ -120,7 +120,7 @@ export default function PaymentWebviewScreen() {
       } catch (error) {
         console.error('❌ Checkout initialization failed:', error);
         
-        const errorMessage = error instanceof Error ? error.message : 'Failed to initialize payment';
+        const errorMessage = error instanceof Error ? error.message : 'Error al inicializar el pago';
         console.error('❌ Error message:', errorMessage);
         
         setError(errorMessage);
@@ -187,38 +187,52 @@ export default function PaymentWebviewScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0a7ea4" />
-        <ThemedText style={styles.loadingText}>Preparing your payment...</ThemedText>
+      <View className="flex-1 justify-center items-center bg-black px-5">
+        <ActivityIndicator size="large" color="#FAB10A" />
+        <Text className="text-white text-base text-center mt-5">
+          Preparando tu pago...
+        </Text>
       </View>
     );
   }
   
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <ThemedText style={styles.errorText}>{error}</ThemedText>
-        <ThemedText 
-          style={styles.backButton}
+      <View className="flex-1 justify-center items-center bg-black px-5">
+        <Text className="text-red-500 text-base mb-5 text-center">
+          {error}
+        </Text>
+        <TouchableOpacity 
+          className="bg-yellow-500 px-6 py-3 rounded-xl"
           onPress={() => router.back()}
         >
-          Go Back
-        </ThemedText>
+          <Text className="text-black text-base font-bold">
+            Volver
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   }
   
   return (
-    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
+    <View 
+      className="flex-1 bg-black"
+      style={{ 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom, 
+        paddingLeft: insets.left, 
+        paddingRight: insets.right 
+      }}
+    >
       {paymentUrl && (
         <WebView
           source={{ uri: paymentUrl }}
-          style={styles.webview}
+          className="flex-1"
           onNavigationStateChange={handleNavigationStateChange}
           startInLoadingState={true}
           renderLoading={() => (
-            <View style={styles.webviewLoading}>
-              <ActivityIndicator size="large" color="#0a7ea4" />
+            <View className="absolute inset-0 justify-center items-center bg-black">
+              <ActivityIndicator size="large" color="#FAB10A" />
             </View>
           )}
         />
@@ -227,56 +241,3 @@ export default function PaymentWebviewScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  webview: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  backButton: {
-    color: '#0a7ea4',
-    fontSize: 16,
-    fontWeight: 'bold',
-    padding: 10,
-  },
-  navButton: {
-    color: '#0a7ea4',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  webviewLoading: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

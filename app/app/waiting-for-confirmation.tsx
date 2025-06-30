@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
 import { orderAPI } from '@/services/api';
 import * as Haptics from 'expo-haptics';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Clock, CheckCircle, AlertCircle } from 'lucide-react-native';
+
+// RNR Components
+import { Text } from '@/components/ui/text';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 // Define the expected type for order status data
 type OrderStatusData = {
@@ -18,22 +22,19 @@ export default function WaitingForConfirmationScreen() {
   const params = useLocalSearchParams();
   const orderId = params.orderId; // Expecting orderId to be passed as a string
   
-  const [loadingMessage, setLoadingMessage] = useState('Waiting for restaurant to confirm your order...');
+  const [loadingMessage, setLoadingMessage] = useState('Esperando confirmación del restaurante...');
   const [error, setError] = useState<string | null>(null);
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (!orderId || typeof orderId !== 'string') {
-      setError('Order ID is missing or invalid.');
+      setError('El ID del pedido falta o es inválido.');
       console.error('WaitingForConfirmationScreen: Order ID is missing or invalid', orderId);
-      // Optionally, navigate back or to an error screen
-      // router.replace('/(tabs)/menu'); 
       return;
     }
 
     const numOrderId = Number(orderId);
     if (isNaN(numOrderId)) {
-      setError('Invalid Order ID format.');
+      setError('Formato de ID de pedido inválido.');
       console.error('WaitingForConfirmationScreen: Invalid Order ID format', orderId);
       return;
     }
@@ -54,82 +55,110 @@ export default function WaitingForConfirmationScreen() {
           });
         } else if (orderStatusData.status === 'CANCELLED' || orderStatusData.status === 'DECLINED_BY_RESTAURANT') {
           clearInterval(intervalId);
-          setError('Unfortunately, your order could not be confirmed by the restaurant at this time. Please contact us for assistance.');
+          setError('Lamentablemente, tu pedido no pudo ser confirmado por el restaurante. Por favor contáctanos para asistencia.');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          // Consider navigating to a different screen or showing options
         }
         // Continue polling for other statuses like PENDING, PAID
       } catch (err: any) {
         console.error(`WaitingForConfirmationScreen: Error polling order status for ${numOrderId}:`, err);
-        // Potentially set an error message, but be careful about stopping polling for recoverable errors
-        // setError('Having trouble confirming your order. We are still trying.');
       }
     }, 7000); // Poll every 7 seconds
 
     return () => clearInterval(intervalId); // Cleanup interval
   }, [orderId]);
 
-  return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <View style={styles.content}>
-        <ActivityIndicator size="large" color="#ff8c00" style={styles.activityIndicator} />
-        <ThemedText type="subtitle" style={styles.messageText}>
-          {loadingMessage}
-        </ThemedText>
-        {error && (
-          <ThemedText type="default" style={styles.errorText}>
-            {error}
-          </ThemedText>
-        )}
-        <ThemedText type="defaultSemiBold" style={styles.noticeText}>
-          Please keep this screen open.
-        </ThemedText>
-      </View>
-    </ThemedView>
-  );
-}
+  const handleGoToMenu = () => {
+    router.push('/(tabs)/menu');
+  };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#121212', // Dark theme background
-  },
-  content: {
-    padding: 20,
-    alignItems: 'center',
-    width: '90%',
-    backgroundColor: '#1e1e1e', // Slightly lighter card background
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  activityIndicator: {
-    marginBottom: 30,
-  },
-  messageText: {
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#e0e0e0', // Light text for dark theme
-  },
-  errorText: {
-    fontSize: 16,
-    textAlign: 'center',
-    color: '#ff6b6b', // Error color
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  noticeText: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#aaaaaa', // Subtler notice text
-  },
-}); 
+  return (
+    <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
+      <View className="flex-1 justify-center items-center px-6" style={{ backgroundColor: '#000000' }}>
+        
+        {/* Main Content Card */}
+        <Card className="w-full max-w-sm" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+          <CardContent className="p-8">
+            
+            {/* Icon and Loading */}
+            <View className="items-center mb-6">
+              <View className="w-20 h-20 rounded-full items-center justify-center mb-4" style={{ backgroundColor: '#FAB10A' }}>
+                <Clock size={32} color="#000000" />
+              </View>
+              <ActivityIndicator size="large" color="#FAB10A" />
+            </View>
+
+            {/* Status Message */}
+            <View className="items-center mb-6">
+              <Text className="text-xl font-bold text-center mb-3" style={{ color: '#FFFFFF' }}>
+                Confirmando Pedido
+              </Text>
+              <Text className="text-base text-center leading-6" style={{ color: '#CCCCCC' }}>
+                {loadingMessage}
+              </Text>
+            </View>
+
+            {/* Error State */}
+            {error && (
+              <Card className="mb-6" style={{ borderColor: '#FF4444', backgroundColor: 'rgba(255, 68, 68, 0.1)' }}>
+                <View className="p-4 flex-row items-start">
+                  <AlertCircle size={20} color="#FF4444" className="mr-3 mt-1" />
+                  <Text className="text-sm leading-6 flex-1" style={{ color: '#FF4444' }}>
+                    {error}
+                  </Text>
+                </View>
+              </Card>
+            )}
+
+            {/* Instructions */}
+            <View className="items-center mb-6">
+              <Text className="text-sm text-center" style={{ color: '#CCCCCC' }}>
+                Por favor mantén esta pantalla abierta
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            {error && (
+              <Button 
+                className="w-full h-12"
+                style={{ backgroundColor: '#FAB10A' }}
+                onPress={handleGoToMenu}
+              >
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-base font-semibold" style={{ color: '#000000' }}>
+                    Volver a la Carta
+                  </Text>
+                </View>
+              </Button>
+            )}
+
+            {!error && (
+              <View className="items-center">
+                <View className="w-full h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#333333' }}>
+                  <View 
+                    className="h-full rounded-full animate-pulse" 
+                    style={{ 
+                      backgroundColor: '#FAB10A',
+                      width: '60%'
+                    }} 
+                  />
+                </View>
+                <Text className="text-xs mt-2" style={{ color: '#666666' }}>
+                  Procesando...
+                </Text>
+              </View>
+            )}
+
+          </CardContent>
+        </Card>
+
+        {/* Bottom Info */}
+        <View className="mt-8 items-center">
+          <Text className="text-xs text-center" style={{ color: '#666666' }}>
+            Tiempo estimado de confirmación: 2-5 minutos
+          </Text>
+        </View>
+
+      </View>
+    </SafeAreaView>
+  );
+} 
