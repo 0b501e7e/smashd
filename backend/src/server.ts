@@ -8,6 +8,7 @@ import { services } from './config/services';
 import testRoutes from './routes/test.routes';
 import authRoutes from './routes/auth.routes';
 import menuRoutes from './routes/menu.routes';
+import notificationRoutes from './routes/notification.routes';
 import userRoutes from './routes/user.routes';
 import orderRoutes from './routes/order.routes';
 import adminRoutes from './routes/admin.routes';
@@ -91,6 +92,7 @@ app.get('/v1/health', async (_req: Request, res: Response) => {
 // API Routes
 app.use('/v1/auth', authRoutes);
 app.use('/v1/menu', menuRoutes);
+app.use('/v1/notifications', notificationRoutes);
 app.use('/v1/users', userRoutes);
 app.use('/v1/orders', orderRoutes);
 app.use('/v1/admin', adminRoutes);

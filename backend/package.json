@@ -32,15 +32,18 @@
   "license": "ISC",
   "dependencies": {
     "@prisma/client": "^5.21.1",
+    "@types/nodemailer": "^6.4.17",
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "expo-server-sdk": "^3.15.0",
     "express": "^4.21.1",
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.0",
     "node-cron": "^4.1.0",
+    "nodemailer": "^7.0.4",
     "pg": "^8.13.0",
     "prisma": "^5.21.1"
   },

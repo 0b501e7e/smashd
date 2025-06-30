@@ -23,6 +23,7 @@ model User {
   phoneNumber   String
   acceptedTerms Boolean        @default(false)
   role          Role           @default(CUSTOMER)
+  pushToken     String?        // Expo push notification token
   orders        Order[]
   loyaltyPoints LoyaltyPoints?
   pointsTransactions PointsTransaction[]

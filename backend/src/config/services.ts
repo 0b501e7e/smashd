@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { AuthService } from '../services/auth.service';
 import { MenuService } from '../services/menu.service';
+import { NotificationService } from '../services/notification.service';
 import { OrderService } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { AdminService } from '../services/admin.service';
@@ -22,6 +23,7 @@ export class ServiceContainer {
   private _prisma: PrismaClient;
   private _authService: AuthService;
   private _menuService: MenuService;
+  private _notificationService: NotificationService;
   private _orderService: OrderService;
   private _userService: UserService;
   private _adminService: AdminService;
@@ -38,6 +40,7 @@ export class ServiceContainer {
     // Initialize services with dependency injection
     this._authService = new AuthService(this._prisma);
     this._menuService = new MenuService(this._prisma);
+    this._notificationService = new NotificationService(this._prisma);
     this._orderService = new OrderService(this._prisma);
     this._userService = new UserService(this._prisma);
     this._adminService = new AdminService(this._prisma);
@@ -75,6 +78,13 @@ export class ServiceContainer {
    */
   public get menuService(): MenuService {
     return this._menuService;
+  }
+
+  /**
+   * Get notification service
+   */
+  public get notificationService(): NotificationService {
+    return this._notificationService;
   }
 
   /**
