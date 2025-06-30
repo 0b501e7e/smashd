@@ -17,6 +17,7 @@ import {
 } from '../middleware/validation.middleware';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { HTTP_STATUS } from '../config/constants';
+import { adminController, paymentController } from '../controllers';
 
 const router = Router();
 
@@ -250,6 +251,22 @@ router.post('/integration/order-creation',
 );
 
 // ============================================================================
+// SUMUP AND ORDER TESTING
+// ============================================================================
+
+// Test SumUp connection
+router.get('/sumup-connection', paymentController.testSumUpConnectionController);
+
+// Test SumUp merchant profile
+router.get('/merchant-profile', paymentController.getMerchantProfile);
+
+// Test detailed order check with SumUp
+router.get('/check-order/:orderId', paymentController.checkOrderWithSumUp);
+
+// Test manual order status update
+router.post('/update-order-status', adminController.updateOrderStatusTest);
+
+// ============================================================================
 // HEALTH CHECK AND STATUS
 // ============================================================================
 
@@ -280,6 +297,12 @@ router.get('/status', (_req: Request, res: Response) => {
       integration: [
         'POST /test/integration/user-registration',
         'POST /test/integration/order-creation'
+      ],
+      sumup: [
+        'GET /test/sumup-connection',
+        'GET /test/merchant-profile',
+        'GET /test/check-order/:orderId',
+        'POST /test/update-order-status'
       ]
     }
   });

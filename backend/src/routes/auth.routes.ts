@@ -1,9 +1,6 @@
 import { Router } from 'express';
-import { register, login } from '../controllers/auth.controller';
-import { 
-  validateUserRegistration, 
-  validateUserLogin 
-} from '../middleware/validation.middleware';
+import { authController } from '../controllers';
+import { userRegistrationValidation, userLoginValidation } from '../middleware';
 
 const router = Router();
 
@@ -12,13 +9,13 @@ const router = Router();
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', ...validateUserRegistration, register);
+router.post('/register', userRegistrationValidation, authController.register);
 
 /**
  * @route   POST /v1/auth/login
  * @desc    Login user and get JWT token
  * @access  Public
  */
-router.post('/login', ...validateUserLogin, login);
+router.post('/login', userLoginValidation, authController.login);
 
 export default router; 

@@ -436,6 +436,67 @@ export const validateImageUpload = (req: Request, res: Response, next: NextFunct
   next();
 };
 
+/**
+ * Validation for creating menu items
+ */
+export const validateCreateMenuItem = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('description').trim().notEmpty().withMessage('Description is required'),
+  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
+  body('imageUrl').isURL().withMessage('Valid image URL is required'),
+  handleValidationErrors
+];
+
+/**
+ * Validation for updating menu items
+ */
+export const validateUpdateMenuItem = [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('description').trim().notEmpty().withMessage('Description is required'),
+  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
+  body('isAvailable').isBoolean().withMessage('isAvailable must be a boolean'),
+  body('imageUrl').isURL().withMessage('Valid image URL is required'),
+  handleValidationErrors
+];
+
+/**
+ * Validation for order ID parameter
+ */
+export const validateOrderId = [
+  param('id').isInt({ min: 1 }).withMessage('Order ID must be a positive integer'),
+  handleValidationErrors
+];
+
+/**
+ * Validation for creating orders
+ */
+export const validateCreateOrder = [
+  body('items').isArray().withMessage('Items must be an array'),
+  body('items.*.menuItemId').isInt().withMessage('Invalid menu item ID'),
+  body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+  body('total').isFloat({ min: 0 }).withMessage('Total must be a positive number'),
+  handleValidationErrors
+];
+
+/**
+ * Validation for creating customization categories
+ */
+export const validateCreateCustomizationCategory = [
+  body('name').trim().notEmpty().withMessage('Category name is required'),
+  body('description').optional().trim(),
+  handleValidationErrors
+];
+
+/**
+ * Validation for menu item ID parameter
+ */
+export const validateMenuItemId = [
+  param('menuItemId').isInt({ min: 1 }).withMessage('Menu item ID must be a positive integer'),
+  handleValidationErrors
+];
+
 // ============================================================================
 // VALIDATION MIDDLEWARE COMBINATIONS
 // ============================================================================

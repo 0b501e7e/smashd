@@ -19,7 +19,13 @@ export {
   validatePaginationQuery,
   createValidationMiddleware,
   runValidation,
-  handleValidationErrors
+  handleValidationErrors,
+  validateCreateMenuItem,
+  validateUpdateMenuItem,
+  validateOrderId,
+  validateCreateOrder,
+  validateCreateCustomizationCategory,
+  validateMenuItemId
 } from './validation.middleware';
 
 // Export upload middleware
