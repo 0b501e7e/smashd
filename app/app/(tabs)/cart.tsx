@@ -1,11 +1,13 @@
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import React from 'react';
+import { View, ScrollView } from 'react-native';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { ShoppingCart, Plus, Minus, Trash2, CreditCard, LogIn } from 'lucide-react-native';
 
 export default function CartScreen() {
   const { items, removeItem, updateQuantity, total } = useCart();
@@ -22,184 +24,210 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ThemedText style={styles.emptyText}>Tu carrito está vacío</ThemedText>
-      </ThemedView>
+      <View 
+        className="flex-1 justify-center items-center px-6"
+        style={{ 
+          backgroundColor: '#000000',
+          paddingTop: insets.top + 40,
+          paddingBottom: insets.bottom + 40 
+        }}
+      >
+        <View className="items-center">
+          <View className="w-24 h-24 rounded-full items-center justify-center mb-6" style={{ backgroundColor: '#111111' }}>
+            <ShoppingCart size={48} color="#FAB10A" />
+          </View>
+          <Text className="text-2xl font-bold text-center mb-3" style={{ color: '#FFFFFF' }}>
+            Tu carrito está vacío
+          </Text>
+          <Text className="text-center text-base leading-6 mb-8" style={{ color: '#CCCCCC' }}>
+            Agrega algunos deliciosos burgers para comenzar
+          </Text>
+          <Button 
+            className="px-8 py-4"
+            style={{ backgroundColor: '#FAB10A' }}
+            onPress={() => router.push('/(tabs)/menu')}
+          >
+            <Text className="font-semibold" style={{ color: '#000000' }}>
+              Ver Carta
+            </Text>
+          </Button>
+        </View>
+      </View>
     );
   }
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#FFE4B5', dark: '#8B4513' }}
-      headerImage={
-        <ThemedView style={styles.headerContainer}>
-          <ThemedText style={[
-            styles.headerText, 
-            { 
-              padding: 20,
-              lineHeight: 48,
-              height: 100
-            }
-          ]}>
-            Tu Carrito
-          </ThemedText>
-        </ThemedView>
-      }>
-      <ThemedView style={styles.container}>
-        {items.map((item, index) => (
-          <ThemedView 
-            key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`} 
-            style={styles.cartItem}>
-            <ThemedView style={styles.itemInfo}>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <ThemedText type="subtitle" style={{ flexShrink: 1 }}>{item.name}</ThemedText>
+    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+      {/* Header */}
+      <View 
+        className="items-center py-6 px-6"
+        style={{ 
+          paddingTop: insets.top + 20,
+          backgroundColor: '#FAB10A'
+        }}
+      >
+        <Text className="text-3xl font-bold" style={{ color: '#000000' }}>
+          Tu Carrito
+        </Text>
+        <Text className="text-base mt-1" style={{ color: '#000000' }}>
+          {items.length} {items.length === 1 ? 'artículo' : 'artículos'}
+        </Text>
+      </View>
+
+      <ScrollView 
+        className="flex-1"
+        contentContainerStyle={{
+          padding: 24,
+          paddingBottom: insets.bottom + 24,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Cart Items */}
+        <View className="gap-4 mb-6">
+          {items.map((item, index) => (
+            <Card 
+              key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`}
+              style={{ backgroundColor: '#111111', borderColor: '#333333' }}
+            >
+              <View className="p-5">
+                {/* Item Header */}
+                <View className="flex-row justify-between items-start mb-4">
+                  <View className="flex-1 mr-3">
+                    <Text className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>
+                      {item.name}
+                    </Text>
+                    <Text className="text-base mt-1" style={{ color: '#FAB10A' }}>
+                      €{item.price.toFixed(2)}
+                    </Text>
+                  </View>
+                  
+                  {/* Remove Button */}
+                  <Button
+                    variant="ghost"
+                    className="p-2"
+                    onPress={() => removeItem(Number(item.id))}
+                  >
+                    <Trash2 size={20} color="#FF4444" />
+                  </Button>
+                </View>
+
+                {/* Customizations */}
+                {item.customizations && (
+                  <View className="mb-4 py-3 px-3 rounded-md" style={{ backgroundColor: '#1A1A1A' }}>
+                    {item.customizations.extras && item.customizations.extras.length > 0 && (
+                      <View className="mb-2">
+                        <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
+                          Extras:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.extras.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {item.customizations.sauces && item.customizations.sauces.length > 0 && (
+                      <View className="mb-2">
+                        <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
+                          Salsas:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.sauces.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {item.customizations.toppings && item.customizations.toppings.length > 0 && (
+                      <View>
+                        <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
+                          Ingredientes:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.toppings.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Quantity Controls */}
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-3">
+                    <Button
+                      variant="outline"
+                      className="w-10 h-10 p-0"
+                      style={{ 
+                        borderColor: '#333333', 
+                        backgroundColor: '#1A1A1A' 
+                      }}
+                      onPress={() => updateQuantity(Number(item.id), Math.max(0, item.quantity - 1))}
+                    >
+                      <Minus size={16} color="#FFFFFF" />
+                    </Button>
+                    
+                    <Text className="text-lg font-semibold min-w-8 text-center" style={{ color: '#FFFFFF' }}>
+                      {item.quantity}
+                    </Text>
+                    
+                    <Button
+                      variant="outline"
+                      className="w-10 h-10 p-0"
+                      style={{ 
+                        borderColor: '#333333', 
+                        backgroundColor: '#1A1A1A' 
+                      }}
+                      onPress={() => updateQuantity(Number(item.id), item.quantity + 1)}
+                    >
+                      <Plus size={16} color="#FFFFFF" />
+                    </Button>
+                  </View>
+
+                  <Text className="text-lg font-bold" style={{ color: '#FAB10A' }}>
+                    €{(item.price * item.quantity).toFixed(2)}
+                  </Text>
+                </View>
               </View>
-              <ThemedText>€{item.price.toFixed(2)}</ThemedText>
-            </ThemedView>
-            
-            {item.customizations && (
-              <ThemedView style={styles.customizationsContainer}>
-                {item.customizations.extras && item.customizations.extras.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Extras: {item.customizations.extras.join(', ')}
-                  </ThemedText>
-                )}
-                
-                {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Salsas: {item.customizations.sauces.join(', ')}
-                  </ThemedText>
-                )}
-                
-                {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Ingredientes: {item.customizations.toppings.join(', ')}
-                  </ThemedText>
-                )}
-              </ThemedView>
-            )}
-            
-            <ThemedView style={styles.quantityControls}>
-              <TouchableOpacity
-                onPress={() => updateQuantity(Number(item.id), Math.max(0, item.quantity - 1))}
-                style={styles.quantityButton}>
-                <ThemedText style={{ color: '#333' }}>-</ThemedText>
-              </TouchableOpacity>
-              <ThemedText>{item.quantity}</ThemedText>
-              <TouchableOpacity
-                onPress={() => updateQuantity(Number(item.id), item.quantity + 1)}
-                style={styles.quantityButton}>
-                <ThemedText style={{ color: '#333' }}>+</ThemedText>
-              </TouchableOpacity>
-            </ThemedView>
+            </Card>
+          ))}
+        </View>
 
-            <TouchableOpacity
-              onPress={() => removeItem(Number(item.id))}
-              style={styles.removeButton}>
-              <ThemedText style={styles.removeButtonText}>Eliminar</ThemedText>
-            </TouchableOpacity>
-          </ThemedView>
-        ))}
+        {/* Total Section */}
+        <Card style={{ backgroundColor: '#111111', borderColor: '#FAB10A', borderWidth: 2 }}>
+          <View className="p-6">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-semibold" style={{ color: '#FFFFFF' }}>
+                Total
+              </Text>
+              <Text className="text-3xl font-bold" style={{ color: '#FAB10A' }}>
+                €{total.toFixed(2)}
+              </Text>
+            </View>
 
-        <ThemedView style={styles.totalContainer}>
-          <ThemedText type="subtitle">Total: €{total.toFixed(2)}</ThemedText>
-          <TouchableOpacity 
-            style={styles.checkoutButton}
-            onPress={handleCheckout}>
-            <ThemedText style={styles.checkoutButtonText}>
-              {isLoggedIn ? 'Proceder al Pago' : 'Iniciar Sesión para Pagar'}
-            </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
-    </ParallaxScrollView>
+            <Button 
+              className="h-14"
+              style={{ backgroundColor: '#FAB10A' }}
+              onPress={handleCheckout}
+            >
+              <View className="flex-row items-center gap-3">
+                {isLoggedIn ? (
+                  <>
+                    <CreditCard size={22} color="#000000" />
+                    <Text className="text-lg font-semibold" style={{ color: '#000000' }}>
+                      Proceder al Pago
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <LogIn size={22} color="#000000" />
+                    <Text className="text-lg font-semibold" style={{ color: '#000000' }}>
+                      Iniciar Sesión para Pagar
+                    </Text>
+                  </>
+                )}
+              </View>
+            </Button>
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  headerContainer: {
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerText: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  cartItem: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  itemInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  quantityControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  quantityButton: {
-    padding: 8,
-    borderRadius: 4,
-    backgroundColor: '#eee',
-  },
-  removeButton: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#ff4444',
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  removeButtonText: {
-    color: 'white',
-  },
-  totalContainer: {
-    marginTop: 16,
-    padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-  },
-  checkoutButton: {
-    marginTop: 16,
-    padding: 16,
-    backgroundColor: '#0a7ea4',
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  checkoutButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  customizationsContainer: {
-    marginVertical: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
-  },
-  customizationText: {
-    fontSize: 14,
-    color: '#555',
-    marginVertical: 2,
-  },
-});

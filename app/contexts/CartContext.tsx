@@ -56,11 +56,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateQuantity = (id: number, quantity: number) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
+    setItems(currentItems => {
+      if (quantity <= 0) {
+        // Remove item when quantity reaches 0 or below
+        return currentItems.filter(item => item.id !== id);
+      }
+      
+      return currentItems.map(item =>
         item.id === id ? { ...item, quantity } : item
-      )
-    );
+      );
+    });
   };
 
   const clearCart = () => {

@@ -1,16 +1,22 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Alert, View, AppState, AppStateStatus, ScrollView, ActivityIndicator } from 'react-native';
+import { Alert, View, AppState, AppStateStatus, ScrollView, ActivityIndicator } from 'react-native';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useCart } from '@/contexts/CartContext';
 import { useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Stack } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { orderAPI } from '@/services/api';
 import { sumupService } from '@/services/sumupService';
 import api from '@/services/api';
+import { ShoppingCart, CreditCard, CheckCircle, AlertCircle, Package, Plus, Minus } from 'lucide-react-native';
+
+// RNR Components
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export default function CheckoutScreen() {
   const { orderId: urlOrderId, returnToApp } = useLocalSearchParams();
@@ -94,43 +100,34 @@ export default function CheckoutScreen() {
           console.log('Setting order ID and checking status for:', numOrderId);
           setOrderId(numOrderId);
           
-          // Always check if we're returning from payment
           paymentAttemptedRef.current = true;
-          
-          // Check the order status
           handleStatusCheck(numOrderId);
         }
       } catch (err) {
         console.error('Error parsing order ID:', err);
-        setIsProcessing(false); // Ensure processing is false if parsing fails
+        setIsProcessing(false);
       }
     }
     
-    // Cleanup any existing app state listener
     if (appStateListenerRef.current) {
       appStateListenerRef.current.remove();
     }
     
-    // Listen for app state changes - only needed when returning from payment and not being on payment screen
     appStateListenerRef.current = AppState.addEventListener('change', nextAppState => {
       console.log(`App state changed from ${appState.current} to ${nextAppState}`);
       
-      // Only handle foreground event for orders we already know about
       if (
         appState.current.match(/inactive|background/) && 
         nextAppState === 'active' &&
         paymentAttemptedRef.current && 
         orderId
       ) {
-        // Add a safeguard to prevent multiple status checks
         if (isProcessing) {
           console.log('Already processing, skipping additional status check');
           return;
         }
         
         console.log('App returned to foreground. Checking status for order:', orderId);
-        
-        // Check order status
         handleStatusCheck(orderId);
       }
       
@@ -148,8 +145,6 @@ export default function CheckoutScreen() {
   const handlePlaceOrder = async () => {
     console.log(`[CheckoutScreen] handlePlaceOrder triggered. Current isProcessing: ${isProcessing}, items count: ${items.length}`);
 
-    // Prevent duplicate order submissions by checking if already processing
-    // This check is important if user somehow manages to press again before UI updates
     if (isProcessing) {
       console.log('[CheckoutScreen] Already processing, returning.');
       Alert.alert('Procesando', 'Tu pedido ya está siendo procesado. Por favor espera.');
@@ -158,8 +153,6 @@ export default function CheckoutScreen() {
 
     if (items.length === 0) {
       console.log('[CheckoutScreen] Empty cart, returning.');
-      // This alert should ideally not be needed if button is correctly disabled,
-      // but as a safeguard:
       Alert.alert('Carrito Vacío', 'Por favor agrega productos a tu carrito antes de proceder al pago.');
       return;
     }
@@ -167,7 +160,6 @@ export default function CheckoutScreen() {
     console.log('[CheckoutScreen] IMMEDIATELY SETTING isProcessing = true');
     setIsProcessing(true); 
 
-    // Allow state to propagate and UI to update before heavy async work
     await new Promise(resolve => setTimeout(resolve, 0)); 
 
     try {
@@ -184,7 +176,7 @@ export default function CheckoutScreen() {
 
       const response = await orderAPI.createOrder({
         items: orderItems,
-        collectionTime: "", // Consider if this needs a real value or different handling
+        collectionTime: "",
         total: total
       });
       console.log('[CheckoutScreen] orderAPI.createOrder response:', response?.order?.id);
@@ -199,13 +191,7 @@ export default function CheckoutScreen() {
           params: { orderId: createdOrderId.toString() }
         });
         
-        // Clear cart after initiating navigation.
-        // If navigation itself could fail, might need more complex handling.
         clearCart();
-        
-        // If navigation is successful, this screen's "isProcessing" for this action is done.
-        // No need to set setIsProcessing(false) here as we are moving away.
-        // If the user comes back to this screen, isProcessing will be its default false.
       } else {
         console.error('[CheckoutScreen] Invalid response from orderAPI.createOrder:', response);
         throw new Error('Respuesta inválida del servidor');
@@ -213,7 +199,6 @@ export default function CheckoutScreen() {
     } catch (error: any) {
       console.error('[CheckoutScreen] Error in handlePlaceOrder:', error);
       
-      // Show user-friendly error message
       const errorMessage = error.response?.data?.error || error.message || 'Error desconocido al crear el pedido';
       Alert.alert(
         'Error al Procesar Pedido',
@@ -226,7 +211,6 @@ export default function CheckoutScreen() {
     }
   };
 
-  // Display informative message based on processing state
   const getButtonText = () => {
     if (isProcessing) {
       return 'Procesando...';
@@ -234,7 +218,6 @@ export default function CheckoutScreen() {
     return 'Realizar Pedido';
   }
 
-  // Helper to go to confirmation screen for testing
   const goToConfirmation = () => {
     if (orderId) {
       router.push({
@@ -244,228 +227,195 @@ export default function CheckoutScreen() {
     }
   };
 
-  // Determine if each item has the same key as the first item with the same ID
-  // and add a more unique key that includes customizations
   const renderItems = () => {
     return items.map((item, index) => {
-      // Using a composite key that includes id, index, and customizations
       const key = `${item.id}-${index}-${JSON.stringify(item.customizations)}`;
       
       return (
-        <ThemedView key={key} style={styles.itemRow}>
-          <View style={styles.itemDetails}>
-            <ThemedText type="subtitle" style={styles.itemName}>
-              {item.name}
-            </ThemedText>
-            
-            {item.customizations && (
-              <View style={styles.customizationsContainer}>
-                {item.customizations.extras && item.customizations.extras.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Extras: {item.customizations.extras.join(', ')}
-                  </ThemedText>
-                )}
+        <Card key={key} className="mb-3" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+          <CardContent className="p-4">
+            <View className="flex-row justify-between items-start">
+              <View className="flex-1 mr-3">
+                <Text className="font-semibold text-lg mb-1" style={{ color: '#FFFFFF' }}>
+                  {item.name}
+                </Text>
                 
-                {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Salsas: {item.customizations.sauces.join(', ')}
-                  </ThemedText>
-                )}
-                
-                {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                  <ThemedText style={styles.customizationText}>
-                    Ingredientes: {item.customizations.toppings.join(', ')}
-                  </ThemedText>
+                {item.customizations && (
+                  <View className="mt-2">
+                    {item.customizations.extras && item.customizations.extras.length > 0 && (
+                      <View className="flex-row items-center mb-1">
+                        <Plus size={12} color="#FAB10A" className="mr-1" />
+                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
+                          Extras: {item.customizations.extras.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {item.customizations.sauces && item.customizations.sauces.length > 0 && (
+                      <View className="flex-row items-center mb-1">
+                        <Plus size={12} color="#FAB10A" className="mr-1" />
+                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
+                          Salsas: {item.customizations.sauces.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                    
+                    {item.customizations.toppings && item.customizations.toppings.length > 0 && (
+                      <View className="flex-row items-center mb-1">
+                        <Plus size={12} color="#FAB10A" className="mr-1" />
+                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
+                          Ingredientes: {item.customizations.toppings.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 )}
               </View>
-            )}
-          </View>
-          
-          <View style={styles.priceSection}>
-            <ThemedText type="default" style={styles.quantity}>
-              x{item.quantity}
-            </ThemedText>
-            <ThemedText type="subtitle" style={styles.price}>
-              €{(item.price * item.quantity).toFixed(2)}
-            </ThemedText>
-          </View>
-        </ThemedView>
+              
+              <View className="items-end">
+                <Badge className="mb-2" style={{ backgroundColor: '#333333' }}>
+                  <Text className="text-xs font-medium" style={{ color: '#FFFFFF' }}>
+                    x{item.quantity}
+                  </Text>
+                </Badge>
+                <Text className="font-bold text-lg" style={{ color: '#FAB10A' }}>
+                  €{(item.price * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            </View>
+          </CardContent>
+        </Card>
       );
     });
   };
 
   console.log('[CheckoutScreen] Rendering - isProcessing:', isProcessing);
   console.log('[CheckoutScreen] Rendering - items:', JSON.stringify(items));
-  console.log('[CheckoutScreen] Style for minimalButton:', JSON.stringify(styles.minimalButton));
-  console.log('[CheckoutScreen] Style for minimalButtonText:', JSON.stringify(styles.minimalButtonText));
 
   return (
     <>
       <Stack.Screen 
         options={{
           title: 'Pagar',
+          headerStyle: { backgroundColor: '#000000' },
+          headerTintColor: '#FFFFFF',
         }}
       />
       
-      <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
+        <View className="flex-1" style={{ backgroundColor: '#000000' }}>
         <ScrollView 
-          style={styles.scrollView} 
-          contentContainerStyle={[styles.scrollContentContainer, { paddingBottom: 100 }]}
+          className="flex-1"
+          contentContainerStyle={{ 
+            paddingTop: 20,
+            paddingBottom: Math.max(insets.bottom + 80, 120),
+            paddingHorizontal: 16
+          }}
+          showsVerticalScrollIndicator={false}
         >
-          <ThemedView style={styles.orderSummary}>
-            <ThemedText type="title" style={styles.sectionTitle}>
-              Resumen del Pedido
-            </ThemedText>
-            
-            <ThemedView style={styles.itemsList}>
-              {renderItems()}
-            </ThemedView>
-            
-            <ThemedView style={styles.totalRow}>
-              <ThemedText type="subtitle">Total: </ThemedText>
-              <ThemedText type="subtitle" style={styles.totalAmount}>
-                €{total.toFixed(2)}
-              </ThemedText>
-            </ThemedView>
-          </ThemedView>
+          {/* Header */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardHeader>
+              <View className="flex-row items-center">
+                <View className="w-12 h-12 rounded-full items-center justify-center mr-3" style={{ backgroundColor: '#FAB10A' }}>
+                  <ShoppingCart size={24} color="#000000" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-xl font-bold" style={{ color: '#FFFFFF' }}>
+                    Resumen del Pedido
+                  </Text>
+                  <Text className="text-sm" style={{ color: '#CCCCCC' }}>
+                    Revisa tu pedido antes de pagar
+                  </Text>
+                </View>
+              </View>
+            </CardHeader>
+          </Card>
+
+          {/* Order Items */}
+          <View className="mb-6">
+            {renderItems()}
+          </View>
+
+          {/* Order Total */}
+          <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardContent className="p-6">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-lg font-medium" style={{ color: '#CCCCCC' }}>
+                  Subtotal:
+                </Text>
+                <Text className="text-lg font-medium" style={{ color: '#FFFFFF' }}>
+                  €{total.toFixed(2)}
+                </Text>
+              </View>
+              
+              <Separator style={{ backgroundColor: '#333333', marginVertical: 16 }} />
+              
+              <View className="flex-row justify-between items-center">
+                <Text className="text-2xl font-bold" style={{ color: '#FFFFFF' }}>
+                  Total:
+                </Text>
+                <Text className="text-2xl font-bold" style={{ color: '#FAB10A' }}>
+                  €{total.toFixed(2)}
+                </Text>
+              </View>
+            </CardContent>
+          </Card>
+
+          {/* Processing State */}
+          {isProcessing && (
+            <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#FAB10A' }}>
+              <CardContent className="p-6 items-center">
+                <ActivityIndicator size="large" color="#FAB10A" className="mb-4" />
+                <Text className="text-lg font-medium mb-2" style={{ color: '#FFFFFF' }}>
+                  Procesando tu pedido...
+                </Text>
+                <Text className="text-sm text-center" style={{ color: '#CCCCCC' }}>
+                  Estamos creando tu pedido y preparando el pago
+                </Text>
+              </CardContent>
+            </Card>
+          )}
         </ScrollView>
 
-        <ThemedView style={[styles.checkoutButtonContainer, { paddingBottom: insets.bottom }]}>
-          <TouchableOpacity
-            style={[styles.minimalButton, isProcessing && styles.disabledButton]}
+        {/* Fixed Bottom Button */}
+        <View 
+          className="absolute bottom-0 left-0 right-0 px-4 pt-4"
+          style={{ 
+            backgroundColor: '#000000', 
+            paddingBottom: Math.max(insets.bottom + 56, 96),
+            borderTopWidth: 1,
+            borderTopColor: '#333333'
+          }}
+        >
+          <Button
             onPress={handlePlaceOrder}
-            disabled={isProcessing}
+            disabled={isProcessing || items.length === 0}
+            className="w-full flex-row items-center justify-center py-4"
+            style={{ 
+              backgroundColor: isProcessing || items.length === 0 ? '#666666' : '#FAB10A',
+              opacity: isProcessing || items.length === 0 ? 0.6 : 1
+            }}
           >
             {isProcessing ? (
-              <ActivityIndicator color="#000" />
-            ) : null}
-            
-            {isProcessing ? (
-              <ThemedText style={[styles.minimalButtonText, styles.processingButtonText]}>Procesando...</ThemedText>
+              <>
+                <ActivityIndicator size="small" color="#000000" className="mr-2" />
+                <Text className="font-bold text-lg" style={{ color: '#000000' }}>
+                  Procesando...
+                </Text>
+              </>
             ) : (
-              <ThemedText style={styles.minimalButtonText}>
-                {getButtonText()}
-              </ThemedText>
+              <>
+                <CreditCard size={20} color="#000000" className="mr-2" />
+                <Text className="font-bold text-lg" style={{ color: '#000000' }}>
+                  Realizar Pedido
+                </Text>
+              </>
             )}
-          </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
+          </Button>
+        </View>
+        </View>
+      </SafeAreaView>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-  },
-  scrollContentContainer: {
-    paddingBottom: 16,
-  },
-  orderSummary: {
-    marginBottom: 24,
-    gap: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  itemsList: {
-    gap: 8,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontWeight: 'bold',
-  },
-  priceSection: {
-    alignItems: 'flex-end',
-  },
-  quantity: {
-    color: '#666',
-  },
-  price: {
-    fontWeight: 'bold',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-  },
-  totalAmount: {
-    fontWeight: 'bold',
-  },
-  placeOrderButton: {
-    backgroundColor: '#0a7ea4',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    width: '100%',
-  },
-  placeOrderButtonPressed: {
-    backgroundColor: '#e67e00',
-  },
-  processingButton: {
-    backgroundColor: '#cccccc',
-  },
-  placeOrderText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  minimalButton: {
-    backgroundColor: '#2196F3',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    flexDirection: 'row',
-  },
-  disabledButton: {
-    backgroundColor: '#cccccc',
-    opacity: 0.6,
-  },
-  minimalButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  processingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  processingButtonText: {
-    marginLeft: 8,
-  },
-  customizationsContainer: {
-    marginTop: 4,
-  },
-  customizationText: {
-    color: '#666',
-  },
-  buttonContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  checkoutButtonContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-});
