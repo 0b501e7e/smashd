@@ -1,10 +1,14 @@
-import { useState } from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, ScrollView, ActivityIndicator } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
 import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Mail, Lock, LogIn, User } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -25,7 +29,7 @@ export default function LoginScreen() {
 
     try {
       await login(email, password);
-      router.replace('/'); // Redirect to main app after login
+      router.replace('/(tabs)/promotions'); // Redirect to promotions after login
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err && 'response' in (err as any) && (err as any).response?.status === 401) {
         setError('Email o contraseña incorrectos');
@@ -38,100 +42,128 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={[
-      styles.container, 
-      { 
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom 
-      }
-    ]}>
+    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+      <ScrollView 
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: insets.top + 40,
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 24,
+          justifyContent: 'center',
+          minHeight: '100%',
+        }}
+      >
+        {/* Header Section */}
+        <View className="items-center mb-12">
+          <View className="w-20 h-20 rounded-full items-center justify-center mb-6" style={{ backgroundColor: '#FAB10A' }}>
+            <User size={40} color="#000000" />
+          </View>
+          <Text className="text-4xl font-bold text-center mb-3" style={{ color: '#FFFFFF' }}>
+            Bienvenido
+          </Text>
+          <Text className="text-center text-base leading-6" style={{ color: '#CCCCCC' }}>
+            Inicia sesión para continuar con SMASHD
+          </Text>
+        </View>
+        
+        {/* Error Message */}
         {error ? (
-          <ThemedText style={styles.error}>{error}</ThemedText>
+          <Card className="mb-8" style={{ borderColor: '#FF4444', backgroundColor: 'rgba(255, 68, 68, 0.1)' }}>
+            <View className="p-4">
+              <Text className="text-center font-medium" style={{ color: '#FF4444' }}>
+                {error}
+              </Text>
+            </View>
+          </Card>
         ) : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        {/* Login Form */}
+        <Card className="mb-8" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+          <View className="p-8">
+            <View className="gap-6">
+              <View className="gap-3">
+                <Label className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                  Email
+                </Label>
+                <View className="flex-row items-center rounded-md px-4 h-14" style={{ borderWidth: 1, borderColor: '#333333', backgroundColor: '#1A1A1A' }}>
+                  <Mail size={18} color="#CCCCCC" />
+                  <Input
+                    placeholder="tu@email.com"
+                    placeholderTextColor="#666666"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    className="flex-1 ml-3 border-0 p-0 h-auto bg-transparent"
+                    style={{ color: '#FFFFFF' }}
+                  />
+                </View>
+              </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <TouchableOpacity 
-          style={[styles.button, isLoading && styles.buttonDisabled]}
+              <View className="gap-3">
+                <Label className="text-sm font-medium" style={{ color: '#FFFFFF' }}>
+                  Contraseña
+                </Label>
+                <View className="flex-row items-center rounded-md px-4 h-14" style={{ borderWidth: 1, borderColor: '#333333', backgroundColor: '#1A1A1A' }}>
+                  <Lock size={18} color="#CCCCCC" />
+                  <Input
+                    placeholder="Tu contraseña"
+                    placeholderTextColor="#666666"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                    className="flex-1 ml-3 border-0 p-0 h-auto bg-transparent"
+                    style={{ color: '#FFFFFF' }}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        </Card>
+
+        {/* Login Button */}
+        <Button 
+          className="h-16 mb-8"
+          style={{ backgroundColor: '#FAB10A' }}
           onPress={handleLogin}
-          disabled={isLoading}>
+          disabled={isLoading}
+        >
           {isLoading ? (
-            <ActivityIndicator color="white" />
+            <View className="flex-row items-center gap-3">
+              <ActivityIndicator color="#000000" size="small" />
+              <Text className="text-lg font-semibold" style={{ color: '#000000' }}>
+                Iniciando sesión...
+              </Text>
+            </View>
           ) : (
-            <ThemedText style={styles.buttonText}>Iniciar Sesión</ThemedText>
+            <View className="flex-row items-center gap-3">
+              <LogIn size={22} color="#000000" />
+              <Text className="text-lg font-semibold" style={{ color: '#000000' }}>
+                Iniciar Sesión
+              </Text>
+            </View>
           )}
-        </TouchableOpacity>
+        </Button>
 
-        <ThemedView style={styles.registerContainer}>
-          <ThemedText>¿No tienes cuenta? </ThemedText>
-          <Link href="/register" asChild>
-            <TouchableOpacity>
-              <ThemedText style={styles.registerLink}>Registrarse</ThemedText>
-            </TouchableOpacity>
-          </Link>
-        </ThemedView>
-      </ThemedView>
-    );
+        {/* Register Link */}
+        <Card style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+          <View className="p-5">
+            <View className="flex-row justify-center items-center gap-2">
+              <Text style={{ color: '#CCCCCC' }}>
+                ¿No tienes cuenta?
+              </Text>
+              <Link href="/register" asChild>
+                <Button variant="link" className="p-0 h-auto">
+                  <Text className="font-semibold" style={{ color: '#FAB10A' }}>
+                    Registrarse
+                  </Text>
+                </Button>
+              </Link>
+            </View>
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    justifyContent: 'center',
-    gap: 16,
-  },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#ffffff', // Explicit white background
-    color: '#000000', // Explicit black text
-    fontSize: 16,
-  },
-  button: {
-    backgroundColor: '#0a7ea4',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  error: {
-    color: '#ff4444',
-    textAlign: 'center',
-  },
-  registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 16,
-  },
-  registerLink: {
-    color: '#0a7ea4',
-    fontWeight: 'bold',
-  },
-});

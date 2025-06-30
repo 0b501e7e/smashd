@@ -1,24 +1,65 @@
-import { StyleSheet, View } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import React from 'react';
+import { View, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
-import { setGuestMode } from '@/services/api';
+import { useEffect, useState, useRef } from 'react';
+import { setGuestMode, checkGuestMode } from '@/services/api';
 import { AnimatedLogo } from '@/components/AnimatedLogo';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/button';
 
 export default function HomeScreen() {
   const { isLoggedIn, loading } = useAuth();
   const insets = useSafeAreaInsets();
+  const [showAuthOptions, setShowAuthOptions] = useState(false);
+  const logoPosition = useRef(new Animated.Value(0)).current; // 0 = center, 1 = top
+  const authOpacity = useRef(new Animated.Value(0)).current; // For auth options fade-in
 
-  // Redirect to menu if already logged in
+  // Handle splash completion and logo animation
   useEffect(() => {
-    if (isLoggedIn && !loading) {
+    const handleSplashCompletion = async () => {
+      // Always show splash for at least 2.5 seconds
+      const timer = setTimeout(async () => {
+        // Start logo animation to move upwards
+        Animated.parallel([
+          Animated.timing(logoPosition, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+          Animated.timing(authOpacity, {
+            toValue: 1,
+            duration: 600,
+            delay: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+        
+        setShowAuthOptions(true);
+
+        // After showing the animation, check if we need to redirect
+        if (!loading && isLoggedIn) {
+          // If user is logged in, redirect after showing splash briefly
+          setTimeout(() => {
+            router.replace('/(tabs)/promotions');
+          }, 1000); // Give 1 second to see the animation
+        }
+      }, 2500); // 2.5 seconds for splash branding
+
+      return () => clearTimeout(timer);
+    };
+
+    handleSplashCompletion();
+  }, []); // Remove dependencies to always show splash first
+
+  // Separate effect to handle auth state changes after splash is shown
+  useEffect(() => {
+    if (showAuthOptions && !loading && isLoggedIn) {
+      // Only redirect if user is actually logged in, not just for guest mode
       router.replace('/(tabs)/promotions');
     }
-  }, [isLoggedIn, loading]);
+  }, [showAuthOptions, isLoggedIn, loading]);
 
   const handleGuestMode = async () => {
     // Enable guest mode and navigate to menu
@@ -30,75 +71,86 @@ export default function HomeScreen() {
     router.replace('/(tabs)/promotions');
   };
 
-  // Don't render anything while checking auth status
-  if (loading) {
-    return (
-      <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <AnimatedLogo />
-        <ThemedText style={styles.loadingText}>Cargando...</ThemedText>
-      </ThemedView>
-    );
-  }
-
+  // Single screen with animated logo transition
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      <AnimatedLogo />
-      
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/(auth)/login')}>
-          <ThemedText style={styles.buttonText}>INICIAR SESIÓN</ThemedText>
-        </TouchableOpacity>
+    <View 
+      className="flex-1 p-4" 
+      style={{ backgroundColor: '#FAB10A', paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
+      {/* Animated Logo Container */}
+      <Animated.View 
+        className="flex-1 justify-center items-center"
+        style={{
+          transform: [{
+            translateY: logoPosition.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -120], // Move logo up by 120px
+            })
+          }]
+        }}
+      >
+        <AnimatedLogo />
+        
+        <View className="mt-8">
+          <Text className="text-4xl font-bold text-black text-center tracking-wider">
+            SMASHD
+          </Text>
+          <Text className="text-lg text-black/80 text-center mt-2">
+            Burgers Auténticos
+          </Text>
+          {!showAuthOptions && (
+            <Text className="text-base text-black/60 text-center mt-4 font-medium">
+              {loading ? 'Cargando...' : 'Bienvenido'}
+            </Text>
+          )}
+        </View>
+      </Animated.View>
 
-        <TouchableOpacity 
-          style={styles.button}
-          onPress={() => router.push('/(auth)/register')}>
-          <ThemedText style={styles.buttonText}>REGISTRARSE</ThemedText>
-        </TouchableOpacity>
+      {/* Auth Options - Fade in after logo animation */}
+      {showAuthOptions && !loading && (
+        <Animated.View 
+          className="w-full items-center gap-4 pb-8"
+          style={{ opacity: authOpacity }}
+        >
+          {!isLoggedIn ? (
+            <>
+              <Text className="text-xl font-semibold text-black/80 text-center mb-2">
+                ¡Comencemos!
+              </Text>
+              
+              <Button 
+                className="bg-black py-4 px-8 rounded-lg w-4/5"
+                onPress={() => router.push('/(auth)/login')}
+              >
+                <Text className="text-yellow-100 text-lg font-bold">INICIAR SESIÓN</Text>
+              </Button>
 
-        <TouchableOpacity 
-          style={[styles.button, styles.guestButton]}
-          onPress={handleGuestMode}>
-          <ThemedText style={styles.buttonText}>CONTINUAR COMO INVITADO</ThemedText>
-        </TouchableOpacity>
-      </View>
-    </ThemedView>
+              <Button 
+                className="bg-black py-4 px-8 rounded-lg w-4/5"
+                onPress={() => router.push('/(auth)/register')}
+              >
+                <Text className="text-yellow-100 text-lg font-bold">REGISTRARSE</Text>
+              </Button>
+
+              <Button 
+                className="bg-zinc-800 py-4 px-8 rounded-lg w-4/5 mt-2"
+                onPress={handleGuestMode}
+              >
+                <Text className="text-yellow-100 text-lg font-bold">CONTINUAR COMO INVITADO</Text>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Text className="text-xl font-semibold text-black/80 text-center mb-2">
+                ¡Bienvenido de vuelta!
+              </Text>
+              <Text className="text-base text-black/60 text-center mb-4">
+                Redirigiendo...
+              </Text>
+            </>
+          )}
+        </Animated.View>
+      )}
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FAB10A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: '#000',
-  },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 16,
-  },
-  button: {
-    backgroundColor: '#000',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 8,
-    width: '80%',
-    alignItems: 'center',
-  },
-  guestButton: {
-    backgroundColor: '#333',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#FFE4B5',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});

@@ -1,32 +1,21 @@
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { Text } from '@/components/ui/text';
 
 export default function NotFoundScreen() {
   const insets = useSafeAreaInsets();
   
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ThemedText type="title">This screen doesn't exist.</ThemedText>
-        <Link href="/" style={styles.link}>
-          <ThemedText type="link">Go to home screen!</ThemedText>
+    <View 
+      className="flex-1 bg-black items-center justify-center px-5"
+      style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+    >
+        <Text className="text-2xl font-bold text-white text-center">Esta pantalla no existe.</Text>
+        <Link href="/" className="mt-4 py-4">
+          <Text className="text-base text-yellow-500 underline">¡Ir a la pantalla de inicio!</Text>
         </Link>
-      </ThemedView>
+      </View>
     );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
-});
