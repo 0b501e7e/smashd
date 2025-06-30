@@ -72,7 +72,6 @@ export default function RootLayout() {
                     color: '#fff',
                     fontWeight: 'bold',
                   },
-                  headerBackTitleVisible: false,
                 }}>
                   <Stack.Screen name="index" />
                   <Stack.Screen name="(tabs)" />

@@ -5,10 +5,12 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CartScreen() {
   const { items, removeItem, updateQuantity, total } = useCart();
   const { isLoggedIn } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleCheckout = () => {
     if (!isLoggedIn) {
@@ -20,7 +22,7 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <ThemedView style={styles.emptyContainer}>
+      <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <ThemedText style={styles.emptyText}>Tu carrito está vacío</ThemedText>
       </ThemedView>
     );

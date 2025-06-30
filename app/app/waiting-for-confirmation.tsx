@@ -70,7 +70,7 @@ export default function WaitingForConfirmationScreen() {
   }, [orderId]);
 
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <View style={styles.content}>
         <ActivityIndicator size="large" color="#ff8c00" style={styles.activityIndicator} />
         <ThemedText type="subtitle" style={styles.messageText}>

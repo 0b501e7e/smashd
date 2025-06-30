@@ -304,7 +304,6 @@ export default function CheckoutScreen() {
       <Stack.Screen 
         options={{
           title: 'Pagar',
-          headerBackTitleVisible: false,
         }}
       />
       
@@ -331,7 +330,7 @@ export default function CheckoutScreen() {
           </ThemedView>
         </ScrollView>
 
-        <ThemedView style={styles.checkoutButtonContainer}>
+        <ThemedView style={[styles.checkoutButtonContainer, { paddingBottom: insets.bottom }]}>
           <TouchableOpacity
             style={[styles.minimalButton, isProcessing && styles.disabledButton]}
             onPress={handlePlaceOrder}

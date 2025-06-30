@@ -178,7 +178,7 @@ export default function OrderConfirmationScreen() {
     <ThemedView style={styles.container}>
       <ScrollView 
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContentContainer}
+        contentContainerStyle={[styles.scrollContentContainer, { paddingBottom: insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
         <ThemedView style={styles.header}>
@@ -207,7 +207,7 @@ export default function OrderConfirmationScreen() {
           <ThemedView style={styles.orderInfoRow}>
             <ThemedText style={styles.orderInfoLabel}>Estado:</ThemedText>
             <ThemedView style={styles.statusContainer}>
-              <IconSymbol name={statusInfo.icon} size={20} color={statusInfo.color} />
+              <IconSymbol name={statusInfo.icon as any} size={20} color={statusInfo.color} />
               <ThemedText style={[styles.statusText, { color: statusInfo.color }]}>
                 {statusInfo.text}
               </ThemedText>
@@ -443,13 +443,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 4,
   },
-  itemName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: 'bold',
+  customizations: {
+    marginTop: 4,
   },
   totalContainer: {
     borderTopWidth: 1,

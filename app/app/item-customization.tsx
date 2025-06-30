@@ -262,7 +262,6 @@ export default function ItemCustomizationScreen() {
       <Stack.Screen
         options={{
           title: item.name,
-          headerBackTitleVisible: false,
           headerStyle: { backgroundColor: "black" },
           headerTintColor: "white",
           headerTitleStyle: { color: "white" },

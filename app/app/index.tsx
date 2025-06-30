@@ -7,10 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect } from 'react';
 import { setGuestMode } from '@/services/api';
 import { AnimatedLogo } from '@/components/AnimatedLogo';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { isLoggedIn, loading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   // Redirect to menu if already logged in
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function HomeScreen() {
   // Don't render anything while checking auth status
   if (loading) {
     return (
-      <ThemedView style={styles.container}>
+      <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <AnimatedLogo />
         <ThemedText style={styles.loadingText}>Cargando...</ThemedText>
       </ThemedView>
@@ -40,8 +41,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaProvider>
-    <ThemedView style={styles.container}>
+    <ThemedView style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <AnimatedLogo />
       
       <View style={styles.buttonContainer}>
@@ -64,7 +64,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
     </ThemedView>
-    </SafeAreaProvider>
   );
 }
 
