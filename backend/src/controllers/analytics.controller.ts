@@ -11,7 +11,7 @@ export const analyticsController = {
    * GET /analytics/current-week
    * Get current week analytics
    */
-  getCurrentWeekAnalytics: async (req: Request, res: Response) => {
+  getCurrentWeekAnalytics: async (_req: Request, res: Response) => {
     try {
       const analytics = await analyticsService.getCurrentWeekAnalytics();
       
@@ -57,7 +57,7 @@ export const analyticsController = {
    */
   getRevenueAnalytics: async (req: Request, res: Response) => {
     try {
-      const weeks = parseInt(req.query.weeks as string) || 8;
+      const weeks = parseInt(req.query['weeks'] as string) || 8;
       
       const endDate = new Date();
       const startDate = new Date();
@@ -88,7 +88,7 @@ export const analyticsController = {
       const totalOrders = revenueData.reduce((sum, week) => sum + week.orders, 0);
       const avgRevenue = totalRevenue / weeks;
 
-      responseUtils.success(res, {
+      sendSuccess(res, {
         summary: {
           totalRevenue,
           totalOrders,
@@ -100,7 +100,7 @@ export const analyticsController = {
       }, 'Revenue analytics retrieved successfully');
     } catch (error: any) {
       console.error('Error getting revenue analytics:', error);
-      responseUtils.error(res, 'Failed to retrieve revenue analytics', 500);
+      sendError(res, 'Failed to retrieve revenue analytics', 500);
     }
   },
 
@@ -110,7 +110,7 @@ export const analyticsController = {
    */
   getMenuPerformance: async (req: Request, res: Response) => {
     try {
-      const weeks = parseInt(req.query.weeks as string) || 4;
+      const weeks = parseInt(req.query['weeks'] as string) || 4;
       
       const endDate = new Date();
       const startDate = new Date();
@@ -167,7 +167,7 @@ export const analyticsController = {
       const categoryPerformance = Array.from(categoryAggregation.values())
         .sort((a, b) => b.totalRevenue - a.totalRevenue);
 
-      responseUtils.success(res, {
+      sendSuccess(res, {
         period: `${weeks} weeks`,
         topItems,
         categoryPerformance,
@@ -179,7 +179,7 @@ export const analyticsController = {
       }, 'Menu performance analytics retrieved successfully');
     } catch (error: any) {
       console.error('Error getting menu performance:', error);
-      responseUtils.error(res, 'Failed to retrieve menu performance analytics', 500);
+      sendError(res, 'Failed to retrieve menu performance analytics', 500);
     }
   },
 
@@ -189,7 +189,7 @@ export const analyticsController = {
    */
   getCustomerAnalytics: async (req: Request, res: Response) => {
     try {
-      const weeks = parseInt(req.query.weeks as string) || 4;
+      const weeks = parseInt(req.query['weeks'] as string) || 4;
       
       const endDate = new Date();
       const startDate = new Date();
@@ -215,7 +215,7 @@ export const analyticsController = {
         ? (totals.totalReturningCustomers / (totals.totalNewCustomers + totals.totalReturningCustomers)) * 100 
         : 0;
 
-      responseUtils.success(res, {
+      sendSuccess(res, {
         summary: {
           ...totals,
           retentionRate: Math.round(retentionRate * 100) / 100,
@@ -225,7 +225,7 @@ export const analyticsController = {
       }, 'Customer analytics retrieved successfully');
     } catch (error: any) {
       console.error('Error getting customer analytics:', error);
-      responseUtils.error(res, 'Failed to retrieve customer analytics', 500);
+      sendError(res, 'Failed to retrieve customer analytics', 500);
     }
   },
 
@@ -239,15 +239,15 @@ export const analyticsController = {
       const userId = (req as any).user?.id; // From auth middleware
 
       if (!eventType) {
-        return responseUtils.error(res, 'Event type is required', 400);
+        return sendError(res, 'Event type is required', 400);
       }
 
       await analyticsService.trackEvent(eventType, userId, sessionId, metadata);
       
-      responseUtils.success(res, null, 'Event tracked successfully');
+      sendSuccess(res, null, 'Event tracked successfully');
     } catch (error: any) {
       console.error('Error tracking event:', error);
-      responseUtils.error(res, 'Failed to track event', 500);
+      sendError(res, 'Failed to track event', 500);
     }
   },
 
@@ -274,10 +274,10 @@ export const analyticsController = {
 
       const analytics = await analyticsService.generateWeeklyAnalytics(startDate);
       
-      responseUtils.success(res, analytics, 'Weekly analytics generated successfully');
+      sendSuccess(res, analytics, 'Weekly analytics generated successfully');
     } catch (error: any) {
       console.error('Error generating weekly analytics:', error);
-      responseUtils.error(res, 'Failed to generate weekly analytics', 500);
+      sendError(res, 'Failed to generate weekly analytics', 500);
     }
   }
 }; 

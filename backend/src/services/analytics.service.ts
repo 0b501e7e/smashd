@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 // Types
-interface AnalyticsEvent {
+export interface AnalyticsEvent {
   id: number;
   eventType: string;
   userId?: number;
@@ -10,7 +10,7 @@ interface AnalyticsEvent {
   createdAt: Date;
 }
 
-interface WeeklyMetrics {
+export interface WeeklyMetrics {
   id?: number;
   weekStartDate: Date;
   weekEndDate: Date;
