@@ -12,6 +12,25 @@ export interface JwtPayload {
 
 // User authentication data
 export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  role: UserRole;
+  dateOfBirth: Date;
+  address: string;
+  phoneNumber: string;
+  acceptedTerms: boolean;
+}
+
+// Minimal user data for responses
+export interface UserBasicInfo {
+  id: number;
+  email: string;
+  role: UserRole;
+}
+
+// User data for authenticated requests (middleware)
+export interface AuthenticatedUser {
   userId: number;
   role: UserRole;
   email: string;
@@ -19,7 +38,7 @@ export interface AuthUser {
 
 // Extended Request interface with user
 export interface AuthenticatedRequest extends Request {
-  user?: AuthUser;
+  user?: AuthenticatedUser;
 }
 
 // Login request/response types

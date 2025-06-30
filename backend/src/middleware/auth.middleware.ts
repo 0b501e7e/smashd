@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest, JwtPayload, AuthUser } from '../types/auth.types';
+import { AuthenticatedRequest, JwtPayload, AuthenticatedUser } from '../types/auth.types';
 import { HTTP_STATUS } from '../config/constants';
 import { sendError } from '../utils/response.utils';
 
@@ -61,7 +61,7 @@ export const authenticateToken = (
         userId: payload.userId,
         role: payload.role,
         email: payload.email || ''
-      } as AuthUser;
+      } as AuthenticatedUser;
 
       next();
     });
@@ -139,7 +139,7 @@ export const optionalAuth = (
           userId: payload.userId,
           role: payload.role,
           email: payload.email || ''
-        } as AuthUser;
+        } as AuthenticatedUser;
       }
 
       next();

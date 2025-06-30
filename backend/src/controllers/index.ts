@@ -1,5 +1,5 @@
 // Central export file for all controllers
-export { authController } from './auth.controller';
+export { AuthController } from './auth.controller';
 export { MenuController } from './menu.controller';
 export { userController } from './user.controller';
 export { orderController } from './order.controller';
