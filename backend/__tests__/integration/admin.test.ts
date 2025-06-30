@@ -361,7 +361,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(updateData)
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Validation failed');
+      expect(response.body).toHaveProperty('error', 'Invalid menu item ID');
     });
   });
 

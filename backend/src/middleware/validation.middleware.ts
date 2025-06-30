@@ -444,7 +444,8 @@ export const validateCreateMenuItem = [
   body('description').trim().notEmpty().withMessage('Description is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
-  body('imageUrl').isURL().withMessage('Valid image URL is required'),
+  body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
+  body('imageUrl').trim().notEmpty().withMessage('Image URL is required'),
   handleValidationErrors
 ];
 
@@ -452,12 +453,12 @@ export const validateCreateMenuItem = [
  * Validation for updating menu items
  */
 export const validateUpdateMenuItem = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
-  body('description').trim().notEmpty().withMessage('Description is required'),
-  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
-  body('isAvailable').isBoolean().withMessage('isAvailable must be a boolean'),
-  body('imageUrl').isURL().withMessage('Valid image URL is required'),
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('description').optional().trim().notEmpty().withMessage('Description cannot be empty'),
+  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('category').optional().isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
+  body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
+  body('imageUrl').optional().trim().notEmpty().withMessage('Image URL cannot be empty'),
   handleValidationErrors
 ];
 
