@@ -1,5 +1,3 @@
-import { Request } from 'express';
-
 // API Response types
 export interface ApiResponse<T = any> {
   data?: T;
@@ -17,14 +15,8 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
   };
 }
 
-// Request types
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: number;
-    role: UserRole;
-    email: string;
-  };
-}
+// Request types - re-export from auth.types to avoid duplication
+export { AuthenticatedRequest } from './auth.types';
 
 // Common utility types
 export type Nullable<T> = T | null;
