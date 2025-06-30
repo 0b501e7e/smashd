@@ -1,10 +1,10 @@
 // Central export file for all controllers
 export { AuthController } from './auth.controller';
 export { MenuController } from './menu.controller';
-export { userController } from './user.controller';
-export { orderController } from './order.controller';
-export { adminController } from './admin.controller';
-export { paymentController } from './payment.controller';
+export { UserController } from './user.controller';
+export { OrderController } from './order.controller';
+export { AdminController } from './admin.controller';
+export { PaymentController } from './payment.controller';
 
 // Individual controller exports for more granular imports
 export * from './auth.controller';

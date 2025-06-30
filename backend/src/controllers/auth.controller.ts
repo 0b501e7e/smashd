@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { validationResult } from 'express-validator';
 import { HTTP_STATUS } from '../config/constants';
 import { IAuthService } from '../interfaces/IAuthService';
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from '../types/auth.types';
@@ -16,16 +15,7 @@ export class AuthController {
    */
   register = async (req: Request<{}, RegisterResponse, RegisterRequest>, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          errors: errors.array()
-        } as any);
-        return;
-      }
-
+      // Validation is handled by middleware, no need to check here
       const result = await this.authService.register(req.body);
 
       res.status(HTTP_STATUS.CREATED).json({
@@ -55,16 +45,7 @@ export class AuthController {
    */
   login = async (req: Request<{}, LoginResponse, LoginRequest>, res: Response, next: NextFunction): Promise<void> => {
     try {
-      // Check for validation errors
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          errors: errors.array()
-        } as any);
-        return;
-      }
-
+      // Validation is handled by middleware, no need to check here
       const result = await this.authService.login(req.body);
 
       res.json({
