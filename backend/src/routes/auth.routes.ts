@@ -1,15 +1,12 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers';
-import { AuthService } from '../services/auth.service';
 import { userRegistrationValidation, userLoginValidation } from '../middleware';
-import { PrismaClient } from '@prisma/client';
+import { services } from '../config/services';
 
 const router = Router();
 
-// TODO: This should be moved to dependency injection container
-const prisma = new PrismaClient();
-const authService = new AuthService(prisma);
-const authController = new AuthController(authService);
+// Use centralized service container (single DB connection, shared services)
+const authController = new AuthController(services.authService);
 
 /**
  * @route   POST /v1/auth/register

@@ -29,15 +29,25 @@ frontend/public/sw.js
 frontend/public/workbox-*.js
 frontend/public/workbox-*.map
 frontend/package-lock.json
+frontend/.env
 
 backend/node_modules
 backend/dist
 backend/build
 backend/coverage
+backend/coverage/*
 backend/public/sw.js
 backend/public/workbox-*.js
 backend/public/workbox-*.map
 backend/package-lock.json
+backend/coverage
+backend/dist
+backend/build
+backend/public/sw.js
+backend/public/workbox-*.js
+backend/public/workbox-*.map
+backend/package-lock.json
+backend/.env
 
 app/node_modules
 app/dist
@@ -49,3 +59,5 @@ app/public/workbox-*.map
 app/package-lock.json
 app/app.json
 app/eas.json
+app/.env
+

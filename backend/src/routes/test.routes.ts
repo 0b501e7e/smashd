@@ -17,9 +17,13 @@ import {
 } from '../middleware/validation.middleware';
 import { sendSuccess, sendError } from '../utils/response.utils';
 import { HTTP_STATUS } from '../config/constants';
-import { adminController, paymentController } from '../controllers';
+import { PaymentController } from '../controllers/payment.controller';
+import { services } from '../config/services';
 
 const router = Router();
+
+// Use centralized service container for payment controller
+const paymentController = new PaymentController(services.paymentService);
 
 // ============================================================================
 // AUTHENTICATION MIDDLEWARE TESTS
@@ -61,6 +65,14 @@ router.get('/resource/:userId', authenticateToken, isOwnerOrAdmin, (req: Authent
     message: 'This resource requires ownership or admin privileges',
     user: req.user,
     resourceUserId: req.params['userId']
+  });
+});
+
+// Add protected route for JWT middleware testing
+router.get('/protected', authenticateToken, (req: AuthenticatedRequest, res: Response) => {
+  sendSuccess(res, {
+    message: 'Access granted to protected route',
+    user: req.user
   });
 });
 
@@ -255,16 +267,58 @@ router.post('/integration/order-creation',
 // ============================================================================
 
 // Test SumUp connection
-router.get('/sumup-connection', paymentController.testSumUpConnectionController);
+router.get('/sumup-connection', paymentController.testSumUpConnection.bind(paymentController));
 
 // Test SumUp merchant profile
-router.get('/merchant-profile', paymentController.getMerchantProfile);
+router.get('/merchant-profile', paymentController.getMerchantProfile.bind(paymentController));
 
 // Test detailed order check with SumUp
-router.get('/check-order/:orderId', paymentController.checkOrderWithSumUp);
+router.get('/check-order/:orderId', paymentController.checkOrderWithSumUp.bind(paymentController));
 
-// Test manual order status update
-router.post('/update-order-status', adminController.updateOrderStatusTest);
+// Test manual order status update (for development/testing)
+router.post('/update-order-status', async (req: Request, res: Response) => {
+  try {
+    const { orderId, status = 'PAID' } = req.body;
+    
+    if (!orderId) {
+      return sendError(res, 'Missing order ID', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    console.log(`Manually updating order ${orderId} to status: ${status}`);
+    
+    // Import services here to avoid circular dependency
+    const { services } = await import('../config/services');
+    
+    // Find the order first
+    const order = await services.prisma.order.findUnique({
+      where: { id: parseInt(orderId) },
+    });
+    
+    if (!order) {
+      return sendError(res, 'Order not found', HTTP_STATUS.NOT_FOUND);
+    }
+    
+    console.log(`Current order status before manual update: ${order.status}`);
+    
+    // Update the order status
+    const updatedOrder = await services.prisma.order.update({
+      where: { id: parseInt(orderId) },
+      data: { status }
+    });
+    
+    console.log(`Manually updated order ${orderId} status to ${status}`);
+    
+    sendSuccess(res, {
+      order: updatedOrder,
+      previousStatus: order.status,
+      newStatus: status
+    }, `Order ${orderId} updated with status ${status}`);
+    
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    sendError(res, 'Error updating order status', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+});
 
 // ============================================================================
 // HEALTH CHECK AND STATUS
@@ -300,7 +354,7 @@ router.get('/status', (_req: Request, res: Response) => {
       ],
       sumup: [
         'GET /test/sumup-connection',
-        'GET /test/merchant-profile',
+        'GET /test/merchant-profile', 
         'GET /test/check-order/:orderId',
         'POST /test/update-order-status'
       ]

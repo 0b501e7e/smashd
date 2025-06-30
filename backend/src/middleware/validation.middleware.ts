@@ -440,7 +440,7 @@ export const validateImageUpload = (req: Request, res: Response, next: NextFunct
  * Validation for creating menu items
  */
 export const validateCreateMenuItem = [
-  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
   body('description').trim().notEmpty().withMessage('Description is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
