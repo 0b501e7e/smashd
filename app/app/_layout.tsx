@@ -7,11 +7,11 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PortalHost } from '@rn-primitives/portal';
 
-// Import useColorScheme from NativeWind
-import { useColorScheme as useNativeWindColorScheme } from "nativewind";
+// Import useColorScheme from NativeWind for proper dark mode support
+import { useColorScheme } from "nativewind";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider } from '../contexts/AuthContext';
 import { CartProvider } from '../contexts/CartContext';
 import { RootStoreProvider } from '../contexts/RootStoreContext';
@@ -22,7 +22,7 @@ import '../global.css';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
@@ -65,7 +65,7 @@ export default function RootLayout() {
                 <Stack screenOptions={{ 
                   headerShown: false,
                   headerStyle: {
-                    backgroundColor: '#000',
+                    backgroundColor: colorScheme === 'dark' ? '#0F0F0F' : '#000',
                   },
                   headerTintColor: '#fff',
                   headerTitleStyle: {
@@ -83,12 +83,14 @@ export default function RootLayout() {
                   <Stack.Screen name="waiting-for-confirmation" options={{ headerShown: true, title: 'Procesando...' }} />
                   <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Página No Encontrada' }} />
                 </Stack>
-                <StatusBar style="auto" />
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'auto'} />
               </ThemeProvider>
             </GestureHandlerRootView>
           </SafeAreaProvider>
         </CartProvider>
       </AuthProvider>
+      {/* Default Portal Host (required for AlertDialog) */}
+      <PortalHost />
     </RootStoreProvider>
   );
 }

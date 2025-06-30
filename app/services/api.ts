@@ -49,6 +49,28 @@ const api = axios.create({
 // Track guest mode status
 let isGuestMode = false;
 
+// Initialize guest mode from storage on app start
+const initializeGuestMode = async () => {
+  try {
+    const guestMode = await AsyncStorage.getItem('guestMode');
+    isGuestMode = guestMode === 'true';
+    
+    // If we have a valid JWT token, clear guest mode
+    const token = await AsyncStorage.getItem('token');
+    if (token && isGuestMode) {
+      console.log('Clearing guest mode - user has valid token');
+      await AsyncStorage.removeItem('guestMode');
+      isGuestMode = false;
+    }
+  } catch (error) {
+    console.error('Error initializing guest mode:', error);
+    isGuestMode = false;
+  }
+};
+
+// Initialize immediately
+initializeGuestMode();
+
 // Function to set guest mode
 export const setGuestMode = (enabled: boolean) => {
   isGuestMode = enabled;
@@ -73,6 +95,9 @@ export const checkGuestMode = async () => {
 // Add a request interceptor to add the auth token to requests
 api.interceptors.request.use(
   async (config) => {
+    // Ensure guest mode is properly initialized for this request
+    await checkGuestMode();
+    
     // Skip token for guest mode on non-public endpoints
     if (!isGuestMode) {
       const token = await AsyncStorage.getItem('token');
@@ -117,15 +142,20 @@ api.interceptors.response.use(
       console.error('API Error:', error.message, error.config?.url);
     }
 
-    // In guest mode, we don't care about 401 errors for certain endpoints
+    // In guest mode, we don't care about 401 errors for user-specific endpoints
     if (isGuestMode && error.response?.status === 401) {
-      // For public endpoints like menu, just continue without auth
-      if (error.config?.url?.includes('/v1/menu')) {
-        return { data: [] }; // Return empty data instead of error
+      const url = error.config?.url || '';
+             // For guest mode, silently handle 401s for user-specific endpoints
+       if (url.includes('/v1/menu') || 
+           url.includes('/v1/users/profile') || 
+           (url.includes('/v1/users/') && url.includes('/last-order'))) {
+        console.log('Silently handling 401 in guest mode for:', url);
+        return { data: null }; // Return null data instead of error
       }
     } else if (error.response?.status === 401) {
-      // Token expired or invalid
+      // Token expired or invalid (only when not in guest mode)
       await AsyncStorage.removeItem('token');
+      isGuestMode = false; // Reset guest mode if token was invalid
       // You might want to redirect to login here
     }
     return Promise.reject(error);
