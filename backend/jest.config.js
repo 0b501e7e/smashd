@@ -1,10 +1,16 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: [
-    '**/__tests__/**/*.test.js'
+    '**/__tests__/**/*.test.js',
+    '**/__tests__/**/*.test.ts'
   ],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest'
+  },
   collectCoverageFrom: [
-    '**/*.js',
+    'src/**/*.{js,ts}',
+    '!src/**/*.d.ts',
     '!**/node_modules/**',
     '!**/coverage/**',
     '!jest.config.js'
@@ -17,5 +23,10 @@ module.exports = {
     '/node_modules/'
   ],
   clearMocks: true,
-  restoreMocks: true
+  restoreMocks: true,
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  preset: 'ts-jest',
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  }
 }; 

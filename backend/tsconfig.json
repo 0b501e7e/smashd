@@ -3,8 +3,8 @@
     "target": "ES2022",
     "module": "CommonJS",
     "lib": ["ES2022"],
+    "types": ["jest", "node"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -42,13 +42,12 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "__tests__/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts",
     "coverage",
     "prisma",
     "public"

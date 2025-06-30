@@ -1,0 +1,114 @@
+{
+  "passed": 18,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "Public Endpoint Access",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.646Z"
+    },
+    {
+      "name": "Test Endpoint Status",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.650Z"
+    },
+    {
+      "name": "Valid User Registration",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.671Z"
+    },
+    {
+      "name": "Invalid User Registration (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid data",
+      "timestamp": "2025-06-30T05:11:17.679Z"
+    },
+    {
+      "name": "Valid User Login",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.683Z"
+    },
+    {
+      "name": "Invalid User Login (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid data",
+      "timestamp": "2025-06-30T05:11:17.686Z"
+    },
+    {
+      "name": "Valid Menu Item Creation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.691Z"
+    },
+    {
+      "name": "Invalid Menu Item Creation (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid data",
+      "timestamp": "2025-06-30T05:11:17.697Z"
+    },
+    {
+      "name": "Valid Order Creation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.701Z"
+    },
+    {
+      "name": "Invalid Order Creation (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid data",
+      "timestamp": "2025-06-30T05:11:17.705Z"
+    },
+    {
+      "name": "Valid Parameter Validation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.708Z"
+    },
+    {
+      "name": "Invalid Parameter Validation (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid parameter",
+      "timestamp": "2025-06-30T05:11:17.711Z"
+    },
+    {
+      "name": "Valid Query Validation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.715Z"
+    },
+    {
+      "name": "Invalid Query Validation (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid query",
+      "timestamp": "2025-06-30T05:11:17.718Z"
+    },
+    {
+      "name": "Valid Pagination Validation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.721Z"
+    },
+    {
+      "name": "Invalid Pagination Validation (Should Fail)",
+      "success": true,
+      "details": "Correctly rejected invalid pagination",
+      "timestamp": "2025-06-30T05:11:17.723Z"
+    },
+    {
+      "name": "Valid Customization Category Creation",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.726Z"
+    },
+    {
+      "name": "Manual Validation Test",
+      "success": true,
+      "details": "OK",
+      "timestamp": "2025-06-30T05:11:17.729Z"
+    }
+  ]
+}
