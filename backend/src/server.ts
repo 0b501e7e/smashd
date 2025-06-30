@@ -13,6 +13,7 @@ import userRoutes from './routes/user.routes';
 import orderRoutes from './routes/order.routes';
 import adminRoutes from './routes/admin.routes';
 import paymentRoutes from './routes/payment.routes';
+import analyticsRoutes from './routes/analytics.routes';
 import { initializeLoyaltyCron } from './jobs/loyaltyCron';
 import {
   corsMiddleware,
@@ -97,6 +98,7 @@ app.use('/v1/users', userRoutes);
 app.use('/v1/orders', orderRoutes);
 app.use('/v1/admin', adminRoutes);
 app.use('/v1/payment', paymentRoutes);
+app.use('/v1/analytics', analyticsRoutes);
 
 // Test routes for validation and authentication middleware
 app.use('/v1/test', testRoutes);
