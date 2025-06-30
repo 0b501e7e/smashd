@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Image } from 'react-native';
+import { Image, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -32,26 +32,15 @@ export function AnimatedLogo() {
   });
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <Animated.View 
+      className="justify-center items-center mb-10"
+      style={[{ width: LOGO_SIZE, height: LOGO_SIZE }, animatedStyle]}
+    >
       <Image
-        source={require('@/assets/images/smashd.png')} // Assuming assets path alias is configured
-        style={styles.logo}
+        source={require('@/assets/images/smashd.png')}
+        className="w-full h-full"
         resizeMode="contain"
       />
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40, // Add some space below the logo
-  },
-  logo: {
-    width: '100%',
-    height: '100%',
-  },
-}); 
