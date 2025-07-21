@@ -61,3 +61,7 @@ app/app.json
 app/eas.json
 app/.env
 
+# Local config files with secrets
+app/app.config.development.js
+app/app.config.production.js
+backend/.env.production.backup
