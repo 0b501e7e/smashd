@@ -134,13 +134,22 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+    <View 
+      className="flex-1" 
+      style={{ 
+        backgroundColor: '#000000',
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }}
+    >
       <ScrollView 
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + 24,
-          paddingBottom: insets.bottom + 24,
+          paddingTop: 24,
+          paddingBottom: 24,
           paddingHorizontal: 24,
         }}
       >

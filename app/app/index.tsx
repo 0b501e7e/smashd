@@ -75,7 +75,13 @@ export default function HomeScreen() {
   return (
     <View 
       className="flex-1 p-4" 
-      style={{ backgroundColor: '#FAB10A', paddingTop: insets.top, paddingBottom: insets.bottom }}
+      style={{ 
+        backgroundColor: '#FAB10A', 
+        paddingTop: insets.top, 
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }}
     >
       {/* Animated Logo Container */}
       <Animated.View 

@@ -29,7 +29,9 @@ export default function CartScreen() {
         style={{ 
           backgroundColor: '#000000',
           paddingTop: insets.top + 40,
-          paddingBottom: insets.bottom + 40 
+          paddingBottom: insets.bottom + 40,
+          paddingLeft: insets.left,
+          paddingRight: insets.right
         }}
       >
         <View className="items-center">
@@ -57,7 +59,14 @@ export default function CartScreen() {
   }
 
   return (
-    <View className="flex-1" style={{ backgroundColor: '#000000' }}>
+    <View 
+      className="flex-1" 
+      style={{ 
+        backgroundColor: '#000000',
+        paddingLeft: insets.left,
+        paddingRight: insets.right
+      }}
+    >
       {/* Header */}
       <View 
         className="items-center py-6 px-6"

@@ -187,7 +187,15 @@ export default function PaymentWebviewScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 justify-center items-center bg-black px-5">
+      <View 
+        className="flex-1 justify-center items-center bg-black px-5"
+        style={{ 
+          paddingTop: insets.top, 
+          paddingBottom: insets.bottom, 
+          paddingLeft: insets.left, 
+          paddingRight: insets.right 
+        }}
+      >
         <ActivityIndicator size="large" color="#FAB10A" />
         <Text className="text-white text-base text-center mt-5">
           Preparando tu pago...
@@ -198,7 +206,15 @@ export default function PaymentWebviewScreen() {
   
   if (error) {
     return (
-      <View className="flex-1 justify-center items-center bg-black px-5">
+      <View 
+        className="flex-1 justify-center items-center bg-black px-5"
+        style={{ 
+          paddingTop: insets.top, 
+          paddingBottom: insets.bottom, 
+          paddingLeft: insets.left, 
+          paddingRight: insets.right 
+        }}
+      >
         <Text className="text-red-500 text-base mb-5 text-center">
           {error}
         </Text>

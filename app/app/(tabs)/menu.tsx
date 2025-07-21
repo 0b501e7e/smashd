@@ -149,7 +149,14 @@ export default function MenuScreen() {
           </View>
         </View>
       }>
-      <View style={{ backgroundColor: '#000000', paddingBottom: insets.bottom + 20 }}>
+      <View 
+        style={{ 
+          backgroundColor: '#000000', 
+          paddingBottom: insets.bottom + 20,
+          paddingLeft: insets.left,
+          paddingRight: insets.right
+        }}
+      >
         {categories.map((category) => {
           const config = CATEGORY_CONFIG[category];
           const categoryItems = menuItems.filter((item) => item.category === category);
