@@ -87,12 +87,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
-      setUser(response.user);
+      // Extract user from nested response structure
+      const userData = response?.data?.user || response.user;
+      setUser(userData);
       
       // Register push token with backend after successful login
-      if (response.user?.id) {
+      if (userData?.id) {
         try {
-          await notificationService.registerWithBackend(response.user.id);
+          await notificationService.registerWithBackend(userData.id);
         } catch (notificationError) {
           console.warn('Failed to register push token:', notificationError);
           // Don't fail login if notification registration fails

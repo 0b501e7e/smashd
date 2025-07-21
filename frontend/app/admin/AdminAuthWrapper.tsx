@@ -6,10 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface User {
   id: number;
-  username: string;
   email: string;
   role: string;
-  loyaltyPoints: number;
 }
 
 const AdminAuthWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,45 +19,64 @@ const AdminAuthWrapper: React.FC<{ children: React.ReactNode }> = ({ children })
     const token = localStorage.getItem('token');
     const userString = localStorage.getItem('user');
 
-    if (!token || !userString) {
+    console.log('Token exists:', !!token);
+    console.log('User string from localStorage:', userString);
+
+    if (!token || !userString || userString === 'undefined') {
+      console.log('Missing credentials, redirecting to login...');
+      // Clear any bad data
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       router.push('/login');
       return;
     }
 
     try {
       const user: User = JSON.parse(userString);
+      console.log('Parsed user data:', user);
+      console.log('User role:', user.role);
+      
       if (user.role === 'ADMIN') {
+        console.log('✅ User is authorized as admin');
         setIsAuthorized(true);
       } else {
-        // Redirect non-admin users to the home page or an unauthorized page
-        router.push('/');
+        console.log('❌ User is not admin, role:', user.role);
+        setIsAuthorized(false);
       }
     } catch (error) {
       console.error('Error parsing user data from localStorage:', error);
+      console.error('Raw user string:', userString);
+      // Clear corrupted data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       router.push('/login');
+      return;
     }
 
     setIsLoading(false);
   }, [router]);
 
   if (isLoading) {
-    // Optional: Show a loading indicator while checking auth
-    return <div className="min-h-screen bg-black flex items-center justify-center"><p className="text-yellow-400">Loading...</p></div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <p className="text-gray-300">Verifying admin access...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthorized) {
-    // Use Alert for Access Denied message
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 text-center">
-            <Alert variant="destructive" className="max-w-md">
-                <AlertTitle className="font-bold">Access Denied</AlertTitle>
-                <AlertDescription className="text-sm">
-                    You do not have permission to view this page.
-                </AlertDescription>
-            </Alert>
-        </div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-900 p-4">
+        <Alert className="max-w-md border-red-200 bg-red-50">
+          <AlertTitle className="text-red-800">Access Denied</AlertTitle>
+          <AlertDescription className="text-red-700">
+            You do not have administrative privileges to access this area.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 

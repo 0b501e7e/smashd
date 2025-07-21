@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useState, useCallback } from 'react';
 import { orderAPI } from '@/services/api';
 import { User, ShoppingBag, Award, LogOut, Calendar, Package } from 'lucide-react-native';
-import { NotificationTest } from '@/components/NotificationTest';
+
 
 // RNR Components
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -252,9 +252,6 @@ export default function ProfileScreen() {
             </View>
           </CardContent>
         </Card>
-
-        {/* Notification Test (Development) */}
-        <NotificationTest />
 
         {/* Order History */}
         <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>

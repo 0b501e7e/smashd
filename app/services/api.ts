@@ -12,20 +12,18 @@ const getLocalHost = () => {
 
 // Get API URL with fallback for production
 const getApiUrl = () => {
-  // Try to get from expo config extra first (for app.config.js)
-  const extraApiUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
-  // Then try from process.env (for .env files)
-  const envApiUrl = process.env.EXPO_PUBLIC_API_URL;
-  
-  const apiUrl = extraApiUrl || envApiUrl;
+  // Get from expo config extra (from app.config.js variants)
+  const apiUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
   
   if (!apiUrl) {
-    console.error('EXPO_PUBLIC_API_URL is not defined! This will cause app to crash.');
+    console.error('EXPO_PUBLIC_API_URL is not defined in app config! This will cause app to crash.');
     // Fallback to your production URL
     return 'https://backend-production-e9ac.up.railway.app';
   }
   
-  console.log('🌐 Found API URL:', apiUrl);
+  console.log('🌐 Found API URL from app config:', apiUrl);
+  console.log('🎯 App Variant:', Constants.expoConfig?.extra?.EXPO_PUBLIC_APP_ENV || 'production');
+  console.log('🔧 Full Expo Config Extra:', Constants.expoConfig?.extra);
   
   return Platform.OS === 'web' 
     ? apiUrl 
@@ -164,8 +162,20 @@ api.interceptors.response.use(
 
 export const authAPI = {
   login: async (email: string, password: string) => {
+    console.log('🔐 Login attempt:', { email, apiUrl: API_URL });
+    console.log('🌐 Full login URL:', `${API_URL}/v1/auth/login`);
     const response = await api.post('/v1/auth/login', { email, password });
-    await AsyncStorage.setItem('token', response.data.token);
+    console.log('✅ Login successful:', response.data);
+    
+    // Extract token from the nested data structure
+    const token = response.data?.data?.token;
+    if (token) {
+      await AsyncStorage.setItem('token', token);
+      console.log('💾 Token saved successfully');
+    } else {
+      console.error('❌ No token found in response:', response.data);
+    }
+    
     setGuestMode(false); // Disable guest mode on login
     return response.data;
   },
@@ -200,7 +210,7 @@ export const authAPI = {
 
 // Define the structure for all customizations, mirroring the frontend type
 type CustomizationOption = {
-  id: string;
+  id: string | number; // Support both string and number IDs for flexibility
   name: string;
   price: number;
 };
@@ -217,7 +227,8 @@ export const menuAPI = {
       console.log('Getting menu from', `${API_URL}/v1/menu`);
       const response = await api.get('/v1/menu');
       console.log('Menu response data:', response.data);
-      return response.data;
+      // Extract the actual menu items array from the nested response
+      return response.data?.data || response.data;
     } catch (error: any) {
       console.error('Menu fetch error:', error);
       // If axios error, log more details
@@ -237,13 +248,51 @@ export const menuAPI = {
   
   getMenuItemById: async (id: number) => {
     const response = await api.get(`/v1/menu/${id}`);
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   // New function to fetch customizations for a menu item
   getItemCustomizations: async (id: number): Promise<AllCustomizations> => {
-    const response = await api.get(`/v1/menu-items/${id}/customizations`);
-    return response.data;
+    const response = await api.get(`/v1/menu/items/${id}/customizations`);
+    return response.data?.data || response.data;
+  },
+
+  // Fetch all general customizations (fallback for items with no specific customizations)
+  getGeneralCustomizations: async (): Promise<AllCustomizations> => {
+    const response = await api.get('/v1/menu/customizations');
+    const categories = response.data?.data || response.data || [];
+    
+    // Transform backend categories into expected format
+    const customizations: AllCustomizations = {
+      extras: [],
+      sauces: [],
+      toppings: []
+    };
+    
+    categories.forEach((category: any) => {
+      const categoryName = category.name.toLowerCase();
+      if (categoryName === 'extras') {
+        customizations.extras = category.options.map((option: any) => ({
+          id: option.id.toString(),
+          name: option.name,
+          price: option.price || 0
+        }));
+      } else if (categoryName === 'sauces') {
+        customizations.sauces = category.options.map((option: any) => ({
+          id: option.id.toString(),
+          name: option.name,
+          price: option.price || 0
+        }));
+      } else if (categoryName === 'toppings') {
+        customizations.toppings = category.options.map((option: any) => ({
+          id: option.id.toString(),
+          name: option.name,
+          price: option.price || 0
+        }));
+      }
+    });
+    
+    return customizations;
   },
 };
 
@@ -254,20 +303,20 @@ export const orderAPI = {
     total: number;
   }) => {
     const response = await api.post('/v1/orders', orderData);
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   confirmPayment: async (orderId: number, paymentData: any) => {
     const response = await api.post(`/v1/orders/${orderId}/payment-confirm`, {
       ...paymentData
     });
-    return response.data;
+    return response.data?.data || response.data;
   },
 
   getUserOrders: async (userId: number) => {
     console.log(`[api.ts] Fetching orders for userId: ${userId} via /users/:userId/orders`);
     const response = await api.get(`/v1/users/${userId}/orders`);
-    return response.data;
+    return response.data?.data || response.data;
   },
   
   getOrderStatus: async (orderId: number) => {
@@ -278,13 +327,16 @@ export const orderAPI = {
       // Log and validate the response data
       console.log(`Order status response data:`, response.data);
       
-      // Check if response data has the expected structure
-      if (!response.data || !response.data.id) {
+      // Extract order data from nested response structure
+      const orderData = response.data?.data || response.data;
+      
+      // Check if order data has the expected structure
+      if (!orderData || !orderData.id) {
         console.warn(`Invalid order status response for order ${orderId}:`, response.data);
         throw new Error('Invalid order data received');
       }
       
-      return response.data;
+      return orderData;
     } catch (error) {
       console.error(`Error getting order status for order ${orderId}:`, error);
       throw error;
@@ -300,12 +352,13 @@ export const orderAPI = {
 export const userAPI = {
   getProfile: async () => {
     const response = await api.get('/v1/users/profile');
-    return response.data;
+    // Extract user data from nested response structure
+    return response.data?.data || response.data;
   },
   getLastOrder: async (userId: number) => {
     // Ensure the endpoint matches your backend route for fetching a user's last order
     const response = await api.get(`/v1/users/${userId}/last-order`);
-    return response.data;
+    return response.data?.data || response.data;
   },
 };
 
@@ -323,7 +376,7 @@ export const paymentAPI = {
       if (redirectUrl) {
         Object.assign(payload, { redirectUrl });
       }
-      const response = await api.post('/v1/initiate-checkout', payload);
+      const response = await api.post('/v1/payment/initiate-checkout', payload);
       return response.data;
     } catch (error: any) {
       console.error('Error initiating checkout:', error);
@@ -352,13 +405,16 @@ export const paymentAPI = {
       // Log and validate the response data
       console.log(`Order status response data:`, response.data);
       
-      // Check if response data has the expected structure
-      if (!response.data || !response.data.id) {
+      // Extract order data from nested response structure
+      const orderData = response.data?.data || response.data;
+      
+      // Check if order data has the expected structure
+      if (!orderData || !orderData.id) {
         console.warn(`Invalid order status response for order ${orderId}:`, response.data);
         throw new Error('Invalid order data received');
       }
       
-      return response.data;
+      return orderData;
     } catch (error) {
       console.error(`Error getting order status for order ${orderId}:`, error);
       throw error;

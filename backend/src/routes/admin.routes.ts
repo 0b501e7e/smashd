@@ -30,8 +30,8 @@ router.post('/menu-items/upload-image', uploadMenuItemImage.single('menuItemImag
 
 // Order management
 router.get('/orders', adminController.getAdminOrders.bind(adminController));
-router.post('/orders/:orderId/accept', validateOrderId, adminController.acceptOrder.bind(adminController));
-router.post('/orders/:orderId/decline', validateOrderId, adminController.declineOrder.bind(adminController));
+router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.bind(adminController));
+router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));
 
 // Customization management
 router.get('/customization-categories', adminController.getCustomizationCategories.bind(adminController));

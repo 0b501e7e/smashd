@@ -61,8 +61,7 @@ export default function OrderConfirmation() {
 
     if (storedOrderId) {
         setOrderId(storedOrderId);
-        // Important: Remove the ID from storage after retrieving it
-        sessionStorage.removeItem('pendingOrderId');
+        // Don't remove from sessionStorage yet - only remove after successful verification
     } else {
          setError('Could not retrieve order details. Session may have expired.');
          setIsLoading(false);
@@ -100,11 +99,19 @@ export default function OrderConfirmation() {
            throw new Error(errorData.error || `Verification failed (${verifyResponse.status})`);
         }
 
-        const data: OrderDetails = await verifyResponse.json();
+        const response = await verifyResponse.json();
+        console.log('Order verification response received:', response); // Debug log
+        
+        // Extract the actual order data from the API response structure
+        const data: OrderDetails = response.data || response;
+        console.log('Order verification data extracted:', data); // Debug log
         setOrderDetails(data);
 
+        // Remove orderId from sessionStorage after successful verification
+        sessionStorage.removeItem('pendingOrderId');
+
         // Trigger confetti if payment was successful
-        if (data.status === 'PAID') {
+        if (data.status === 'PAID' || data.status === 'PAYMENT_CONFIRMED') {
             setShowConfetti(true);
             // Optional: Hide confetti after a few seconds
             setTimeout(() => setShowConfetti(false), 8000);
@@ -188,11 +195,11 @@ export default function OrderConfirmation() {
           <div className="pt-4 border-t border-border">
               <h4 className="font-semibold mb-2 text-yellow-300">Order Summary:</h4>
               <ul className="text-sm text-gray-300 space-y-1 mb-3">
-                  {orderDetails.items.map((item, index) => (
+                  {(orderDetails.items || []).map((item, index) => (
                       <li key={index}>{item.quantity} x {item.name}</li>
                   ))}
               </ul>
-              <p className="font-bold text-lg text-white">Total: {formatCurrency(orderDetails.total)}</p>
+              <p className="font-bold text-lg text-white">Total: {formatCurrency(Number(orderDetails.total) || 0)}</p>
           </div>
           {/* Update Button styles */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">

@@ -11,7 +11,7 @@ export class PaymentController {
    */
   async initiateCheckout(req: Request, res: Response): Promise<void> {
     const { orderId } = req.body;
-    console.log(`Initiating checkout for order: ${orderId}`);
+    console.log(`PaymentController: Received checkout request for order: ${orderId} (type: ${typeof orderId})`);
 
     if (!orderId) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({

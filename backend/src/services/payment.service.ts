@@ -11,17 +11,49 @@ export class PaymentService implements IPaymentService {
   constructor(private prisma: PrismaClient) {}
 
   async initiateCheckout(orderId: number): Promise<{ orderId: number; checkoutId: string; checkoutUrl: string }> {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { 
-        items: {
-          include: { menuItem: true }
+    console.log(`PaymentService: Looking for order ${orderId}`);
+    
+    // Initial delay to handle database connection pooling/replication lag
+    console.log(`PaymentService: Waiting 100ms for database consistency...`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Enhanced retry mechanism with exponential backoff to handle read-after-write consistency issues
+    let order = null;
+    let attempts = 0;
+    const maxAttempts = 5;
+    const baseDelay = 50; // Start with 50ms
+
+    while (!order && attempts < maxAttempts) {
+      attempts++;
+      console.log(`PaymentService: Attempt ${attempts} to find order ${orderId}`);
+      
+      order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: { 
+          items: {
+            include: { menuItem: true }
+          }
         }
+      });
+
+      if (!order && attempts < maxAttempts) {
+        const delay = baseDelay * Math.pow(2, attempts - 1); // Exponential backoff: 50ms, 100ms, 200ms, 400ms
+        console.log(`PaymentService: Order not found on attempt ${attempts}, waiting ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    });
+    }
+
+    console.log(`PaymentService: Order query result after ${attempts} attempts:`, order ? `Found order ${order.id}` : 'Order not found');
 
     if (!order) {
-      throw new Error('Order not found');
+      // Try to find recent orders to debug
+      const recentOrders = await this.prisma.order.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+        select: { id: true, createdAt: true, status: true }
+      });
+      console.log(`PaymentService: Recent orders for debugging:`, recentOrders);
+      throw new Error(`Order not found after ${attempts} attempts: ${orderId}`);
     }
 
     // Check if this order already has a SumUp checkout ID

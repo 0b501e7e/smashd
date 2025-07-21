@@ -1,215 +1,237 @@
-# SMASHD Monorepo
+# 🍔 Smash'd - Multi-Platform Food Ordering System
 
-A full-stack application comprised of a Next.js website, React Native mobile app, and Node.js backend. This monorepo contains all the code needed to run the complete SMASHD platform, including the mobile app, web interface, and backend services.
+A comprehensive food ordering platform with web frontend, React Native mobile app, and Node.js backend with SumUp payment integration.
 
-## 📁 Project Structure
+## 📱 Platform Overview
 
-This monorepo contains three main components:
+- **Backend**: Node.js + TypeScript + Prisma + PostgreSQL
+- **Frontend**: Next.js + TypeScript + Tailwind CSS  
+- **Mobile**: React Native + Expo + TypeScript
+- **Payments**: SumUp (Hosted Checkout + Native SDK)
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT + AsyncStorage/localStorage
+- **Notifications**: Push notifications via Expo
 
-- **`/app`** - React Native mobile application built with Expo
-  - Mobile-first user interface
-  - Native device features integration
-  - Offline capabilities
-  - Push notifications
-  - TypeScript support
-  - NativeWind for styling
-
-- **`/frontend`** - Web application built with Next.js
-  - Responsive web interface
-  - Server-side rendering
-  - SEO optimization
-  - Progressive Web App (PWA) support
-  - TypeScript support
-  - Tailwind CSS styling
-
-- **`/backend`** - API server built with Express and Prisma
-  - RESTful API endpoints
-  - Database management
-  - Authentication services
-  - Business logic implementation
-  - Jest testing setup
-
-## 🚀 Getting Started
+## 🚀 Development Environment Setup
 
 ### Prerequisites
 
-- Node.js (v18+)
-- npm or yarn
-- PostgreSQL (for backend)
+```bash
+# Required tools
+node >= 18.0.0
+npm >= 9.0.0
+git
+postgresql
+expo-cli (for mobile development)
+```
 
-### Installation
+### Quick Start (All Platforms)
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/0b501e7e/smashd.git
-   cd smashd
-   ```
+```bash
+# Clone and setup
+git clone <repository-url>
+cd smashd
 
-2. Install dependencies for each project:
+# Install all dependencies
+npm run install:all  # (if you create this script)
 
-   ```bash
-   # Backend
-   cd backend
-   npm install
-   cp .env.example .env  # Configure your database connection and other environment variables
-   # Set up PostgreSQL database according to .env
-   npx prisma migrate dev # Apply database migrations
-   npm run seed         # Seed the database (if applicable)
-   
-   # Frontend
-   cd ../frontend
-   npm install
-   # Create a .env file if needed for frontend-specific variables
-   
-   # Mobile App
-   cd ../app
-   npm install
-   # Create a .env file in the 'app' directory and add necessary variables.
-   # Example:
-   # EXPO_PUBLIC_API_URL=http://your_backend_url
-   # EXPO_PUBLIC_SUMUP_PUBLIC_KEY=your_sumup_public_key
-   # ... add other keys as needed
-   ```
+# Or install manually:
+cd backend && npm install
+cd ../frontend && npm install  
+cd ../app && npm install
+```
 
-## 💻 Running the Projects
+## 🔧 Environment Configuration
 
-### Backend
+### Backend (.env.development)
+```env
+# Database
+DATABASE_URL="postgresql://user@localhost:5432/smashd_dev?schema=public"
 
+# API
+NODE_ENV=development
+PORT=5001
+JWT_SECRET="development-secret"
+
+# SumUp (use your real keys for testing)
+SUMUP_CLIENT_ID=cc_classic_xBuYRPZElJofF1DmpYo7Yq74k0Ay5
+SUMUP_CLIENT_SECRET=cc_sk_classic_...
+SUMUP_MERCHANT_EMAIL=your@email.com
+SUMUP_WEBHOOK_SECRET="dev_webhook_secret"
+
+# URLs
+FRONTEND_URL="http://localhost:3000"
+ALLOWED_ORIGINS="http://localhost:3000,http://localhost:19006,http://192.168.1.100:3000"
+```
+
+### Frontend (.env.local)
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5001/v1
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### React Native (.env)
+```env
+EXPO_PUBLIC_API_URL=http://localhost:5001/v1
+EXPO_PUBLIC_SUMUP_PUBLIC_KEY=sup_pk_...
+EXPO_PUBLIC_APP_ENV=development
+```
+
+## 🏃‍♂️ Development Workflow
+
+### Start All Services
+
+```bash
+# Terminal 1: Backend
+cd backend
+npm run dev
+
+# Terminal 2: Frontend
+cd frontend  
+npm run dev
+
+# Terminal 3: React Native
+cd app
+expo start
+```
+
+### Development Profiles
+
+#### 1. **Full Stack Development**
+```bash
+# Backend + Frontend + Database
+npm run dev:web
+```
+
+#### 2. **Mobile Development**  
+```bash
+# Backend + React Native
+npm run dev:mobile
+```
+
+#### 3. **Backend Only**
+```bash
+# API development and testing
+cd backend && npm run dev
+```
+
+## 🔄 API Endpoints Alignment
+
+### Current Status:
+- ✅ Authentication (`/v1/auth/*`)
+- ✅ Menu Management (`/v1/menu/*`)  
+- ✅ Order Management (`/v1/orders/*`)
+- ✅ User Management (`/v1/users/*`)
+- ✅ Payment Integration (`/v1/payment/*`)
+- ⚠️ Analytics (`/v1/analytics/*`) - Web only
+- ⚠️ Admin Panel - Web only
+
+### Platform-Specific Differences:
+
+| Feature | Web Frontend | React Native | Status |
+|---------|--------------|--------------|---------|
+| Authentication | JWT + localStorage | JWT + AsyncStorage | ✅ Aligned |
+| Payment Flow | SumUp Hosted Checkout | SumUp Native SDK | ⚠️ Different approaches |
+| Guest Mode | Basic support | Full guest flow | ⚠️ Enhance web |
+| Push Notifications | Not implemented | Full Expo integration | ⚠️ Missing on web |
+| Analytics Dashboard | Full admin panel | Not implemented | ⚠️ Missing on mobile |
+
+## 🧪 Testing Strategy
+
+### Backend API Testing
 ```bash
 cd backend
-npm run dev  # Development server
-# or
-npm start    # Production server
+npm run test
+npm run test:integration
 ```
 
-**Testing:**
-```bash
-npm test
-```
-
-The server will be available at `http://localhost:8000` (or the port defined in your .env).
-
-### Frontend (Next.js)
-
+### Frontend Testing  
 ```bash
 cd frontend
-npm run dev
+npm run test
+npm run build  # Verify production build
 ```
 
-**Testing:**
-```bash
-npm run lint # Or other test/lint commands defined in package.json
-```
-
-The website will be available at `http://localhost:3000`.
-
-### Mobile App (React Native)
-
+### React Native Testing
 ```bash
 cd app
-npm start    # Starts the Expo development server
+npm run test
+expo build:ios --simulator  # iOS testing
+expo build:android  # Android testing
 ```
 
-**Testing:**
+## 📱 Mobile Development Setup
+
+### iOS Development
 ```bash
-npm test
-npm run lint
+cd app
+expo run:ios
+# Requires Xcode and iOS Simulator
 ```
 
-Follow the instructions in the terminal to run on iOS, Android, or web.
+### Android Development  
+```bash
+cd app
+expo run:android  
+# Requires Android Studio and Android SDK
+```
 
-## 🛠️ Technologies
+### Web Testing (React Native)
+```bash
+cd app
+expo start --web
+# Test React Native app in browser
+```
 
-### Backend
-- **Framework**: Express.js
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with bcrypt
-- **Testing**: Jest and Supertest
-- **Validation**: Express Validator
-- **File Upload**: Multer with image filtering
-- **Scheduling**: Node Cron (for loyalty points)
-- **API Integration**: Axios for external services
-- **Type Safety**: TypeScript
+## 🚀 Deployment
 
-### Frontend
-- **Framework**: Next.js 14 with App Router
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI
-- **Animation**: Framer Motion
-- **Icons**: Lucide React
-- **Build Tools**: PostCSS, ESLint
-- **Type Safety**: TypeScript
-- **Features**:
-  - Admin Dashboard
-  - Payment Processing
-  - Menu Management
-  - User Profiles
-  - Order Management
+### Backend (Production)
+- Platform: Railway/Heroku
+- Database: PostgreSQL (Railway/Neon)
+- Environment: Production `.env`
 
-### Mobile App
-- **Framework**: React Native with Expo SDK 53
-- **Navigation**: Expo Router with file-based routing
-- **State Management**: React Context
-- **Storage**: AsyncStorage, SecureStore
-- **Network**: Axios
-- **Styling**: NativeWind (Tailwind for React Native)
-- **UI Features**: 
-  - Expo Blur
-  - Expo Linear Gradient
-  - Expo Haptics
-  - Expo Web Browser
-  - Expo Constants
-  - Expo Linking
-  - Expo Status Bar
-- **Features**:
-  - Tab-based Navigation
-  - Authentication Flow
-  - Payment Processing
-  - Order Customization
-  - Order Confirmation
-- **Type Safety**: TypeScript
-- **Testing**: Jest with Jest Expo
+### Frontend (Production)
+- Platform: Vercel/Netlify
+- Environment: Production env vars
 
-### Shared
-- **TypeScript**: Across all projects
-- **Tailwind CSS**: Shared styling system
-- **ESLint**: Code quality
-- **Testing**: Jest
+### React Native (Production)
+- Platform: Expo EAS Build
+- iOS: App Store Connect
+- Android: Google Play Console
 
-## 📱 Mobile App Features
+## 🔍 Development Tips
 
-The React Native application includes:
-- Authentication system
-- Navigation with Expo Router
-- Secure data storage
-- Network status monitoring
-- Haptic feedback
-- Localization support
+### API Development
+- Use Prisma Studio for database inspection: `npx prisma studio`
+- Test SumUp integration: `curl http://localhost:5001/v1/test/sumup-connection`
+- Monitor logs: Backend shows all API calls and database queries
 
-## 🌐 Frontend Features
+### Frontend Development  
+- Use Next.js dev tools for debugging
+- Test responsive design across devices
+- Verify payment flow end-to-end
 
-The Next.js website includes:
-- Modern, responsive UI
-- Server-side rendering
-- Type-safe development with TypeScript
-- Component-based architecture
-- Tailwind for styling
+### React Native Development
+- Use Expo dev tools for debugging  
+- Test on physical devices for best experience
+- Use Expo Go app for quick testing
 
-## 🖥️ Backend Features
+### Common Issues & Solutions
+- **API Connection Issues**: Check CORS settings in backend
+- **Payment Integration**: Verify SumUp credentials in environment
+- **Database Issues**: Run `npx prisma generate && npx prisma db push`
+- **React Native Metro Issues**: Clear cache with `expo r -c`
 
-The Express.js server includes:
-- RESTful API endpoints
-- Database integration with Prisma
-- Authentication and authorization
-- Input validation
-- Comprehensive test suite
+## 📚 Additional Resources
 
-## 📂 Development Workflow
+- [Backend API Documentation](./backend/README.md)
+- [Frontend Development Guide](./frontend/README.md)  
+- [React Native Development Guide](./app/README.md)
+- [SumUp Integration Guide](./docs/SUMUP_INTEGRATION.md)
 
-1. Make changes in the appropriate project directory
-2. Test your changes locally
-3. Commit and push your changes
+## 🤝 Contributing
 
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
+1. Create feature branch from `main`
+2. Develop and test across platforms
+3. Ensure API parity between web/mobile
+4. Submit PR with platform testing notes

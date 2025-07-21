@@ -42,13 +42,19 @@ export class OrderController {
 
       const result = await this.orderService.createOrder(orderData);
 
-      res.status(HTTP_STATUS.CREATED).json({
+      console.log(`OrderController: Received order from service:`, result.order.id);
+
+      const response = {
         success: true,
         data: {
           order: result.order,
           message: result.message
         }
-      });
+      };
+
+      console.log(`OrderController: Sending response with order ID:`, response.data.order.id);
+
+      res.status(HTTP_STATUS.CREATED).json(response);
 
     } catch (error) {
       next(error);

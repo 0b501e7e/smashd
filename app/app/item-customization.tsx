@@ -1,4 +1,4 @@
-import { ScrollView, Image, View, Animated, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
+import { ScrollView, Image, View, Animated, ActivityIndicator, Platform, TouchableOpacity, Dimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
@@ -9,6 +9,7 @@ import { menuAPI } from '@/services/api';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_URL } from '@/services/api';
 import { ImageIcon, Plus, Minus, ShoppingCart } from 'lucide-react-native';
+import { AllCustomizations, CustomizationOption } from '@/types';
 
 // RNR Components
 import { Button } from '@/components/ui/button';
@@ -16,44 +17,18 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-// Define customization options
-type CustomizationOption = {
-  id: string;
+const { width } = Dimensions.get('window');
+
+interface MenuItem {
+  id: number;
   name: string;
   price: number;
-};
+  description?: string;
+  imageUrl?: string;
+  category: string;
+}
 
-// Define the structure for all customizations fetched from the backend
-type AllCustomizations = {
-  extras: CustomizationOption[];
-  sauces: CustomizationOption[];
-  toppings: CustomizationOption[];
-};
-
-// Define categories of customizations with unique IDs
-// const EXTRAS = [
-//   { id: 'extra-patty-1', name: 'Extra Patty', price: 2.00 },
-//   { id: 'cheese-1', name: 'Cheese', price: 1.00 },
-//   { id: 'bacon-1', name: 'Bacon', price: 1.50 },
-//   { id: 'avocado-1', name: 'Avocado', price: 1.75 },
-// ];
-
-// const SAUCES = [
-//   { id: 'ketchup-1', name: 'Ketchup', price: 0 },
-//   { id: 'mayo-1', name: 'Mayo', price: 0 },
-//   { id: 'bbq-1', name: 'BBQ Sauce', price: 0 },
-//   { id: 'special-sauce-1', name: 'Special Sauce', price: 0.50 },
-// ];
-
-// const TOPPINGS = [
-//   { id: 'lettuce-1', name: 'Lettuce', price: 0 },
-//   { id: 'tomato-1', name: 'Tomato', price: 0 },
-//   { id: 'onion-1', name: 'Onion', price: 0 },
-//   { id: 'pickles-1', name: 'Pickles', price: 0 },
-//   { id: 'jalapenos-1', name: 'Jalapenos', price: 0.75 },
-// ];
-
-export default function ItemCustomizationScreen() {
+export default function ItemCustomization() {
   const { itemId } = useLocalSearchParams();
   const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -61,9 +36,9 @@ export default function ItemCustomizationScreen() {
   const [allCustomizations, setAllCustomizations] = useState<AllCustomizations | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const [selectedSauces, setSelectedSauces] = useState<string[]>([]);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [selectedExtras, setSelectedExtras] = useState<number[]>([]);
+  const [selectedSauces, setSelectedSauces] = useState<number[]>([]);
+  const [selectedToppings, setSelectedToppings] = useState<number[]>([]);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
 
@@ -72,30 +47,60 @@ export default function ItemCustomizationScreen() {
 
   // Calculate total price based on selections
   const calculateTotalPrice = useCallback(() => {
-    let total = item ? item.price * quantity : 0;
+    let total = item ? (item.price || 0) * quantity : 0;
     if (allCustomizations) {
       selectedExtras.forEach((extraId) => {
         const extra = allCustomizations.extras.find((e) => e.id === extraId);
-        if (extra) total += extra.price * quantity;
+        if (extra) total += (extra.price || 0) * quantity;
       });
       selectedSauces.forEach((sauceId) => {
         const sauce = allCustomizations.sauces.find((s) => s.id === sauceId);
-        if (sauce && sauce.price > 0) total += sauce.price * quantity;
+        if (sauce && (sauce.price || 0) > 0) total += (sauce.price || 0) * quantity;
       });
       selectedToppings.forEach((toppingId) => {
         const topping = allCustomizations.toppings.find((t) => t.id === toppingId);
-        if (topping && topping.price > 0) total += topping.price * quantity;
+        if (topping && (topping.price || 0) > 0) total += (topping.price || 0) * quantity;
       });
     }
     return total;
   }, [item, quantity, selectedExtras, selectedSauces, selectedToppings, allCustomizations]);
 
   useEffect(() => {
+    // Define the async fetching function right inside the effect
+    const fetchAllData = async (id: number) => {
+      try {
+        setLoading(true);
+        setCustomizationsLoading(true);
+
+        // Fetch item details and customizations in parallel for better performance
+        const [itemData, customizationsData] = await Promise.all([
+          menuAPI.getMenuItemById(id),
+          menuAPI.getItemCustomizations(id) as any,
+        ]);
+
+        setItem(itemData);
+        setAllCustomizations({
+          extras: customizationsData.Extras || [],
+          sauces: customizationsData.Sauces || [],
+          toppings: customizationsData.Toppings || [],
+        });
+
+      } catch (error) {
+        console.error("Error fetching item details:", error);
+        // Ensure we don't have a broken UI on error
+        setAllCustomizations({ extras: [], sauces: [], toppings: [] });
+      } finally {
+        setLoading(false);
+        setCustomizationsLoading(false);
+      }
+    };
+
     if (itemId) {
       const itemIdNumber = Number(itemId);
-      fetchMenuItem(itemIdNumber);
-      fetchItemCustomizations(itemIdNumber);
+      fetchAllData(itemIdNumber);
     }
+    // The ONLY dependency is itemId. The fetch function is created and used
+    // within this effect, so it doesn't need to be a dependency.
   }, [itemId]);
 
   // useEffect(() => { // REMOVE PULSE ANIMATION EFFECT
@@ -119,49 +124,22 @@ export default function ItemCustomizationScreen() {
   //   return () => animation.stop();
   // }, [pulseAnim]);
 
-  const fetchMenuItem = async (id: number) => {
-    try {
-      setLoading(true);
-      const data = await menuAPI.getMenuItemById(id);
-      setItem(data);
-    } catch (error) {
-      console.error("Error fetching menu item:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchItemCustomizations = async (id: number) => {
-    try {
-      setCustomizationsLoading(true);
-      const data = await menuAPI.getItemCustomizations(id);
-      // Ensure all expected keys exist, even if the API returns an empty object or partial data
-      setAllCustomizations({
-        extras: data.extras || [],
-        sauces: data.sauces || [],
-        toppings: data.toppings || [],
-      });
-    } catch (error) {
-      console.error("Error fetching item customizations:", error);
-      setAllCustomizations({ extras: [], sauces: [], toppings: [] });
-    } finally {
-      setCustomizationsLoading(false);
-    }
-  };
-
   const baseApiUrl = API_URL?.replace(/\/(v1|api)$/, "");
   const imageUri =
     item?.imageUrl && baseApiUrl ? `${baseApiUrl}${item.imageUrl}` : null;
 
   const toggleSelection = (
-    id: string,
-    currentSelected: string[],
-    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+    id: number,
+    currentSelected: number[],
+    setSelected: React.Dispatch<React.SetStateAction<number[]>>,
   ) => {
+    console.log(`--- Tapped Customization Option --- ID: ${id}, Type: ${typeof id}`);
     Haptics.selectionAsync();
     if (currentSelected.includes(id)) {
+      console.log(`DE-selecting ${id}`);
       setSelected(currentSelected.filter((item) => item !== id));
     } else {
+      console.log(`SELECTING ${id}`);
       setSelected([...currentSelected, id]);
     }
   };
@@ -218,8 +196,8 @@ export default function ItemCustomizationScreen() {
   const renderCustomizationSection = (
     title: string,
     options: CustomizationOption[],
-    selected: string[],
-    setSelected: React.Dispatch<React.SetStateAction<string[]>>,
+    selected: number[],
+    setSelected: React.Dispatch<React.SetStateAction<number[]>>,
   ) => (
     <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
       <CardHeader>
@@ -230,25 +208,27 @@ export default function ItemCustomizationScreen() {
       <CardContent className="pt-0">
         <View className="flex-wrap flex-row gap-2">
           {options.map((option) => {
-            const isSelected = selected.includes(option.id);
+            const optionId = typeof option.id === 'number' ? option.id : parseInt(option.id.toString());
+            const isSelected = selected.includes(optionId);
             return (
-              <Button
+              <TouchableOpacity
                 key={option.id}
-                className={`h-10 ${isSelected ? '' : 'border'}`}
+                className={`h-10 px-4 py-2 flex items-center justify-center rounded-md ${isSelected ? '' : 'border'}`}
                 style={{
                   backgroundColor: isSelected ? '#FAB10A' : 'transparent',
                   borderColor: isSelected ? '#FAB10A' : '#333333',
                 }}
-                onPress={() => toggleSelection(option.id, selected, setSelected)}
+                onPress={() => toggleSelection(optionId, selected, setSelected)}
+                activeOpacity={0.7}
               >
                 <Text
                   className="font-medium text-sm"
                   style={{ color: isSelected ? '#000000' : '#FFFFFF' }}
                 >
                   {option.name}{" "}
-                  {option.price > 0 && `(€${option.price.toFixed(2)})`}
+                  {option.price > 0 && `(€${(option.price || 0).toFixed(2)})`}
                 </Text>
-              </Button>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -287,6 +267,7 @@ export default function ItemCustomizationScreen() {
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Item Header Section */}
         <View className="relative mb-6">
@@ -322,7 +303,7 @@ export default function ItemCustomizationScreen() {
             <CardContent className="p-4">
               <Text className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>
                 Precio base: 
-                <Text style={{ color: '#FAB10A' }}> €{item.price.toFixed(2)}</Text>
+                <Text style={{ color: '#FAB10A' }}> €{(item?.price || 0).toFixed(2)}</Text>
               </Text>
             </CardContent>
           </Card>

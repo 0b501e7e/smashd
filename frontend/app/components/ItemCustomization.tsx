@@ -62,7 +62,9 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                 if (!response.ok) {
                     throw new Error('Failed to fetch customization options');
                 }
-                const data: FetchedCustomizationCategory[] = await response.json();
+                const responseData = await response.json();
+                // Handle new API response structure
+                const data: FetchedCustomizationCategory[] = responseData.data || responseData;
                 setCustomizationCategories(data);
             } catch (err) {
                 console.error("Fetch Customization Error:", err);

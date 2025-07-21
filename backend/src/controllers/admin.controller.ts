@@ -241,7 +241,7 @@ export class AdminController {
 
   /**
    * Accept order and set estimated preparation time
-   * POST /v1/admin/orders/:orderId/accept
+   * POST /v1/admin/orders/:id/accept
    */
   async acceptOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -253,7 +253,7 @@ export class AdminController {
         return;
       }
 
-      const { orderId } = req.params;
+      const { id: orderId } = req.params;
       const { estimatedMinutes } = req.body;
       
       if (!orderId) {
@@ -293,11 +293,11 @@ export class AdminController {
 
   /**
    * Decline order and mark as cancelled
-   * POST /v1/admin/orders/:orderId/decline
+   * POST /v1/admin/orders/:id/decline
    */
   async declineOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { orderId } = req.params;
+      const { id: orderId } = req.params;
       const { reason } = req.body;
       
       if (!orderId) {

@@ -54,14 +54,22 @@ export function Checkout() {
       }
 
       const orderData = await orderResponse.json();
-      const createdOrderId = orderData.order.id;
+      console.log('Order creation response:', orderData);
+      
+      // Handle new API response structure
+      const createdOrderId = orderData.data?.order?.id || orderData.order?.id || orderData.id;
+      
+      if (!createdOrderId) {
+        console.error('Failed to extract order ID from response:', orderData);
+        throw new Error('Order creation failed - no order ID returned');
+      }
 
       // Step 1.5: Store orderId in sessionStorage BEFORE redirecting to SumUp
       sessionStorage.setItem('pendingOrderId', createdOrderId.toString());
       console.log(`Stored pendingOrderId: ${createdOrderId} in sessionStorage`);
 
-      // Step 2: Initiate SumUp checkout
-      const initiateCheckoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/initiate-checkout`, {
+      // Step 2: Initiate SumUp checkout - FIXED ROUTE
+      const initiateCheckoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payment/initiate-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +84,9 @@ export function Checkout() {
       }
 
       const checkoutData = await initiateCheckoutResponse.json();
-      const sumupCheckoutUrl = checkoutData.checkoutUrl;
+      
+      // Handle both old and new response formats
+      const sumupCheckoutUrl = checkoutData.checkoutUrl || checkoutData.data?.checkoutUrl;
 
       if (!sumupCheckoutUrl) {
           throw new Error('SumUp checkout URL not received from backend.');

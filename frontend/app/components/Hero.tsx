@@ -31,7 +31,14 @@ export function Hero({ scrollToMenu }: { scrollToMenu: () => void }) {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const allMenuItems: MenuItem[] = await response.json();
+        const responseData = await response.json();
+        
+        // Handle new API response structure
+        const allMenuItems: MenuItem[] = responseData.data || responseData; // Support both old and new formats
+        
+        if (!Array.isArray(allMenuItems)) {
+          throw new Error('Invalid menu data format received from server');
+        }
 
         // Filter for featured burgers by ID
         const filteredBurgers = allMenuItems.filter(item =>

@@ -6,6 +6,7 @@ import MenuList from './MenuList';
 import OrderManagement from './OrderManagement';
 import StockManagement from './StockManagement';
 import AdminSettings from './Settings';
+import Analytics from './Analytics';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('menu');
@@ -41,6 +42,13 @@ export default function AdminDashboardPage() {
               Stock Management
             </button>
             <button
+              onClick={() => setActiveTab('analytics')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                          ${activeTab === 'analytics' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
+            >
+              Analytics
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'settings' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
@@ -54,6 +62,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'menu' && <MenuList />}
         {activeTab === 'orders' && <OrderManagement />}
         {activeTab === 'stock' && <StockManagement />}
+        {activeTab === 'analytics' && <Analytics />}
         {activeTab === 'settings' && <AdminSettings />}
 
         {/* TODO: Add components for managing restaurant details, etc. */}

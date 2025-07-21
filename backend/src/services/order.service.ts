@@ -78,33 +78,42 @@ export class OrderService implements IOrderService {
           include: { items: true }
         } as any);
 
-        // Award loyalty points for registered users if enabled
-        if (orderData.userId) {
-          try {
-            await prisma.loyaltyPoints.create({
-              data: {
-                userId: orderData.userId,
-                points: 0 // Will be calculated after payment confirmation
-              }
-            });
-          } catch (loyaltyError) {
-            // Ignore if loyalty points record already exists
-            console.log('OrderService: Loyalty points record already exists for user');
-          }
-        }
-
         console.log(`OrderService: Order ${newOrder.id} created successfully`);
         return { order: newOrder };
       });
+
+      // Handle loyalty points AFTER the transaction to avoid constraint conflicts
+      if (orderData.userId) {
+        try {
+          await this.prisma.loyaltyPoints.create({
+            data: {
+              userId: orderData.userId,
+              points: 0 // Will be calculated after payment confirmation
+            }
+          });
+        } catch (loyaltyError) {
+          // Ignore if loyalty points record already exists
+          console.log('OrderService: Loyalty points record already exists for user');
+        }
+      }
+
+      console.log(`OrderService: Transaction completed, returning order:`, result.order.id);
+
+      // Skip verification query to avoid read-after-write consistency issues
+      // The transaction guarantees the order was created successfully
+      console.log(`OrderService: ✅ Order ${result.order.id} created successfully in transaction`);
 
       const responseMessage = orderData.userId
         ? `Order created successfully. Complete payment to earn loyalty points!`
         : 'Order created successfully. Complete the payment to confirm your order.';
 
-      return {
+      const finalResult = {
         order: result.order as any,
         message: responseMessage
       };
+
+      console.log(`OrderService: Final result order ID:`, finalResult.order.id);
+      return finalResult;
 
     } catch (error) {
       console.error('OrderService: Error creating order:', error);
@@ -371,13 +380,43 @@ export class OrderService implements IOrderService {
         // 6. Update order status
         const updatedOrder = await this.updateOrderStatus(orderId, newStatus);
 
+        // 7. Get full order details with items for frontend display
+        const orderDetails = await this.prisma.order.findUnique({
+          where: { id: orderId },
+          include: {
+            items: {
+              include: {
+                menuItem: true
+              }
+            }
+          }
+        });
+
+        if (!orderDetails) {
+          throw new Error('Order not found after update');
+        }
+
+        // Transform the order details to match frontend expectations
+        const transformedOrder = {
+          id: orderDetails.id,
+          status: orderDetails.status,
+          total: orderDetails.total,
+          items: orderDetails.items.map(item => ({
+            name: item.menuItem.name,
+            quantity: item.quantity,
+            price: item.price,
+            customizations: item.customizations ? JSON.parse(item.customizations as string) : {}
+          })),
+          createdAt: orderDetails.createdAt,
+          sumupCheckoutId: orderDetails.sumupCheckoutId || ''
+        };
+
         return {
           message: 'Payment verification completed',
           orderId: updatedOrder.id,
-          status: updatedOrder.status as OrderStatus,
-          sumupCheckoutId: order.sumupCheckoutId || '',
           sumupStatus: newStatus === 'PAYMENT_CONFIRMED' ? 'PAID' : 'PENDING',
-          loyaltyPointsAwarded
+          loyaltyPointsAwarded,
+          ...transformedOrder  // Include full order details for frontend
         };
 
       } catch (updateError) {

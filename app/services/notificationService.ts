@@ -95,9 +95,8 @@ class NotificationService {
         return;
       }
 
-      await api.post('/notifications/register-token', {
-        pushToken: this.pushToken,
-        userId: userId
+      await api.post(`/v1/notifications/users/${userId}/push-token`, {
+        pushToken: this.pushToken
       });
 
       console.log('✅ Push token registered with backend');
@@ -116,7 +115,7 @@ class NotificationService {
         return;
       }
 
-      await api.delete(`/notifications/remove-token/${userId}`);
+      await api.delete(`/v1/notifications/users/${userId}/push-token`);
       console.log('✅ Push token removed from backend');
     } catch (error) {
       console.error('❌ Failed to remove push token from backend:', error);

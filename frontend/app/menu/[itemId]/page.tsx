@@ -74,7 +74,9 @@ export default function MenuItemDetailPage() {
         if (!response.ok) {
           throw new Error(`Failed to fetch item: ${response.statusText}`);
         }
-        const data: MenuItem = await response.json();
+        const responseData = await response.json();
+        // Handle new API response structure
+        const data: MenuItem = responseData.data || responseData;
         setItem(data);
 
         // Set default selections based on item type if needed
