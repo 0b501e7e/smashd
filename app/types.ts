@@ -1,7 +1,24 @@
+export interface CustomizationOption {
+  id: string | number;
+  name: string;
+  price: number;
+  categoryId?: number;
+  category?: {
+    id: number;
+    name: string;
+  };
+}
+
 export interface CustomizationOptions {
   extras?: string[];
   sauces?: string[];
   toppings?: string[];
+}
+
+export interface AllCustomizations {
+  extras: CustomizationOption[];
+  sauces: CustomizationOption[];
+  toppings: CustomizationOption[];
 }
 
 export interface CartItem {

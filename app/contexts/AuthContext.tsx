@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authAPI, userAPI } from '@/services/api';
+import { notificationService } from '@/services/notificationService';
 
 type User = {
   id: number;
@@ -33,8 +34,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    checkAuth();
+    initializeApp();
   }, []);
+
+  const initializeApp = async () => {
+    try {
+      // Initialize notification service first
+      await notificationService.initialize();
+      
+      // Then check authentication
+      await checkAuth();
+    } catch (error) {
+      console.error('App initialization failed:', error);
+      setLoading(false);
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -44,6 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const userData = await userAPI.getProfile();
           setUser(userData);
+          
+          // Register push token for existing user
+          if (userData?.id) {
+            try {
+              await notificationService.registerWithBackend(userData.id);
+            } catch (notificationError) {
+              console.warn('Failed to register push token for existing user:', notificationError);
+            }
+          }
         } catch (profileError: any) {
           // If profile fetch fails, token is likely invalid
           console.log('Token invalid, removing:', profileError.response?.status);
@@ -64,7 +87,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const response = await authAPI.login(email, password);
-      setUser(response.user);
+      // Extract user from nested response structure
+      const userData = response?.data?.user || response.user;
+      setUser(userData);
+      
+      // Register push token with backend after successful login
+      if (userData?.id) {
+        try {
+          await notificationService.registerWithBackend(userData.id);
+        } catch (notificationError) {
+          console.warn('Failed to register push token:', notificationError);
+          // Don't fail login if notification registration fails
+        }
+      }
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -73,6 +108,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+      // Remove push token from backend before logout
+      if (user?.id) {
+        try {
+          await notificationService.unregisterFromBackend(user.id);
+        } catch (notificationError) {
+          console.warn('Failed to unregister push token:', notificationError);
+          // Continue with logout even if token removal fails
+        }
+      }
+
       await AsyncStorage.removeItem('token');
       setUser(null);
     } catch (error) {
@@ -94,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ) => {
     try {
       await authAPI.register(email, password, name, dateOfBirth, address, phoneNumber, acceptedTerms);
+      // Login will automatically handle push token registration
       await login(email, password);
     } catch (error) {
       console.error('Registration failed:', error);

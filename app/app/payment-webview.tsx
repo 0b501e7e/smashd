@@ -24,7 +24,7 @@ export default function PaymentWebviewScreen() {
       statusCheckInterval = setInterval(async () => {
         try {
           // Check SumUp checkout status directly
-          const response = await api.get(`/v1/checkouts/${checkoutId}/status`);
+          const response = await api.get(`/v1/payment/checkouts/${checkoutId}/status`);
           const status = response.data;
           console.log('SumUp payment status poll:', status);
           

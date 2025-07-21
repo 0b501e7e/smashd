@@ -17,8 +17,8 @@ export const sumupService = {
         console.log('🌐 API base URL:', api.defaults.baseURL);
       }
       
-      // Use the correct v1 API endpoint
-      const response = await api.post('/v1/initiate-checkout', { orderId });
+      // Use the correct payment API endpoint
+      const response = await api.post('/v1/payment/initiate-checkout', { orderId });
       
       if (__DEV__) {
         console.log('✅ Checkout response received:', response.data);

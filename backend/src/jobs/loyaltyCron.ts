@@ -1,9 +1,12 @@
-const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
+import * as cron from 'node-cron';
+import { PrismaClient } from '@prisma/client';
+
 const prisma = new PrismaClient();
 
-// Function to calculate the difference in days between two dates
-function dateDiffInDays(a, b) {
+/**
+ * Calculate the difference in days between two dates
+ */
+function dateDiffInDays(a: Date, b: Date): number {
   const _MS_PER_DAY = 1000 * 60 * 60 * 24;
   // Discard the time and time-zone information.
   const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
@@ -11,14 +14,19 @@ function dateDiffInDays(a, b) {
   return Math.floor((utc2 - utc1) / _MS_PER_DAY);
 }
 
-// Function to add days to a date
-function addDays(date, days) {
-  var result = new Date(date);
+/**
+ * Add days to a date
+ */
+function addDays(date: Date, days: number): Date {
+  const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 }
 
-async function expirePoints() {
+/**
+ * Expire loyalty points after 90-day cycles
+ */
+async function expirePoints(): Promise<void> {
   console.log('Running scheduled job: Expire Loyalty Points - Starting');
   const today = new Date();
 
@@ -38,9 +46,6 @@ async function expirePoints() {
         continue;
       }
 
-      const numberOf90DayCyclesSinceRegistration = Math.floor(daysSinceRegistration / 90);
-      const lastTheoreticalResetDate = addDays(registrationDate, numberOf90DayCyclesSinceRegistration * 90);
-      
       // Determine the start of the current 90-day cycle for which points *should have been* reset
       // This is essentially the most recent 90-day anniversary of their registration that has passed.
       let currentCycleStartDate = registrationDate;
@@ -86,11 +91,13 @@ async function expirePoints() {
   console.log('Scheduled job: Expire Loyalty Points - Finished');
 }
 
-async function handleBirthdayRewardsAndAnnualReset() {
+/**
+ * Handle birthday rewards and annual reset
+ */
+async function handleBirthdayRewardsAndAnnualReset(): Promise<void> {
   console.log('Running scheduled job: Handle Birthday Rewards & Annual Reset - Starting');
   const today = new Date();
   const currentYear = today.getFullYear();
-  const firstDayOfYear = new Date(currentYear, 0, 1);
 
   try {
     const usersWithLoyalty = await prisma.user.findMany({
@@ -98,9 +105,6 @@ async function handleBirthdayRewardsAndAnnualReset() {
         loyaltyPoints: {
           isNot: null,
         },
-        dateOfBirth: {
-          not: null,
-        }
       },
       include: {
         loyaltyPoints: true,
@@ -174,18 +178,22 @@ async function handleBirthdayRewardsAndAnnualReset() {
   console.log('Scheduled job: Handle Birthday Rewards & Annual Reset - Finished');
 }
 
-// Schedule the job to run, for example, once a day at 2 AM
-cron.schedule('0 2 * * *', async () => {
-  console.log('\n------------------------------------');
-  await expirePoints();
-  await handleBirthdayRewardsAndAnnualReset();
-  console.log('------------------------------------\n');
-}, {
-  scheduled: true,
-  timezone: "Europe/Dublin" // Set your desired timezone
-});
+/**
+ * Initialize and schedule the loyalty cron jobs
+ */
+export function initializeLoyaltyCron(): void {
+  // Schedule the job to run once a day at 2 AM
+  cron.schedule('0 2 * * *', async () => {
+    console.log('\n------------------------------------');
+    await expirePoints();
+    await handleBirthdayRewardsAndAnnualReset();
+    console.log('------------------------------------\n');
+  }, {
+    timezone: "Europe/Dublin" // Set your desired timezone
+  });
 
-console.log('Loyalty points expiration cron job defined and scheduled to run daily at 2 AM Europe/Dublin.');
+  console.log('Loyalty points expiration cron job defined and scheduled to run daily at 2 AM Europe/Dublin.');
+}
 
 // Export for potential manual triggering or testing if needed
-module.exports = { expirePoints, handleBirthdayRewardsAndAnnualReset }; 
+export { expirePoints, handleBirthdayRewardsAndAnnualReset }; 

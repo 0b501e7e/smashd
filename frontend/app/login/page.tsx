@@ -24,15 +24,30 @@ export default function Login() {
       });
 
       const data = await response.json();
+      console.log('Full API response:', data);
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         console.log('Login successful');
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('Token:', data.data.token);
+        console.log('User data:', data.data.user);
+        
+        // Store token and user data from the nested structure
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+        
+        console.log('Stored in localStorage - token:', !!localStorage.getItem('token'));
+        console.log('Stored in localStorage - user:', localStorage.getItem('user'));
+        
         window.dispatchEvent(new Event('storage'));
-        router.push('/');
+        
+        // Redirect based on user role
+        if (data.data.user.role === 'ADMIN') {
+          router.push('/admin');
+        } else {
+          router.push('/');
+        }
       } else {
-        setError(data.error || 'Login failed. Please try again.');
+        setError(data.error || data.message || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);

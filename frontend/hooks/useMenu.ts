@@ -29,8 +29,15 @@ export function useMenu(): UseMenuReturn {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const data: MenuItem[] = await response.json();
-      console.log('Menu response data:', data); // Keep log for debugging
+      const responseData = await response.json();
+      console.log('Menu response data:', responseData); // Keep log for debugging
+
+      // Handle new API response structure
+      const data: MenuItem[] = responseData.data || responseData; // Support both old and new formats
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid menu data format received from server');
+      }
 
       // Group items by category
       const groupedItems = data.reduce((acc, item) => {

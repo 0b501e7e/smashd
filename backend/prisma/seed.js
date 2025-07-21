@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 // --- Customization Data Definitions (copied from TS example) ---
@@ -27,8 +28,59 @@ const TOPPINGS = [
 async function main() {
   console.log('Start seeding ...');
 
+  // Seed Test Users
+  console.log('Seeding test users...');
+  
+  // Create admin user
+  const hashedPassword = await bcrypt.hash('test123', 10);
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'test@gmail.com' },
+    update: {},
+    create: {
+      email: 'test@gmail.com',
+      name: 'Test Admin',
+      password: hashedPassword,
+      role: 'ADMIN',
+      dateOfBirth: new Date('1990-01-01'),
+      address: '123 Test Street, Test City',
+      phoneNumber: '+1234567890',
+      acceptedTerms: true,
+    },
+  });
+  console.log('Admin user created:', adminUser.email);
+
+  // Create a few test customers
+  const testCustomers = [];
+  for (let i = 1; i <= 3; i++) {
+    const customer = await prisma.user.upsert({
+      where: { email: `customer${i}@test.com` },
+      update: {},
+      create: {
+        email: `customer${i}@test.com`,
+        name: `Test Customer ${i}`,
+        password: hashedPassword,
+        role: 'CUSTOMER',
+        dateOfBirth: new Date(`199${i}-01-01`),
+        address: `${i}23 Customer Street, Test City`,
+        phoneNumber: `+123456789${i}`,
+        acceptedTerms: true,
+      },
+    });
+    testCustomers.push(customer);
+  }
+  console.log('Test customers created');
+
   // Seed Menu Items (Keep existing logic)
   console.log('Seeding Menu Items...');
+  
+  // Clear existing menu items
+  console.log('Clearing existing menu items...');
+  await prisma.orderItem.deleteMany({});
+  await prisma.menuItemCustomizationCategory.deleteMany({});
+  await prisma.menuItemCustomizationOption.deleteMany({});
+  await prisma.menuItem.deleteMany({});
+  console.log('Existing menu items cleared.');
+  
   const menuItemsData = [
     { name: "Barbacoa", price: 9.00, category: "BURGER", imageUrl: "/images/barbacoa.jpeg", description: "Delicious barbecue burger" },
     { name: "Andalu", price: 7.00, category: "BURGER", imageUrl: "/images/andalu.jpeg", description: "Andalusian style burger" },
@@ -52,8 +104,10 @@ async function main() {
     { name: "Nestlé lemon", price: 1.10, category: "DRINK", imageUrl: "/images/nestealemon.jpeg", description: "Nestlé Lemon Tea" },
     { name: "Fanta Nestlé passion fruit", price: 1.10, category: "DRINK", imageUrl: "/images/nestea-passionfruit.jpg", description: "Nestlé Passion Fruit Fanta" },
   ];
+  
+  const createdMenuItems = [];
   for (const item of menuItemsData) {
-    await prisma.menuItem.create({
+    const menuItem = await prisma.menuItem.create({
       data: {
         name: item.name,
         price: item.price,
@@ -63,6 +117,7 @@ async function main() {
         isAvailable: true
       },
     });
+    createdMenuItems.push(menuItem);
   }
   console.log('Menu items seeded/updated.');
 
@@ -143,6 +198,62 @@ async function main() {
     }
      console.log(`Linked ${burgerItems.length} BURGER items to customization categories.`);
   }
+
+  // 5. Create some test orders for analytics
+  console.log('Creating test orders...');
+  
+  // Make sure we have menu items to work with
+  const availableMenuItems = await prisma.menuItem.findMany({
+    where: { isAvailable: true }
+  });
+  
+  if (availableMenuItems.length === 0) {
+    console.warn('No menu items available for creating test orders.');
+    console.log('Seeding finished.');
+    return;
+  }
+  
+  const now = new Date();
+  const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+  
+  // Create orders across different weeks for analytics
+  const testOrders = [
+    { customer: testCustomers[0], date: twoWeeksAgo, items: [availableMenuItems[0], availableMenuItems[8]] },
+    { customer: testCustomers[1], date: twoWeeksAgo, items: [availableMenuItems[1], availableMenuItems[11]] },
+    { customer: testCustomers[2], date: oneWeekAgo, items: [availableMenuItems[2], availableMenuItems[9], availableMenuItems[12]] },
+    { customer: testCustomers[0], date: oneWeekAgo, items: [availableMenuItems[4]] },
+    { customer: testCustomers[1], date: now, items: [availableMenuItems[3], availableMenuItems[10]] },
+  ];
+
+  for (let i = 0; i < testOrders.length; i++) {
+    const orderData = testOrders[i];
+    const orderTotal = orderData.items.reduce((sum, item) => sum + item.price, 0);
+    
+    const order = await prisma.order.create({
+      data: {
+        userId: orderData.customer.id,
+        total: orderTotal,
+        status: 'DELIVERED',
+        createdAt: orderData.date,
+        updatedAt: orderData.date,
+      },
+    });
+
+    // Add order items
+    for (const item of orderData.items) {
+      await prisma.orderItem.create({
+        data: {
+          orderId: order.id,
+          menuItemId: item.id,
+          quantity: 1,
+          price: item.price,
+          customizations: '{}',
+        },
+      });
+    }
+  }
+  console.log('Test orders created for analytics.');
 
   console.log('Seeding finished.');
 }

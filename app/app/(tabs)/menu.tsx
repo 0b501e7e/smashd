@@ -1,10 +1,10 @@
-import { ActivityIndicator, View, Pressable, Image } from 'react-native';
+import { ActivityIndicator, View, Pressable, Image, ScrollView, FlatList, Dimensions } from 'react-native';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useCart } from '@/contexts/CartContext';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { menuAPI } from '@/services/api';
+import { menuAPI, API_URL } from '@/services/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ChefHat, Coffee, Utensils, Plus, ShoppingCart } from 'lucide-react-native';
@@ -55,6 +55,8 @@ export default function MenuScreen() {
   const [error, setError] = useState<string | null>(null);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = Dimensions.get('window');
+  const cardWidth = screenWidth * 0.75; // Card size that allows peek of next card
 
   useEffect(() => {
     loadMenu();
@@ -173,56 +175,85 @@ export default function MenuScreen() {
                 </View>
               </View>
 
-              {/* Category Items */}
-              {categoryItems.map((item) => (
-                <Card key={item.id} className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
-                  <Pressable onPress={() => handleItemPress(item)}>
-                    <CardHeader className="pb-3">
-                      <View className="flex-row justify-between items-start">
-                        <View className="flex-1 mr-3">
-                          <CardTitle className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>
-                            {item.name}
-                          </CardTitle>
-                          <View className="flex-row items-center">
-                            <Text className="text-2xl font-bold" style={{ color: '#FAB10A' }}>
-                              €{item.price.toFixed(2)}
-                            </Text>
+              {/* Category Items - Horizontal Carousel */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingLeft: 16,
+                  paddingRight: 16,
+                }}
+                decelerationRate="fast"
+                snapToInterval={cardWidth + 12} // Card width + gap
+                snapToAlignment="start"
+                pagingEnabled={false}
+              >
+                {categoryItems.map((item, index) => (
+                  <View
+                    key={item.id}
+                    style={{
+                      width: cardWidth,
+                      height: 160, // Fixed height for all cards
+                      marginRight: index === categoryItems.length - 1 ? 0 : 12,
+                    }}
+                  >
+                    <Card className="mb-4 h-full" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+                                              <Pressable onPress={() => handleItemPress(item)} className="h-full flex-1">
+                          <View className="flex-1 justify-between">
+                            <CardHeader className="pb-3">
+                              <View className="flex-row justify-between items-start">
+                                <View className="flex-1 mr-3">
+                                  <CardTitle className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>
+                                    {item.name}
+                                  </CardTitle>
+                                  <View className="flex-row items-center">
+                                    <Text className="text-2xl font-bold" style={{ color: '#FAB10A' }}>
+                                      €{item.price.toFixed(2)}
+                                    </Text>
+                                  </View>
+                                  <CardDescription 
+                                    className="text-sm mt-2" 
+                                    style={{ color: '#CCCCCC' }}
+                                    numberOfLines={2}
+                                    ellipsizeMode="tail"
+                                  >
+                                    {item.description}
+                                  </CardDescription>
+                                </View>
+                                {/* Item Image - Right Side */}
+                                {item.imageUrl && (
+                                  <View className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: '#222222' }}>
+                                    <Image
+                                      source={{ uri: `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}` }}
+                                      className="w-full h-full"
+                                      resizeMode="cover"
+                                    />
+                                  </View>
+                                )}
+                              </View>
+                            </CardHeader>
+                            <CardFooter className="pt-0 flex-row justify-between items-center">
+                          <View className="flex-1 mr-3">
+                            <Badge className="self-start" style={{ backgroundColor: '#FAB10A' }}>
+                              <Text className="text-xs font-medium" style={{ color: '#000000' }}>
+                                {CATEGORY_CONFIG[item.category].title}
+                              </Text>
+                            </Badge>
                           </View>
-                        </View>
-                        {/* Item Image */}
-                        {item.imageUrl && (
-                          <View className="w-16 h-16 rounded-lg overflow-hidden" style={{ backgroundColor: '#222222' }}>
-                            <Image
-                              source={{ uri: `https://backend-production-e9ac.up.railway.app${item.imageUrl}` }}
-                              className="w-full h-full"
-                              resizeMode="cover"
-                            />
-                          </View>
-                        )}
+                          <TouchableOpacity
+                            onPress={() => handleAddToCart(item)}
+                            className="w-10 h-10 rounded-full items-center justify-center"
+                            style={{ backgroundColor: '#FAB10A' }}
+                          >
+                            <Plus size={20} color="#000000" />
+                          </TouchableOpacity>
+                        </CardFooter>
                       </View>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <CardDescription className="text-sm leading-5" style={{ color: '#CCCCCC' }}>
-                        {item.description}
-                      </CardDescription>
-                    </CardContent>
-                  </Pressable>
-                  <CardFooter className="pt-3">
-                    <Button
-                      variant="default"
-                      size="sm"
-                      className="w-full flex-row items-center"
-                      style={{ backgroundColor: '#FAB10A' }}
-                      onPress={() => handleAddToCart(item)}
-                    >
-                      <Plus size={16} color="#000000" className="mr-2" />
-                      <Text className="font-semibold" style={{ color: '#000000' }}>
-                        Añadir al Carrito
-                      </Text>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                    </Pressable>
+                    </Card>
+                  </View>
+                ))}
+              </ScrollView>
             </View>
           );
         })}

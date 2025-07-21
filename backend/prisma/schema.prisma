@@ -23,10 +23,12 @@ model User {
   phoneNumber   String
   acceptedTerms Boolean        @default(false)
   role          Role           @default(CUSTOMER)
+  pushToken     String?        // Expo push notification token
   orders        Order[]
   loyaltyPoints LoyaltyPoints?
   pointsTransactions PointsTransaction[]
   notifications Notification[]
+  analyticsEvents AnalyticsEvent[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -170,6 +172,51 @@ model Notification {
   scheduledFor DateTime?
   sentAt    DateTime?
   createdAt DateTime @default(now())
+}
+
+// Analytics Models
+model AnalyticsEvent {
+  id        Int      @id @default(autoincrement())
+  eventType String   // "order_placed", "screen_viewed", "item_clicked", etc.
+  userId    Int?     // Optional - for guest users
+  user      User?    @relation(fields: [userId], references: [id])
+  sessionId String?  // For tracking user sessions
+  metadata  Json?    // Event-specific data (orderId, itemId, screenName, etc.)
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model WeeklyAnalytics {
+  id             Int      @id @default(autoincrement())
+  weekStartDate  DateTime // Start of the week (Monday)
+  weekEndDate    DateTime // End of the week (Sunday)
+  
+  // Revenue metrics
+  totalRevenue   Float    @default(0)
+  totalOrders    Int      @default(0)
+  avgOrderValue  Float    @default(0)
+  revenuePerHour Float    @default(0)
+  
+  // Customer metrics
+  newCustomers      Int   @default(0)
+  returningCustomers Int  @default(0)
+  totalCustomers    Int   @default(0)
+  
+  // Popular items (stored as JSON for flexibility)
+  topItems       Json?    // [{itemId, name, orderCount, revenue}, ...]
+  menuMetrics    Json?    // Detailed menu performance data
+  
+  // Additional metrics
+  metadata       Json?    // Any other weekly metrics
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([weekStartDate])
+  @@index([weekStartDate])
 }
 
 enum Role {
