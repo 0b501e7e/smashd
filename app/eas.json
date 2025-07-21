@@ -17,7 +17,7 @@
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "versionCode": "auto"
+        "autoIncrement": true
       },
       "cache": {
         "disabled": true
