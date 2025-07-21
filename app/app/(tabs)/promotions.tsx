@@ -280,15 +280,7 @@ export default function PromotionsScreen() {
   );
 
   return (
-    <View 
-      className="flex-1 bg-black" 
-      style={{ 
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right
-      }}
-    >
+    <View className="flex-1 bg-black" style={{ paddingTop: insets.top }}>
       <ScrollView
         className="pb-24"
         refreshControl={
