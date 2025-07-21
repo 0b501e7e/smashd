@@ -37,7 +37,7 @@ export function AnimatedLogo() {
       style={[{ width: LOGO_SIZE, height: LOGO_SIZE }, animatedStyle]}
     >
       <Image
-        source={require('@/assets/images/smashd.png')}
+        source={require('@/assets/images/smashd-transparent.png')}
         className="w-full h-full"
         resizeMode="contain"
       />

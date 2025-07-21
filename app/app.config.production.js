@@ -5,7 +5,7 @@ module.exports = ({ config }) => {
     slug: "smashd-app",
     version: "1.0.8",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./assets/images/smashd.png",
     scheme: "smashd",
     userInterfaceStyle: "automatic",
     splash: {
@@ -20,7 +20,7 @@ module.exports = ({ config }) => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./assets/images/smashd.png",
         backgroundColor: "#ffffff"
       },
       package: "com.smashd.app",
