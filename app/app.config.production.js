@@ -20,7 +20,7 @@ module.exports = ({ config }) => {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: "./assets/images/smashd.png",
+        foregroundImage: "./assets/images/smashd-transparent.png",
         backgroundColor: "#ffffff"
       },
       package: "com.smashd.app",
