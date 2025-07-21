@@ -28,6 +28,7 @@ const createCorsOptions = (): CorsOptions => {
         'Content-Type',
         'Accept',
         'Authorization',
+        'X-App-Platform',
         'Cache-Control',
         'Pragma'
       ],
@@ -70,7 +71,8 @@ const createCorsOptions = (): CorsOptions => {
         'X-Requested-With',
         'Content-Type',
         'Accept',
-        'Authorization'
+        'Authorization',
+        'X-App-Platform'
       ],
       maxAge: 86400, // 24 hours
       preflightContinue: false,

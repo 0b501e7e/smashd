@@ -40,8 +40,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'X-App-Platform': 'react-native', // Identify React Native requests
   },
-  // Set timeout to avoid long-running requests
-  timeout: 10000,
+  // Set timeout to avoid long-running requests (increased for production)
+  timeout: 15000,
 });
 
 // Track guest mode status
@@ -254,21 +254,44 @@ export const menuAPI = {
   // New function to fetch customizations for a menu item
   getItemCustomizations: async (id: number): Promise<AllCustomizations> => {
     try {
-      console.log(`Fetching customizations for menu item ${id}`);
+      console.log(`🔧 Fetching customizations for menu item ${id} from ${API_URL}/v1/menu/items/${id}/customizations`);
       const response = await api.get(`/v1/menu/items/${id}/customizations`);
-      console.log('Customizations response:', response.data);
+      console.log('✅ Customizations response status:', response.status);
+      console.log('📦 Customizations response data:', JSON.stringify(response.data, null, 2));
       
       // Handle new backend response format: { success: true, data: {...}, message: "..." }
       const customizationsData = response.data?.data || response.data;
       
+      // Validate the data structure
+      if (!customizationsData) {
+        console.warn('⚠️ No customizations data received');
+        return { extras: [], sauces: [], toppings: [] };
+      }
+      
       // Return in expected format
-      return {
+      const result = {
         extras: customizationsData.Extras || [],
         sauces: customizationsData.Sauces || [],
         toppings: customizationsData.Toppings || []
       };
-    } catch (error) {
-      console.error(`Error fetching customizations for item ${id}:`, error);
+      
+      console.log('🎯 Transformed customizations:', JSON.stringify(result, null, 2));
+      return result;
+    } catch (error: any) {
+      console.error(`❌ Error fetching customizations for item ${id}:`, error);
+      
+      // Enhanced error logging for production debugging
+      if (error.response) {
+        console.error('📊 Response status:', error.response.status);
+        console.error('📊 Response headers:', error.response.headers);
+        console.error('📊 Response data:', error.response.data);
+      } else if (error.request) {
+        console.error('🔗 Request failed - no response received');
+        console.error('🔗 Request config:', error.config);
+      } else {
+        console.error('⚙️ Request setup error:', error.message);
+      }
+      
       // Return empty customizations on error
       return { extras: [], sauces: [], toppings: [] };
     }
