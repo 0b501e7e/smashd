@@ -45,7 +45,9 @@ const createCorsOptions = (): CorsOptions => {
       'https://smashd.app',           // Production frontend
       'https://www.smashd.app',       // Production frontend with www
       'https://admin.smashd.app',     // Admin panel
-      'https://api.smashd.app'        // API domain
+      'https://api.smashd.app',       // API domain
+      'http://localhost:3000',        // Local development (temporary)
+      'http://127.0.0.1:3000'         // Alternative localhost (temporary)
     ];
 
     // Add any additional origins from environment variables

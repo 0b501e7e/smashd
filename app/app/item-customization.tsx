@@ -48,16 +48,12 @@ export default function ItemCustomization() {
       try {
         const [itemData, customizationsData] = await Promise.all([
           menuAPI.getMenuItemById(Number(itemId)),
-          menuAPI.getItemCustomizations(Number(itemId)) as any,
+          menuAPI.getItemCustomizations(Number(itemId)),
         ]);
 
         setItem(itemData);
-        // API service now handles the response transformation
-        setAllCustomizations({
-          extras: customizationsData.extras || [],
-          sauces: customizationsData.sauces || [],
-          toppings: customizationsData.toppings || [],
-        });
+        // API service already handles the response transformation
+        setAllCustomizations(customizationsData);
       } catch (error) {
         console.error("Error fetching data:", error);
         setAllCustomizations({ extras: [], sauces: [], toppings: [] });
