@@ -3,7 +3,7 @@ module.exports = ({ config }) => {
     ...config,
     name: "Smash'd",
     slug: "smashd-app",
-    version: "1.0.8", // Increment version for new build
+    version: "1.0.8",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "smashd",

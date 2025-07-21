@@ -52,10 +52,11 @@ export default function ItemCustomization() {
         ]);
 
         setItem(itemData);
+        // API service now handles the response transformation
         setAllCustomizations({
-          extras: customizationsData.Extras || [],
-          sauces: customizationsData.Sauces || [],
-          toppings: customizationsData.Toppings || [],
+          extras: customizationsData.extras || [],
+          sauces: customizationsData.sauces || [],
+          toppings: customizationsData.toppings || [],
         });
       } catch (error) {
         console.error("Error fetching data:", error);

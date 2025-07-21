@@ -253,8 +253,25 @@ export const menuAPI = {
 
   // New function to fetch customizations for a menu item
   getItemCustomizations: async (id: number): Promise<AllCustomizations> => {
-    const response = await api.get(`/v1/menu/items/${id}/customizations`);
-    return response.data?.data || response.data;
+    try {
+      console.log(`Fetching customizations for menu item ${id}`);
+      const response = await api.get(`/v1/menu/items/${id}/customizations`);
+      console.log('Customizations response:', response.data);
+      
+      // Handle new backend response format: { success: true, data: {...}, message: "..." }
+      const customizationsData = response.data?.data || response.data;
+      
+      // Return in expected format
+      return {
+        extras: customizationsData.Extras || [],
+        sauces: customizationsData.Sauces || [],
+        toppings: customizationsData.Toppings || []
+      };
+    } catch (error) {
+      console.error(`Error fetching customizations for item ${id}:`, error);
+      // Return empty customizations on error
+      return { extras: [], sauces: [], toppings: [] };
+    }
   },
 
   // Fetch all general customizations (fallback for items with no specific customizations)
