@@ -16,7 +16,8 @@ import {
   CreditCard,
   Plus,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Truck
 } from 'lucide-react-native';
 
 // RNR Components
@@ -26,7 +27,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED';
+type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
 
 type OrderDetails = {
   id: number;
@@ -41,6 +42,8 @@ type OrderDetails = {
   estimatedReadyTime: string | null;
   createdAt: string;
   transactionId?: string;
+  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  deliveryAddress?: string | null;
 };
 
 export default function OrderConfirmationScreen() {
@@ -91,7 +94,7 @@ export default function OrderConfirmationScreen() {
 
   // Add polling for order status updates
   useEffect(() => {
-    if (!orderId || !order || (order.status === 'COMPLETED' || order.status === 'CANCELLED')) {
+    if (!orderId || !order || (order.status === 'COMPLETED' || order.status === 'CANCELLED' || order.status === 'DELIVERED')) {
       return; // Don't poll if no order, or order is in a terminal state
     }
 
@@ -146,7 +149,11 @@ export default function OrderConfirmationScreen() {
       case 'PREPARING':
         return { color: '#FAB10A', icon: Flame, text: 'Preparando tu Pedido' };
       case 'READY':
-        return { color: '#2196F3', icon: Bell, text: 'Listo para Recoger' };
+        return { color: '#2196F3', icon: Bell, text: order.fulfillmentMethod === 'DELIVERY' ? 'Listo para Entrega' : 'Listo para Recoger' };
+      case 'OUT_FOR_DELIVERY':
+        return { color: '#2196F3', icon: Truck, text: '¡En Camino! Tu pedido está siendo entregado' };
+      case 'DELIVERED':
+        return { color: '#4CAF50', icon: CheckCircle, text: '¡Entregado! Disfruta tu pedido' };
       case 'COMPLETED':
         return { color: '#4CAF50', icon: CheckCircle, text: 'Pedido Completado' };
       case 'CANCELLED':
@@ -283,6 +290,31 @@ export default function OrderConfirmationScreen() {
                     {getEstimatedReadyTime()}
                   </Text>
                 </View>
+
+                {order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress && (
+                  <View className="mt-2">
+                    <Text className="text-sm font-medium mb-1" style={{ color: '#CCCCCC' }}>
+                      Dirección de entrega:
+                    </Text>
+                    <Text className="text-sm" style={{ color: '#FFFFFF' }}>{order.deliveryAddress}</Text>
+                    <View className="mt-3">
+                      <Button
+                        className="h-10"
+                        style={{ backgroundColor: '#333333', borderColor: '#FAB10A', borderWidth: 1 }}
+                        onPress={() => {
+                          const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.deliveryAddress || '')}`;
+                          router.push({ pathname: '/payment-webview', params: { url } as any });
+                        }}
+                      >
+                        <View className="flex-row items-center gap-2">
+                          <Text className="text-base font-semibold" style={{ color: '#FAB10A' }}>
+                            Abrir en Google Maps
+                          </Text>
+                        </View>
+                      </Button>
+                    </View>
+                  </View>
+                )}
               </View>
             </CardContent>
           </Card>

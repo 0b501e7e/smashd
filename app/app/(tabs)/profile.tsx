@@ -71,9 +71,27 @@ export default function ProfileScreen() {
       const fetchedOrders = await orderAPI.getUserOrders(Number(user.id));
       setOrders(fetchedOrders || []);
     } catch (error: any) {
-      console.error('Error fetching orders:', error);
-      setOrderError(error.message || 'Failed to fetch order history.');
-      setOrders([]);
+      // Gracefully handle errors - don't show error for empty order history
+      if (error.response?.status === 404) {
+        const errorMessage = error.response?.data?.error || '';
+        if (errorMessage.includes('No previous orders') || errorMessage.includes('not found')) {
+          // Expected case - user has no orders yet
+          setOrders([]);
+          setOrderError(null);
+        } else {
+          setOrderError('No se encontraron pedidos.');
+          setOrders([]);
+        }
+      } else if (error.response?.status === 401) {
+        // Unauthorized - user might need to log in again
+        setOrderError(null);
+        setOrders([]);
+      } else {
+        // Only show error for unexpected errors
+        console.error('Error fetching orders:', error);
+        setOrderError('Error al cargar el historial de pedidos. Por favor, intenta de nuevo.');
+        setOrders([]);
+      }
     } finally {
       setIsLoadingOrders(false);
     }

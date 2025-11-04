@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+console.log("🚦 API BASE URL at runtime:", Constants?.expoConfig?.extra?.EXPO_PUBLIC_API_URL);
 
 // Get the host from Expo when running in development
 const getLocalHost = () => {
@@ -206,6 +207,17 @@ export const authAPI = {
     await AsyncStorage.removeItem('token');
     setGuestMode(false); // Reset guest mode on logout
   },
+  
+  // Forgot / Reset password
+  forgotPassword: async (email: string) => {
+    const res = await api.post('/v1/auth/forgot-password', { email });
+    return res.data;
+  },
+
+  resetPassword: async (token: string, password: string) => {
+    const res = await api.post('/v1/auth/reset-password', { token, password });
+    return res.data;
+  },
 };
 
 // Define the structure for all customizations, mirroring the frontend type
@@ -339,8 +351,9 @@ export const menuAPI = {
 export const orderAPI = {
   createOrder: async (orderData: {
     items: Array<{ menuItemId: number; quantity: number; price: number; customizations?: any }>;
-    collectionTime: string;
     total: number;
+    fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+    deliveryAddress?: string;
   }) => {
     const response = await api.post('/v1/orders', orderData);
     return response.data?.data || response.data;
@@ -383,9 +396,9 @@ export const orderAPI = {
     }
   },
   repeatOrder: async (orderId: number) => {
-    // Ensure the endpoint matches your backend route for repeating an order
-    const response = await api.post('/v1/orders/repeat', { orderId });
-    return response.data;
+    // Updated endpoint: GET /v1/users/orders/:orderId/repeat
+    const response = await api.get(`/v1/users/orders/${orderId}/repeat`);
+    return response.data?.data || response.data;
   },
 };
 
@@ -398,6 +411,33 @@ export const userAPI = {
   getLastOrder: async (userId: number) => {
     // Ensure the endpoint matches your backend route for fetching a user's last order
     const response = await api.get(`/v1/users/${userId}/last-order`);
+    return response.data?.data || response.data;
+  },
+};
+
+export const driverAPI = {
+  getOrders: async () => {
+    const response = await api.get('/v1/driver/orders');
+    return response.data?.data || response.data;
+  },
+
+  getActiveOrders: async () => {
+    const response = await api.get('/v1/driver/orders/active');
+    return response.data?.data || response.data;
+  },
+
+  getOrderDetails: async (orderId: number) => {
+    const response = await api.get(`/v1/driver/orders/${orderId}`);
+    return response.data?.data || response.data;
+  },
+
+  acceptOrder: async (orderId: number) => {
+    const response = await api.post(`/v1/driver/orders/${orderId}/accept`);
+    return response.data?.data || response.data;
+  },
+
+  markDelivered: async (orderId: number) => {
+    const response = await api.post(`/v1/driver/orders/${orderId}/delivered`);
     return response.data?.data || response.data;
   },
 };
@@ -461,9 +501,9 @@ export const paymentAPI = {
     }
   },
   repeatOrder: async (orderId: number) => {
-    // Ensure the endpoint matches your backend route for repeating an order
-    const response = await api.post('/v1/orders/repeat', { orderId });
-    return response.data;
+    // Updated endpoint: GET /v1/users/orders/:orderId/repeat
+    const response = await api.get(`/v1/users/orders/${orderId}/repeat`);
+    return response.data?.data || response.data;
   },
 };
 

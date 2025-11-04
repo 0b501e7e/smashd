@@ -46,7 +46,8 @@ export default function WaitingForConfirmationScreen() {
         const orderStatusData: OrderStatusData = await orderAPI.getOrderStatus(numOrderId);
         console.log(`WaitingForConfirmationScreen: Order ${numOrderId} status: ${orderStatusData.status}`);
 
-        if (orderStatusData.status === 'CONFIRMED') {
+        // Delivery orders go to READY, pickup orders go to CONFIRMED
+        if (orderStatusData.status === 'CONFIRMED' || orderStatusData.status === 'READY') {
           clearInterval(intervalId);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.replace({

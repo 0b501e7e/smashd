@@ -131,24 +131,21 @@ export default function PromotionsScreen() {
       console.log('[PromotionsScreen] Successfully fetched last order:', data);
       setLastOrder(data);
     } catch (error: any) {
-      console.log('[PromotionsScreen] Raw error object:', JSON.stringify(error));
-      if (error.response && 
-          error.response.status === 404 && 
-          error.response.data?.error === 'No previous orders found') {
-        // This is the expected case when a user has no previous paid orders. Be quiet.
-        console.log('[PromotionsScreen] No previous paid orders found for user:', user.id);
-        setLastOrder(null);
-      } else {
-        // This is an unexpected error.
-        console.error('[PromotionsScreen] Exception while fetching last order:', error);
-        const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch last order.';
-        setErrorDialog({
-          open: true,
-          title: 'Error al Obtener Pedido',
-          message: errorMessage
-        });
-        setLastOrder(null); // Ensure lastOrder is null on exception
+      // Gracefully handle the case where user has no previous orders
+      if (error.response?.status === 404) {
+        const errorMessage = error.response?.data?.error || '';
+        if (errorMessage.includes('No previous orders') || errorMessage.includes('not found')) {
+          // Expected case - user has no orders yet, just set to null
+          console.log('[PromotionsScreen] No previous orders found for user:', user.id);
+          setLastOrder(null);
+          return;
+        }
       }
+      
+      // For other errors, log but don't show error dialog to avoid annoying users
+      // Only log unexpected errors for debugging
+      console.warn('[PromotionsScreen] Error fetching last order (non-critical):', error.response?.data?.error || error.message);
+      setLastOrder(null);
     }
   };
 
@@ -157,8 +154,12 @@ export default function PromotionsScreen() {
 
     setLoading(true);
     try {
-      // No need to manually get token, api instance handles it
       const data = await orderAPI.repeatOrder(lastOrder.id);
+      
+      // Check if we got valid data
+      if (!data || !data.items || !Array.isArray(data.items)) {
+        throw new Error('Invalid response from server');
+      }
       
       clearCart();
       data.items.forEach((item: any) => {
@@ -167,7 +168,7 @@ export default function PromotionsScreen() {
           name: item.name,
           price: item.price,
           quantity: item.quantity,
-          customizations: item.customizations,
+          customizations: item.customizations || {},
         });
       });
       
@@ -186,7 +187,18 @@ export default function PromotionsScreen() {
       }
     } catch (error: any) {
       console.error('Error repeating order:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to repeat order. Please try again.';
+      let errorMessage = 'No se pudo repetir el pedido. Por favor, intenta de nuevo.';
+      
+      if (error.response?.status === 404) {
+        errorMessage = 'El pedido no se encuentra disponible. Por favor, crea un nuevo pedido.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.error || 'Datos inválidos. Por favor, intenta de nuevo.';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setErrorDialog({
         open: true,
         title: 'Error al Repetir Pedido',

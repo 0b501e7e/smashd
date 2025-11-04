@@ -17,12 +17,15 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
 
 export default function CheckoutScreen() {
   const { orderId: urlOrderId, returnToApp } = useLocalSearchParams();
   const { items, total, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'PICKUP' | 'DELIVERY'>('PICKUP');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   const insets = useSafeAreaInsets();
   const appState = useRef(AppState.currentState);
   const [appStateVisible, setAppStateVisible] = useState(appState.current);
@@ -176,8 +179,9 @@ export default function CheckoutScreen() {
 
       const response = await orderAPI.createOrder({
         items: orderItems,
-        collectionTime: "",
-        total: total
+        total: total,
+        fulfillmentMethod,
+        ...(fulfillmentMethod === 'DELIVERY' && deliveryAddress ? { deliveryAddress } : {})
       });
       console.log('[CheckoutScreen] orderAPI.createOrder response:', response?.order?.id);
 
@@ -359,6 +363,44 @@ export default function CheckoutScreen() {
                   €{total.toFixed(2)}
                 </Text>
               </View>
+
+              {/* Fulfillment toggle */}
+              <View className="mt-6">
+                <Text className="text-base font-semibold mb-2" style={{ color: '#FFFFFF' }}>Entrega</Text>
+                <View className="flex-row gap-3">
+                  <Button
+                    className="flex-1"
+                    style={{ backgroundColor: fulfillmentMethod === 'PICKUP' ? '#FAB10A' : '#333333' }}
+                    onPress={() => setFulfillmentMethod('PICKUP')}
+                  >
+                    <Text className="font-semibold" style={{ color: fulfillmentMethod === 'PICKUP' ? '#000000' : '#FFFFFF' }}>Recoger</Text>
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    style={{ backgroundColor: fulfillmentMethod === 'DELIVERY' ? '#FAB10A' : '#333333' }}
+                    onPress={() => setFulfillmentMethod('DELIVERY')}
+                  >
+                    <Text className="font-semibold" style={{ color: fulfillmentMethod === 'DELIVERY' ? '#000000' : '#FFFFFF' }}>Entrega</Text>
+                  </Button>
+                </View>
+              </View>
+
+              {/* Address input when delivery */}
+              {fulfillmentMethod === 'DELIVERY' && (
+                <View className="mt-4">
+                  <Text className="text-sm mb-2" style={{ color: '#CCCCCC' }}>Dirección de entrega</Text>
+                  <View className="rounded-md px-4 h-14" style={{ borderWidth: 1, borderColor: '#333333', backgroundColor: '#1A1A1A' }}>
+                    <Input
+                      placeholder="Calle, número, piso..."
+                      placeholderTextColor="#666666"
+                      value={deliveryAddress}
+                      onChangeText={setDeliveryAddress}
+                      className="flex-1 h-full border-0 p-0 bg-transparent"
+                      style={{ color: '#FFFFFF', fontSize: 16 }}
+                    />
+                  </View>
+                </View>
+              )}
             </CardContent>
           </Card>
 

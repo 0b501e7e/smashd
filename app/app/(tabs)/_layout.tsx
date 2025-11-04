@@ -2,18 +2,21 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, View } from 'react-native';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { HapticTab } from '@/components/HapticTab';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Badge } from '@/components/ui/badge';
 import { Text } from '@/components/ui/text';
-import { Home, Menu, ShoppingCart, User } from 'lucide-react-native';
+import { Home, Menu, ShoppingCart, User, Truck } from 'lucide-react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { items } = useCart();
+  const { user } = useAuth();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const isDriver = user?.role === 'DRIVER';
 
   return (
     <Tabs
@@ -29,11 +32,13 @@ export default function TabLayout() {
           default: {},
         }),
       }}>
+      {/* Customer tabs - hidden for drivers */}
       <Tabs.Screen
         name="promotions"
         options={{
           title: 'Inicio',
           tabBarIcon: ({ color }) => <Home size={28} color={color} />,
+          href: isDriver ? null : undefined,
         }}
       />
       <Tabs.Screen
@@ -41,6 +46,7 @@ export default function TabLayout() {
         options={{
           title: 'Carta',
           tabBarIcon: ({ color }) => <Menu size={28} color={color} />,
+          href: isDriver ? null : undefined,
         }}
       />
       <Tabs.Screen
@@ -57,6 +63,7 @@ export default function TabLayout() {
               )}
             </View>
           ),
+          href: isDriver ? null : undefined,
         }}
       />
       <Tabs.Screen
@@ -64,6 +71,16 @@ export default function TabLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color }) => <User size={28} color={color} />,
+          href: isDriver ? null : undefined,
+        }}
+      />
+      {/* Driver tab - hidden for non-drivers */}
+      <Tabs.Screen
+        name="driver"
+        options={{
+          title: 'Pedidos',
+          tabBarIcon: ({ color }) => <Truck size={28} color={color} />,
+          href: isDriver ? undefined : null,
         }}
       />
     </Tabs>
