@@ -12,6 +12,7 @@ import notificationRoutes from './routes/notification.routes';
 import userRoutes from './routes/user.routes';
 import orderRoutes from './routes/order.routes';
 import adminRoutes from './routes/admin.routes';
+import driverRoutes from './routes/driver.routes';
 import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import { initializeLoyaltyCron } from './jobs/loyaltyCron';
@@ -97,6 +98,7 @@ app.use('/v1/notifications', notificationRoutes);
 app.use('/v1/users', userRoutes);
 app.use('/v1/orders', orderRoutes);
 app.use('/v1/admin', adminRoutes);
+app.use('/v1/driver', driverRoutes);
 app.use('/v1/payment', paymentRoutes);
 app.use('/v1/analytics', analyticsRoutes);
 

@@ -1,11 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { AuthService } from '../services/auth.service';
+import { IAuthService } from '../interfaces/IAuthService';
 import { MenuService } from '../services/menu.service';
 import { NotificationService } from '../services/notification.service';
 import { OrderService } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { AdminService } from '../services/admin.service';
 import { PaymentService } from '../services/payment.service';
+import { DriverService } from '../services/driver.service';
+import { IDriverService } from '../interfaces/IDriverService';
 
 /**
  * Service Container - Centralized dependency injection
@@ -21,13 +24,14 @@ import { PaymentService } from '../services/payment.service';
 export class ServiceContainer {
   private static instance: ServiceContainer;
   private _prisma: PrismaClient;
-  private _authService: AuthService;
+  private _authService: IAuthService;
   private _menuService: MenuService;
   private _notificationService: NotificationService;
   private _orderService: OrderService;
   private _userService: UserService;
   private _adminService: AdminService;
   private _paymentService: PaymentService;
+  private _driverService: IDriverService;
 
   private constructor() {
     console.log('🔧 Initializing Service Container...');
@@ -43,8 +47,9 @@ export class ServiceContainer {
     this._notificationService = new NotificationService(this._prisma);
     this._orderService = new OrderService(this._prisma);
     this._userService = new UserService(this._prisma);
-    this._adminService = new AdminService(this._prisma);
+    this._adminService = new AdminService(this._prisma, this._notificationService);
     this._paymentService = new PaymentService(this._prisma);
+    this._driverService = new DriverService(this._prisma, this._notificationService);
 
     console.log('✅ Service Container initialized successfully');
   }
@@ -69,7 +74,7 @@ export class ServiceContainer {
   /**
    * Get authentication service
    */
-  public get authService(): AuthService {
+  public get authService(): IAuthService {
     return this._authService;
   }
 
@@ -113,6 +118,13 @@ export class ServiceContainer {
    */
   public get paymentService(): PaymentService {
     return this._paymentService;
+  }
+
+  /**
+   * Get driver service
+   */
+  public get driverService(): IDriverService {
+    return this._driverService;
   }
 
   /**

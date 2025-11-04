@@ -6,7 +6,7 @@ import { notificationService } from '@/services/notificationService';
 type User = {
   id: number;
   email: string;
-  role: 'ADMIN' | 'STAFF' | 'CUSTOMER';
+  role: 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
   loyaltyPoints?: number;
 };
 
