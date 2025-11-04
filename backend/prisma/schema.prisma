@@ -29,6 +29,7 @@ model User {
   pointsTransactions PointsTransaction[]
   notifications Notification[]
   analyticsEvents AnalyticsEvent[]
+  passwordResetToken PasswordResetToken?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -56,6 +57,9 @@ model Order {
   user              User?       @relation(fields: [userId], references: [id])
   total             Float
   status            OrderStatus
+  fulfillmentMethod FulfillmentMethod @default(PICKUP)
+  deliveryAddress   String?
+  orderCode         String?     @unique
   items             OrderItem[]
   sumupCheckoutId   String?     // SumUp checkout reference
   sumupOrderId      String?     // If SumUp has a separate order ID
@@ -222,6 +226,7 @@ model WeeklyAnalytics {
 enum Role {
   ADMIN
   STAFF
+  DRIVER
   CUSTOMER
 }
 
@@ -238,7 +243,21 @@ enum OrderStatus {
   CONFIRMED      // Business confirmed, in preparation
   PREPARING      // In preparation (optional)
   READY          // Ready for collection
+  OUT_FOR_DELIVERY // Driver has picked up order and is delivering
   DELIVERED      // Customer picked up order
   CANCELLED      // Order was cancelled
   PAYMENT_FAILED // Payment processing failed
+}
+
+enum FulfillmentMethod {
+  PICKUP
+  DELIVERY
+}
+
+model PasswordResetToken {
+  userId    Int   @id
+  user      User  @relation(fields: [userId], references: [id])
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
