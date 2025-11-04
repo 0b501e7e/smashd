@@ -24,35 +24,65 @@ export interface WeeklyAnalytics {
   totalRevenue: number;
   revenuePerHour: number;
   totalOrders: number;
-  averageOrderValue: number;
+  avgOrderValue: number; // Changed from averageOrderValue to match backend
   totalCustomers: number;
   newCustomers: number;
   returningCustomers: number;
 }
 
 export interface RevenueAnalytics {
-  totalRevenue: number;
+  summary: {
+    totalRevenue: number;
+    totalOrders: number;
+    avgWeeklyRevenue: number;
+    growthRate: number;
+    period: string;
+  };
   weeklyData: Array<{
-    week: string;
+    weekStart: string;
     revenue: number;
+    orders: number;
+    avgOrderValue: number;
+    revenuePerHour: number;
   }>;
 }
 
 export interface MenuPerformance {
-  itemName: string;
-  sales: number;
-  revenue: number;
+  period: string;
+  topItems: Array<{
+    itemId: number;
+    name: string;
+    category: string;
+    totalRevenue: number;
+    totalQuantity: number;
+    totalOrders: number;
+  }>;
+  categoryPerformance: Array<{
+    category: string;
+    totalRevenue: number;
+    totalOrders: number;
+  }>;
+  summary: {
+    totalItems: number;
+    totalCategories: number;
+    totalItemRevenue: number;
+  };
 }
 
 export interface CustomerAnalytics {
-  newCustomers: number;
-  returningCustomers: number;
-  averageOrderValue: number;
-  totalCustomers: number;
+  summary: {
+    totalNewCustomers: number;
+    totalReturningCustomers: number;
+    avgNewCustomersPerWeek: number;
+    avgReturningCustomersPerWeek: number;
+    retentionRate: number;
+    period: string;
+  };
   weeklyData: Array<{
-    week: string;
+    weekStart: string;
     newCustomers: number;
     returningCustomers: number;
+    totalCustomers: number;
   }>;
 }
 
@@ -90,7 +120,7 @@ export const analyticsAPI = {
       }
 
       const data = await response.json();
-      return data.data || { totalRevenue: 0, weeklyData: [] };
+      return data.data || { summary: { totalRevenue: 0, totalOrders: 0, avgWeeklyRevenue: 0, growthRate: 0, period: '' }, weeklyData: [] };
     } catch (error) {
       console.error('Failed to fetch revenue analytics:', error);
       throw error;
@@ -110,7 +140,7 @@ export const analyticsAPI = {
       }
 
       const data = await response.json();
-      return data.data || [];
+      return data.data || { period: '', topItems: [], categoryPerformance: [], summary: { totalItems: 0, totalCategories: 0, totalItemRevenue: 0 } };
     } catch (error) {
       console.error('Failed to fetch menu performance:', error);
       throw error;
@@ -130,7 +160,17 @@ export const analyticsAPI = {
       }
 
       const data = await response.json();
-      return data.data || { newCustomers: 0, returningCustomers: 0, averageOrderValue: 0, totalCustomers: 0, weeklyData: [] };
+      return data.data || { 
+        summary: { 
+          totalNewCustomers: 0, 
+          totalReturningCustomers: 0, 
+          avgNewCustomersPerWeek: 0, 
+          avgReturningCustomersPerWeek: 0, 
+          retentionRate: 0, 
+          period: '' 
+        }, 
+        weeklyData: [] 
+      };
     } catch (error) {
       console.error('Failed to fetch customer analytics:', error);
       throw error;

@@ -1,11 +1,13 @@
 export interface NotificationData {
   userId: number;
-  type: 'ORDER_UPDATE' | 'PAYMENT_CONFIRMED' | 'ORDER_READY' | 'BIRTHDAY_REWARD' | 'ADMIN_ALERT' | 'PROMOTIONAL';
+  type: 'ORDER_UPDATE' | 'ORDER_STATUS_UPDATE' | 'PAYMENT_CONFIRMED' | 'ORDER_READY' | 'BIRTHDAY_REWARD' | 'ADMIN_ALERT' | 'PROMOTIONAL';
   title: string;
   message: string;
   metadata?: any;
   emailTemplate?: string;
   pushData?: {
+    title?: string;
+    body?: string;
     sound?: string;
     badge?: number;
     data?: any;

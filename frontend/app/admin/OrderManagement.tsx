@@ -31,11 +31,14 @@ interface Order {
   id: number;
   items: OrderItem[];
   total: number;
-  status: string; // e.g., PENDING, PAID, CONFIRMED, CANCELLED
+  status: string; // e.g., PENDING, PAID, CONFIRMED, CANCELLED, READY
   userId?: number | null;
   user?: UserInfo | null; // User details
   createdAt: string; // ISO date string
   estimatedReadyTime?: string | null; // ISO date string, from backend
+  fulfillmentMethod?: 'PICKUP' | 'DELIVERY' | null;
+  deliveryAddress?: string | null;
+  orderCode?: string | null;
   // Frontend-specific state for managing prep time selection
   selectedPrepTime?: number | null; 
 }
@@ -222,7 +225,18 @@ export default function OrderManagement() {
                   <h3 className="text-lg font-medium text-white">Order ID: {order.id} (User: {order.user?.name || order.user?.email || order.userId || 'Guest'})</h3>
                   <p className="text-sm text-gray-300">Received: {new Date(order.createdAt).toLocaleString()}</p>
                   <p className="text-sm text-gray-300">Total: ${order.total.toFixed(2)}</p>
-                  <p className="text-sm text-gray-300">Status: <span className={`font-semibold ${order.status === 'PAYMENT_CONFIRMED' ? 'text-yellow-400' : order.status === 'CONFIRMED' ? 'text-green-400' : 'text-red-400'}`}>{order.status}</span></p>
+                  <p className="text-sm text-gray-300">Status: <span className={`font-semibold ${order.status === 'PAYMENT_CONFIRMED' ? 'text-yellow-400' : order.status === 'CONFIRMED' ? 'text-green-400' : order.status === 'READY' ? 'text-blue-400' : 'text-red-400'}`}>{order.status}</span></p>
+                  {order.fulfillmentMethod && (
+                    <p className="text-sm text-gray-300">
+                      Type: <span className="font-semibold">{order.fulfillmentMethod === 'DELIVERY' ? '🚚 Delivery' : '🏪 Pickup'}</span>
+                      {order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress && (
+                        <span className="block text-xs text-gray-400 mt-1">📍 {order.deliveryAddress}</span>
+                      )}
+                      {order.fulfillmentMethod === 'DELIVERY' && order.orderCode && (
+                        <span className="block text-xs text-gray-400 mt-1">Code: {order.orderCode}</span>
+                      )}
+                    </p>
+                  )}
                   {order.items.map(item => (
                       <p key={item.id} className="text-xs text-gray-400 pl-2">- {item.quantity}x {item.menuItem.name}</p>
                   ))}

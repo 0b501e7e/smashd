@@ -62,7 +62,7 @@ export class UserService implements IUserService {
       return profileData;
     } catch (error) {
       console.error(`UserService: Error fetching user profile ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch user profile');
+      throw new Error(error instanceof Error ? error.message : 'Error al obtener el perfil del usuario');
     }
   }
 
@@ -97,7 +97,7 @@ export class UserService implements IUserService {
       return profileData;
     } catch (error) {
       console.error(`UserService: Error updating user profile ${updateQuery.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to update user profile');
+      throw new Error(error instanceof Error ? error.message : 'Error al actualizar el perfil del usuario');
     }
   }
 
@@ -111,7 +111,7 @@ export class UserService implements IUserService {
       return user as UserWithLoyalty | null;
     } catch (error) {
       console.error(`UserService: Error fetching user with loyalty ${userId}:`, error);
-      throw new Error('Failed to fetch user with loyalty data');
+      throw new Error('Error al obtener el usuario con datos de lealtad');
     }
   }
 
@@ -160,7 +160,7 @@ export class UserService implements IUserService {
       return orders as UserOrderWithDetails[];
     } catch (error) {
       console.error(`UserService: Error fetching user orders for user ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch user orders');
+      throw new Error(error instanceof Error ? error.message : 'Error al obtener los pedidos del usuario');
     }
   }
 
@@ -210,7 +210,7 @@ export class UserService implements IUserService {
       return lastOrder as LastOrderResult | null;
     } catch (error) {
       console.error(`UserService: Error fetching last order for user ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch last order');
+      throw new Error(error instanceof Error ? error.message : 'Error al obtener el último pedido');
     }
   }
 
@@ -282,7 +282,7 @@ export class UserService implements IUserService {
       return statistics;
     } catch (error) {
       console.error(`UserService: Error generating statistics for user ${userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to generate user statistics');
+      throw new Error(error instanceof Error ? error.message : 'Error al generar las estadísticas del usuario');
     }
   }
 
@@ -302,7 +302,7 @@ export class UserService implements IUserService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       // Validate user can repeat this order
@@ -313,13 +313,13 @@ export class UserService implements IUserService {
       });
 
       if (!accessValidation.isAuthorized) {
-        throw new Error(accessValidation.reason || 'Not authorized to repeat this order');
+        throw new Error(accessValidation.reason || 'No autorizado para repetir este pedido');
       }
 
       // Check availability of items and prepare response
       const availableItems: RepeatOrderItemData[] = [];
       const unavailableItems: string[] = [];
-      let message = 'All items from your previous order are available and ready to be added to cart.';
+      let message = 'Todos los artículos de tu pedido anterior están disponibles y listos para agregarse al carrito.';
 
       for (const orderItem of order.items) {
         const currentMenuItem = await this.prisma.menuItem.findUnique({
@@ -340,7 +340,7 @@ export class UserService implements IUserService {
       }
 
       if (unavailableItems.length > 0) {
-        message = `Some items are no longer available: ${unavailableItems.join(', ')}. Available items ready to be added to cart.`;
+        message = `Algunos artículos ya no están disponibles: ${unavailableItems.join(', ')}. Los artículos disponibles están listos para agregarse al carrito.`;
       }
 
       const result: RepeatOrderResult = {
@@ -353,7 +353,7 @@ export class UserService implements IUserService {
       return result;
     } catch (error) {
       console.error(`UserService: Error repeating order ${query.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to repeat order');
+      throw new Error(error instanceof Error ? error.message : 'Error al repetir el pedido');
     }
   }
 
@@ -444,7 +444,7 @@ export class UserService implements IUserService {
       return loyaltyData;
     } catch (error) {
       console.error(`UserService: Error fetching loyalty data for user ${userId}:`, error);
-      throw new Error('Failed to fetch loyalty data');
+      throw new Error('Error al obtener los datos de lealtad');
     }
   }
 
@@ -465,7 +465,7 @@ export class UserService implements IUserService {
       return result.points;
     } catch (error) {
       console.error(`UserService: Error updating loyalty points for user ${userId}:`, error);
-      throw new Error('Failed to update loyalty points');
+      throw new Error('Error al actualizar los puntos de lealtad');
     }
   }
 
@@ -504,7 +504,7 @@ export class UserService implements IUserService {
       return userProfiles;
     } catch (error) {
       console.error(`UserService: Error searching users with term "${searchTerm}":`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to search users');
+      throw new Error(error instanceof Error ? error.message : 'Error al buscar usuarios');
     }
   }
 
@@ -560,7 +560,7 @@ export class UserService implements IUserService {
       return orders as UserOrderWithDetails[];
     } catch (error) {
       console.error(`UserService: Error fetching filtered orders for user ${userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to fetch filtered orders');
+      throw new Error(error instanceof Error ? error.message : 'Error al obtener los pedidos filtrados');
     }
   }
 } 

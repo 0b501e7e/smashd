@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
 import { authenticateToken, validateCreateOrder, validateOrderId } from '../middleware';
+import { PrismaClient } from '@prisma/client';
 import { services } from '../config/services';
 
 const router = Router();
 
 // Use centralized service container (single DB connection, shared services)
 const orderController = new OrderController(services.orderService);
+const prisma = new PrismaClient();
 
 /**
  * @route   POST /v1/orders
@@ -18,6 +20,30 @@ router.post('/',
   validateCreateOrder, 
   orderController.createOrder.bind(orderController)
 );
+
+/**
+ * @route   GET /v1/orders/driver/:orderCode
+ * @desc    Public driver endpoint to retrieve delivery address by code
+ * @access  Public (code-based)
+ */
+router.get('/driver/:orderCode', async (req, res) => {
+  try {
+    const { orderCode } = req.params;
+    if (!orderCode) {
+      res.status(400).json({ success: false, error: 'orderCode is required' });
+      return;
+    }
+    const order = await prisma.order.findFirst({ where: { orderCode }, select: { orderCode: true, deliveryAddress: true } });
+    if (!order || !order.deliveryAddress) {
+      res.status(404).json({ success: false, error: 'Order not found' });
+      return;
+    }
+    res.json({ success: true, data: order });
+  } catch (err) {
+    console.error('Driver endpoint error:', err);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
 
 /**
  * @route   GET /v1/orders/:id/status
@@ -45,7 +71,6 @@ router.post('/:id/estimate',
  * @access  Private (order owner)
  */
 router.post('/:orderId/verify-payment', 
-  authenticateToken, 
   orderController.verifyPayment.bind(orderController)
 );
 

@@ -1,17 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import nodemailer from 'nodemailer';
+// Use require for SDKs without types
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { Resend } = require('resend');
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { INotificationService, NotificationData } from '../interfaces/INotificationService';
 
 export class NotificationService implements INotificationService {
   private prisma: PrismaClient;
   private emailTransporter!: nodemailer.Transporter;
+  private resend?: any;
   private expo!: Expo;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.setupEmailTransporter();
     this.setupExpo();
+    this.setupResend();
   }
 
   private setupEmailTransporter(): void {
@@ -22,6 +27,16 @@ export class NotificationService implements INotificationService {
         pass: process.env['EMAIL_APP_PASSWORD'],
       },
     });
+  }
+
+  private setupResend(): void {
+    const key = process.env['RESEND_API_KEY'];
+    if (key) {
+      this.resend = new Resend(key);
+      console.log('✅ Resend email provider configured');
+    } else {
+      console.log('ℹ️  RESEND_API_KEY not set - falling back to Nodemailer');
+    }
   }
 
   private setupExpo(): void {
@@ -82,18 +97,30 @@ export class NotificationService implements INotificationService {
       // 4. Send push notification if user has push token
       if (user.pushToken && data.pushData) {
         try {
+          // Log notification details for debugging
+          console.log(`📱 Sending push notification to user ${data.userId} (${user.email || 'no email'}), pushToken: ${user.pushToken.substring(0, 20)}...`);
+          
           await this.sendPushNotification(
             user.pushToken, 
-            data.title, 
-            data.message, 
+            data.pushData.title || data.title, 
+            data.pushData.body || data.message, 
             data.pushData.data
           );
+          
+          console.log(`✅ Push notification sent successfully to user ${data.userId}`);
         } catch (pushError) {
           console.error(`❌ Failed to send push notification to user ${data.userId}:`, pushError);
         }
+      } else {
+        if (!user.pushToken) {
+          console.log(`⚠️ User ${data.userId} has no push token registered, skipping push notification`);
+        }
+        if (!data.pushData) {
+          console.log(`⚠️ No pushData provided for notification to user ${data.userId}, skipping push notification`);
+        }
       }
 
-      console.log(`✅ Notification sent to user ${data.userId}: ${data.type}`);
+      console.log(`✅ Notification sent to user ${data.userId} (${user.email || 'no email'}): ${data.type}`);
     } catch (error) {
       console.error(`❌ Failed to send notification:`, error);
       throw error;
@@ -117,20 +144,24 @@ export class NotificationService implements INotificationService {
 
     const statusMessages = {
       'PAYMENT_CONFIRMED': {
-        title: '✅ Payment Confirmed!',
-        message: `Your order #${orderId} payment has been confirmed. We'll start preparing it soon!`,
+        title: '✅ ¡Pago Confirmado!',
+        message: `El pago de tu pedido #${orderId} ha sido confirmado. ¡Empezaremos a prepararlo pronto!`,
         template: 'payment-confirmed',
         sound: 'default'
       },
       'CONFIRMED': {
-        title: '👨‍🍳 Order Confirmed!',
-        message: `Your order #${orderId} is being prepared. ${order.estimatedReadyTime ? `Ready at ${new Date(order.estimatedReadyTime).toLocaleTimeString()}` : 'We\'ll notify you when it\'s ready!'}`,
+        title: '👨‍🍳 ¡Pedido Confirmado!',
+        message: `Tu pedido #${orderId} se está preparando. ${order.estimatedReadyTime ? `Listo a las ${new Date(order.estimatedReadyTime).toLocaleTimeString('es-ES')}` : '¡Te notificaremos cuando esté listo!'}`,
         template: 'order-confirmed',
         sound: 'default'
       },
       'READY': {
-        title: '🍔 Order Ready!',
-        message: `Your order #${orderId} is ready for pickup!`,
+        title: order.fulfillmentMethod === 'DELIVERY' 
+          ? '🍔 ¡Pedido Listo para Entrega!' 
+          : '🍔 ¡Pedido Listo!',
+        message: order.fulfillmentMethod === 'DELIVERY'
+          ? `¡Tu pedido #${orderId} está listo! Un repartidor lo recogerá pronto.`
+          : `¡Tu pedido #${orderId} está listo para recoger!`,
         template: 'order-ready',
         sound: 'notification'
       }
@@ -171,8 +202,8 @@ export class NotificationService implements INotificationService {
       await this.sendNotification({
         userId: admin.id,
         type: 'ADMIN_ALERT',
-        title: '🔔 New Order Received!',
-        message: `Order #${order.id} from ${customerName} for €${order.total.toFixed(2)}`,
+        title: '🔔 ¡Nuevo Pedido Recibido!',
+        message: `Pedido #${order.id} de ${customerName} por €${order.total.toFixed(2)}`,
         emailTemplate: 'new-order-admin',
         metadata: { 
           orderId: order.id, 
@@ -265,12 +296,29 @@ export class NotificationService implements INotificationService {
 
   async sendEmail(to: string, subject: string, html: string): Promise<void> {
     try {
-      await this.emailTransporter.sendMail({
-        from: `"Smashd Restaurant" <${process.env['EMAIL_USER']}>`,
-        to,
-        subject,
-        html,
-      });
+      if (!process.env['EMAIL_FROM'] && this.resend) {
+        console.warn('EMAIL_FROM not set. Using default fallback no-reply@smashd.app');
+      }
+      if (this.resend) {
+        const { data, error } = await this.resend.emails.send({
+          from: process.env['EMAIL_FROM'] || 'Smashd <no-reply@smashd.app>',
+          to,
+          subject,
+          html,
+        });
+        if (error) {
+          console.error('❌ Resend error:', error);
+          throw new Error(typeof error === 'string' ? error : (error.message || 'Resend send failed'));
+        }
+        console.log('📧 Resend accepted. Message ID:', data?.id);
+      } else {
+        await this.emailTransporter.sendMail({
+          from: `"Smashd Restaurant" <${process.env['EMAIL_USER']}>`,
+          to,
+          subject,
+          html,
+        });
+      }
 
       console.log(`📧 Email sent to ${to}: ${subject}`);
     } catch (error) {
@@ -370,6 +418,23 @@ export class NotificationService implements INotificationService {
             Smashd Restaurant<br>
             Unsubscribe anytime in your account settings.
           </p>
+        </div>
+      `
+      ,
+      'password-reset': `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #f59e0b;">Restablecer tu contraseña</h2>
+          <p>Hola 
+            ${'${data.userName}'}
+            ,</p>
+          <p>Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú, haz clic en el botón:</p>
+          <p style="margin: 24px 0; text-align: center;">
+            <a href="${'${data.resetUrl}'}" style="background: #f59e0b; color: #000; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Restablecer contraseña en la app
+            </a>
+          </p>
+          ${'${data.webResetUrl ? `<p style="text-align:center;"><a href="' + data.webResetUrl + '">Abrir en el navegador</a></p>` : ""}'}
+          <p style="color: #6b7280; font-size: 12px;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
         </div>
       `
     };

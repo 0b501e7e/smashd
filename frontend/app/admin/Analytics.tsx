@@ -274,17 +274,10 @@ export default function Analytics() {
                 <CardHeader>
                   <CardTitle className="text-white">Revenue Trend</CardTitle>
                   <CardDescription>
-                    {revenueData.summary.growthRate >= 0 ? (
-                      <span className="flex items-center text-green-400">
-                        <TrendingUp className="h-4 w-4 mr-1" />
-                        +{revenueData.summary.growthRate.toFixed(1)}% growth
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-red-400">
-                        <TrendingDown className="h-4 w-4 mr-1" />
-                        {revenueData.summary.growthRate.toFixed(1)}% decline
-                      </span>
-                    )}
+                    <span className="flex items-center text-green-400">
+                      <TrendingUp className="h-4 w-4 mr-1" />
+                      Total: €{revenueData.summary.totalRevenue.toFixed(2)}
+                    </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

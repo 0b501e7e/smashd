@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "OrderStatus" ADD VALUE 'OUT_FOR_DELIVERY';
+
+-- AlterEnum
+ALTER TYPE "Role" ADD VALUE 'DRIVER';

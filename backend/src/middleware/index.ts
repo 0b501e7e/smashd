@@ -2,6 +2,7 @@
 export {
   authenticateToken,
   isAdmin,
+  isDriver,
   optionalAuth,
   isOwnerOrAdmin
 } from './auth.middleware';

@@ -48,11 +48,11 @@ export class OrderService implements IOrderService {
         });
 
         if (!menuItem) {
-          throw new Error(`Menu item with ID ${item.menuItemId} not found`);
+          throw new Error(`El artículo del menú con ID ${item.menuItemId} no se encontró`);
         }
 
         if (!menuItem.isAvailable) {
-          throw new Error(`Menu item "${menuItem.name}" is not available`);
+          throw new Error(`El artículo del menú "${menuItem.name}" no está disponible`);
         }
 
         // Use current menu item price, not the one sent from client
@@ -61,11 +61,19 @@ export class OrderService implements IOrderService {
 
       const result = await this.prisma.$transaction(async (prisma) => {
         // Create the order with items
+        const fulfillmentMethod = (orderData.fulfillmentMethod || 'PICKUP') as any;
+        const isDelivery = fulfillmentMethod === 'DELIVERY';
+        
+        console.log(`OrderService: Creating order with fulfillmentMethod: ${fulfillmentMethod}, isDelivery: ${isDelivery}, deliveryAddress: ${orderData.deliveryAddress ? 'present' : 'missing'}`);
+        
         const newOrder = await prisma.order.create({
           data: {
             userId: orderData.userId || null,
             total: orderData.total,
             status: 'AWAITING_PAYMENT',
+            fulfillmentMethod: fulfillmentMethod,
+            deliveryAddress: isDelivery ? (orderData.deliveryAddress || null) : null,
+            orderCode: isDelivery ? await this.generateUniqueOrderCode(prisma) : null,
             items: {
               create: orderData.items.map((item) => ({
                 menuItemId: item.menuItemId,
@@ -78,7 +86,7 @@ export class OrderService implements IOrderService {
           include: { items: true }
         } as any);
 
-        console.log(`OrderService: Order ${newOrder.id} created successfully`);
+        console.log(`OrderService: Order ${newOrder.id} created successfully with fulfillmentMethod: ${newOrder.fulfillmentMethod}, deliveryAddress: ${newOrder.deliveryAddress ? 'present' : 'missing'}`);
         return { order: newOrder };
       });
 
@@ -104,8 +112,8 @@ export class OrderService implements IOrderService {
       console.log(`OrderService: ✅ Order ${result.order.id} created successfully in transaction`);
 
       const responseMessage = orderData.userId
-        ? `Order created successfully. Complete payment to earn loyalty points!`
-        : 'Order created successfully. Complete the payment to confirm your order.';
+        ? `Pedido creado exitosamente. Completa el pago para ganar puntos de lealtad!`
+        : 'Pedido creado exitosamente. Completa el pago para confirmar tu pedido.';
 
       const finalResult = {
         order: result.order as any,
@@ -117,8 +125,23 @@ export class OrderService implements IOrderService {
 
     } catch (error) {
       console.error('OrderService: Error creating order:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to create order');
+      throw new Error(error instanceof Error ? error.message : 'Error al crear el pedido');
     }
+  }
+
+  private async generateUniqueOrderCode(prisma: any): Promise<string> {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no confusing chars
+    const length = 6;
+    for (let i = 0; i < 10; i++) {
+      let code = '';
+      for (let j = 0; j < length; j++) {
+        code += alphabet[Math.floor(Math.random() * alphabet.length)];
+      }
+      const existing = await prisma.order.findFirst({ where: { orderCode: code } });
+      if (!existing) return code;
+    }
+    // Fallback to timestamp-based
+    return `SM${Date.now().toString().slice(-6)}`;
   }
 
   // =====================
@@ -139,7 +162,7 @@ export class OrderService implements IOrderService {
       return order;
     } catch (error) {
       console.error(`OrderService: Error fetching order ${orderId}:`, error);
-      throw new Error('Failed to fetch order');
+      throw new Error('Error al obtener el pedido');
     }
   }
 
@@ -155,6 +178,8 @@ export class OrderService implements IOrderService {
           sumupCheckoutId: true,
           total: true,
           createdAt: true,
+          fulfillmentMethod: true,
+          deliveryAddress: true,
           items: {
             select: {
               id: true,
@@ -173,13 +198,15 @@ export class OrderService implements IOrderService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       // Transform the items to include the menu item name
       const transformedOrder: OrderStatusResponse = {
         ...order,
         status: order.status as OrderStatus,
+        fulfillmentMethod: order.fulfillmentMethod as any,
+        deliveryAddress: order.deliveryAddress || null,
         items: order.items.map(item => ({
           id: item.id,
           menuItemId: item.menuItemId,
@@ -224,7 +251,7 @@ export class OrderService implements IOrderService {
       return orders as OrderWithFullDetails[];
     } catch (error) {
       console.error(`OrderService: Error fetching user orders for user ${query.userId}:`, error);
-      throw new Error('Failed to fetch user orders');
+      throw new Error('Error al obtener los pedidos del usuario');
     }
   }
 
@@ -246,7 +273,7 @@ export class OrderService implements IOrderService {
       return lastOrder;
     } catch (error) {
       console.error(`OrderService: Error fetching last order for user ${userId}:`, error);
-      throw new Error('Failed to fetch last order');
+      throw new Error('Error al obtener el último pedido');
     }
   }
 
@@ -267,7 +294,7 @@ export class OrderService implements IOrderService {
 
       // Check if order is in a state that can be estimated
       if (!['PAYMENT_CONFIRMED', 'CONFIRMED'].includes(existingOrder.status)) {
-        throw new Error(`Order in status ${existingOrder.status} cannot be estimated`);
+        throw new Error(`El pedido con estado ${existingOrder.status} no puede ser estimado`);
       }
 
       const estimatedReadyTime = new Date(Date.now() + (estimateData.estimatedMinutes * 60000));
@@ -289,7 +316,7 @@ export class OrderService implements IOrderService {
       };
     } catch (error) {
       console.error(`OrderService: Error updating order estimate ${orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to update order estimate');
+      throw new Error(error instanceof Error ? error.message : 'Error al actualizar la estimación del pedido');
     }
   }
 
@@ -304,7 +331,7 @@ export class OrderService implements IOrderService {
       return updatedOrder;
     } catch (error) {
       console.error(`OrderService: Error updating order status ${orderId}:`, error);
-      throw new Error('Failed to update order status');
+      throw new Error('Error al actualizar el estado del pedido');
     }
   }
 
@@ -313,26 +340,21 @@ export class OrderService implements IOrderService {
   // =====================
 
   async verifyPayment(verificationData: PaymentVerificationRequest): Promise<PaymentVerificationResult> {
-    const { orderId, userId } = verificationData;
+    const { orderId } = verificationData;
 
     try {
       // 1. Find the order in the database with proper query
-      const order = await this.prisma.order.findFirst({
-        where: { 
-          id: orderId,
-          userId: userId  // Include user check in the query for security
-        }
-      });
+      const order = await this.prisma.order.findFirst({ where: { id: orderId } });
 
       if (!order) {
-        throw new Error('Order not found or not authorized');
+        throw new Error('Pedido no encontrado o no autorizado');
       }
 
       // 2. Check if order requires verification
       if (order.status !== 'AWAITING_PAYMENT') {
         console.log(`OrderService: Order ${orderId} status is ${order.status}, no verification needed or possible.`);
         return {
-          message: 'Order verification not needed',
+          message: 'Verificación del pedido no necesaria',
           orderId: order.id,
           status: order.status as OrderStatus,
           sumupCheckoutId: order.sumupCheckoutId || '',
@@ -393,7 +415,7 @@ export class OrderService implements IOrderService {
         });
 
         if (!orderDetails) {
-          throw new Error('Order not found after update');
+          throw new Error('Pedido no encontrado después de la actualización');
         }
 
         // Transform the order details to match frontend expectations
@@ -412,7 +434,7 @@ export class OrderService implements IOrderService {
         };
 
         return {
-          message: 'Payment verification completed',
+          message: 'Verificación de pago completada',
           orderId: updatedOrder.id,
           sumupStatus: newStatus === 'PAYMENT_CONFIRMED' ? 'PAID' : 'PENDING',
           loyaltyPointsAwarded,
@@ -421,12 +443,12 @@ export class OrderService implements IOrderService {
 
       } catch (updateError) {
         console.error(`OrderService: Error during payment verification process:`, updateError);
-        throw new Error('Failed to complete payment verification');
+        throw new Error('Error al completar la verificación de pago');
       }
 
     } catch (error) {
       console.error(`OrderService: Error verifying payment for order ${orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to verify payment');
+      throw new Error(error instanceof Error ? error.message : 'Error al verificar el pago');
     }
   }
 
@@ -448,18 +470,18 @@ export class OrderService implements IOrderService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       // Check if user owns this order
       if (order.userId !== userId) {
-        throw new Error('Not authorized to repeat this order');
+        throw new Error('No autorizado para repetir este pedido');
       }
 
       // Check availability of items and prepare response
       const availableItems: any[] = [];
       const unavailableItems: string[] = [];
-      let message = 'All items from your previous order are available and ready to be added to cart.';
+      let message = 'Todos los artículos de tu pedido anterior están disponibles y listos para agregarse al carrito.';
 
       for (const orderItem of order.items) {
         const currentMenuItem = await this.prisma.menuItem.findUnique({
@@ -480,7 +502,7 @@ export class OrderService implements IOrderService {
       }
 
       if (unavailableItems.length > 0) {
-        message = `Some items are no longer available: ${unavailableItems.join(', ')}. Available items ready to be added to cart.`;
+        message = `Algunos artículos ya no están disponibles: ${unavailableItems.join(', ')}. Los artículos disponibles están listos para agregarse al carrito.`;
       }
 
       return {
@@ -491,7 +513,7 @@ export class OrderService implements IOrderService {
 
     } catch (error) {
       console.error(`OrderService: Error repeating order ${orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to repeat order');
+      throw new Error(error instanceof Error ? error.message : 'Error al repetir el pedido');
     }
   }
 
@@ -538,7 +560,7 @@ export class OrderService implements IOrderService {
       return orders as AdminOrderWithDetails[];
     } catch (error) {
       console.error('OrderService: Error fetching orders for admin:', error);
-      throw new Error('Failed to fetch orders for admin');
+      throw new Error('Error al obtener los pedidos para el administrador');
     }
   }
 
@@ -551,20 +573,28 @@ export class OrderService implements IOrderService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       if (order.status !== 'PAYMENT_CONFIRMED') {
-        throw new Error(`Order in status ${order.status} cannot be accepted.`);
+        throw new Error(`El pedido con estado ${order.status} no puede ser aceptado.`);
       }
 
       const estimatedReadyTime = new Date(Date.now() + (estimatedMinutes * 60000));
+
+      // For delivery orders, automatically set to READY status when accepted
+      // (since they need to be ready for driver pickup)
+      // For pickup orders, keep as CONFIRMED (customer will pick up)
+      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress 
+        ? 'READY' 
+        : 'CONFIRMED';
 
       const updatedOrder = await this.prisma.order.update({
         where: { id: orderId },
         data: {
           estimatedReadyTime,
-          status: 'CONFIRMED',
+          status: newStatus,
+          readyAt: newStatus === 'READY' ? new Date() : null
         },
       });
 
@@ -572,7 +602,7 @@ export class OrderService implements IOrderService {
       return updatedOrder;
     } catch (error) {
       console.error(`OrderService: Error accepting order ${orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to accept order');
+      throw new Error(error instanceof Error ? error.message : 'Error al aceptar el pedido');
     }
   }
 
@@ -583,11 +613,11 @@ export class OrderService implements IOrderService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       if (!['PAYMENT_CONFIRMED', 'CONFIRMED'].includes(order.status)) {
-        throw new Error(`Order in status ${order.status} cannot be declined.`);
+        throw new Error(`El pedido con estado ${order.status} no puede ser rechazado.`);
       }
 
       const updatedOrder = await this.prisma.order.update({
@@ -599,7 +629,7 @@ export class OrderService implements IOrderService {
       return updatedOrder;
     } catch (error) {
       console.error(`OrderService: Error declining order ${orderId}:`, error);
-      throw new Error('Failed to decline order');
+      throw new Error('Error al rechazar el pedido');
     }
   }
 
@@ -654,7 +684,7 @@ export class OrderService implements IOrderService {
       });
 
       if (!order) {
-        throw new Error('Order not found for loyalty points calculation');
+        throw new Error('Pedido no encontrado para el cálculo de puntos de lealtad');
       }
 
       const loyaltyPointsToAdd = Math.floor(order.total * 0.1); // 10% of order total as points
@@ -674,7 +704,7 @@ export class OrderService implements IOrderService {
       return loyaltyPointsToAdd;
     } catch (error) {
       console.error(`OrderService: Error awarding loyalty points for order ${orderId}:`, error);
-      throw new Error('Failed to award loyalty points');
+      throw new Error('Error al otorgar puntos de lealtad');
     }
   }
 } 

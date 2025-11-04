@@ -16,7 +16,7 @@ export class NotificationController {
       const limit = limitStr ? parseInt(limitStr) : 20;
 
       if (isNaN(userId)) {
-        sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'ID de usuario inválido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -24,7 +24,7 @@ export class NotificationController {
       sendSuccess(res, notifications);
     } catch (error) {
       console.error('Get user notifications error:', error);
-      sendError(res, 'Failed to get notifications');
+      sendError(res, 'Error al obtener las notificaciones');
     }
   }
 
@@ -37,15 +37,15 @@ export class NotificationController {
       const notificationId = notificationIdStr ? parseInt(notificationIdStr) : NaN;
 
       if (isNaN(notificationId)) {
-        sendError(res, 'Invalid notification ID', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'ID de notificación inválido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       await services.notificationService.markAsRead(notificationId);
-      sendSuccess(res, { message: 'Notification marked as read' });
+      sendSuccess(res, { message: 'Notificación marcada como leída' });
     } catch (error) {
       console.error('Mark notification as read error:', error);
-      sendError(res, 'Failed to mark notification as read');
+      sendError(res, 'Error al marcar la notificación como leída');
     }
   }
 
@@ -58,15 +58,15 @@ export class NotificationController {
       const userId = userIdStr ? parseInt(userIdStr) : NaN;
 
       if (isNaN(userId)) {
-        sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'ID de usuario inválido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       await services.notificationService.markAllAsRead(userId);
-      sendSuccess(res, { message: 'All notifications marked as read' });
+      sendSuccess(res, { message: 'Todas las notificaciones marcadas como leídas' });
     } catch (error) {
       console.error('Mark all notifications as read error:', error);
-      sendError(res, 'Failed to mark all notifications as read');
+      sendError(res, 'Error al marcar todas las notificaciones como leídas');
     }
   }
 
@@ -80,23 +80,23 @@ export class NotificationController {
       const { pushToken } = req.body;
 
       if (isNaN(userId)) {
-        sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'ID de usuario inválido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       if (!pushToken || typeof pushToken !== 'string') {
-        sendError(res, 'Push token is required', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'El token de push es requerido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       await services.notificationService.registerPushToken(userId, pushToken);
-      sendSuccess(res, { message: 'Push token registered successfully' });
+      sendSuccess(res, { message: 'Token de push registrado exitosamente' });
     } catch (error) {
       console.error('Register push token error:', error);
-      if (error instanceof Error && error.message.includes('Invalid Expo push token')) {
-        sendError(res, 'Invalid push token format', HTTP_STATUS.BAD_REQUEST);
+      if (error instanceof Error && (error.message.includes('Invalid Expo push token') || error.message.includes('token'))) {
+        sendError(res, 'Formato de token de push inválido', HTTP_STATUS.BAD_REQUEST);
       } else {
-        sendError(res, 'Failed to register push token');
+        sendError(res, 'Error al registrar el token de push');
       }
     }
   }
@@ -110,15 +110,15 @@ export class NotificationController {
       const userId = userIdStr ? parseInt(userIdStr) : NaN;
 
       if (isNaN(userId)) {
-        sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'ID de usuario inválido', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       await services.notificationService.removePushToken(userId);
-      sendSuccess(res, { message: 'Push token removed successfully' });
+      sendSuccess(res, { message: 'Token de push eliminado exitosamente' });
     } catch (error) {
       console.error('Remove push token error:', error);
-      sendError(res, 'Failed to remove push token');
+      sendError(res, 'Error al eliminar el token de push');
     }
   }
 
@@ -130,22 +130,22 @@ export class NotificationController {
       const { userIds, title, message, metadata } = req.body;
 
       if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-        sendError(res, 'User IDs array is required', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'Se requiere un array de IDs de usuario', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       if (!title || !message) {
-        sendError(res, 'Title and message are required', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'El título y el mensaje son requeridos', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       await services.notificationService.sendPromotionalNotification(userIds, title, message, metadata);
       sendSuccess(res, { 
-        message: `Promotional notification sent to ${userIds.length} users` 
+        message: `Notificación promocional enviada a ${userIds.length} usuarios` 
       });
     } catch (error) {
       console.error('Send promotional notification error:', error);
-      sendError(res, 'Failed to send promotional notification');
+      sendError(res, 'Error al enviar la notificación promocional');
     }
   }
 
@@ -155,14 +155,14 @@ export class NotificationController {
   static async testNotification(req: Request, res: Response): Promise<void> {
     try {
       if (process.env['NODE_ENV'] === 'production') {
-        sendError(res, 'Not found', HTTP_STATUS.NOT_FOUND);
+        sendError(res, 'No encontrado', HTTP_STATUS.NOT_FOUND);
         return;
       }
 
       const { userId, type, title, message } = req.body;
 
       if (!userId || !type || !title || !message) {
-        sendError(res, 'userId, type, title, and message are required', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'userId, type, title y message son requeridos', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -180,10 +180,10 @@ export class NotificationController {
         }
       });
 
-      sendSuccess(res, { message: 'Test notification sent' });
+      sendSuccess(res, { message: 'Notificación de prueba enviada' });
     } catch (error) {
       console.error('Test notification error:', error);
-      sendError(res, 'Failed to send test notification');
+      sendError(res, 'Error al enviar la notificación de prueba');
     }
   }
 } 

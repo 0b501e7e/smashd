@@ -104,6 +104,15 @@ export class PaymentService implements IPaymentService {
 
     // Query SumUp API using imported utility function
     const sumupStatus = await getSumUpCheckoutStatus(checkoutId);
+
+    // Auto-update order status when SumUp reports payment success
+    if (order && order.status === 'AWAITING_PAYMENT' && ['PAID', 'SUCCESSFUL'].includes((sumupStatus.status || '').toUpperCase())) {
+      console.log(`PaymentService: SumUp reports payment success for order ${order.id}, updating status to PAYMENT_CONFIRMED`);
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'PAYMENT_CONFIRMED' }
+      });
+    }
     
     return {
       checkoutId,

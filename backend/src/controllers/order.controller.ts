@@ -31,13 +31,17 @@ export class OrderController {
     }
 
     try {
-      const { items, total } = req.body;
+      const { items, total, fulfillmentMethod, deliveryAddress } = req.body;
       const userId = req.user?.userId;
+
+      console.log(`OrderController: Received order creation request - fulfillmentMethod: ${fulfillmentMethod}, deliveryAddress: ${deliveryAddress ? 'present' : 'missing'}`);
 
       const orderData: CreateOrderData = {
         items,
         total,
-        ...(userId && { userId })
+        ...(userId && { userId }),
+        ...(fulfillmentMethod && { fulfillmentMethod }),
+        ...(deliveryAddress && { deliveryAddress })
       };
 
       const result = await this.orderService.createOrder(orderData);
@@ -71,7 +75,7 @@ export class OrderController {
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Order ID is required'
+        error: 'ID de pedido requerido'
       });
       return;
     }
@@ -81,7 +85,7 @@ export class OrderController {
       if (isNaN(orderId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'Invalid order ID'
+          error: 'ID de pedido inválido'
         });
         return;
       }
@@ -97,7 +101,7 @@ export class OrderController {
       if (error instanceof Error && error.message === 'Order not found') {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
-          error: 'Order not found'
+          error: 'Pedido no encontrado'
         });
         return;
       }
@@ -116,7 +120,7 @@ export class OrderController {
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Order ID is required'
+        error: 'ID de pedido requerido'
       });
       return;
     }
@@ -124,7 +128,7 @@ export class OrderController {
     if (!estimatedMinutes || typeof estimatedMinutes !== 'number') {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Valid estimatedMinutes required'
+        error: 'Se requiere un tiempo estimado válido (estimatedMinutes)'
       });
       return;
     }
@@ -134,7 +138,7 @@ export class OrderController {
       if (isNaN(orderId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'Invalid order ID'
+          error: 'ID de pedido inválido'
         });
         return;
       }
@@ -154,7 +158,7 @@ export class OrderController {
       if (error instanceof Error && error.message === 'Order not found') {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
-          error: 'Order not found'
+          error: 'Pedido no encontrado'
         });
         return;
       }
@@ -172,15 +176,7 @@ export class OrderController {
     if (!orderId) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Order ID is required'
-      });
-      return;
-    }
-
-    if (!req.user?.userId) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        success: false,
-        error: 'User not authenticated'
+        error: 'ID de pedido requerido'
       });
       return;
     }
@@ -190,15 +186,12 @@ export class OrderController {
       if (isNaN(orderIdInt)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'Invalid order ID'
+          error: 'ID de pedido inválido'
         });
         return;
       }
 
-      const verificationRequest: PaymentVerificationRequest = {
-        orderId: orderIdInt,
-        userId: req.user.userId
-      };
+      const verificationRequest: PaymentVerificationRequest = { orderId: orderIdInt };
 
       const result = await this.orderService.verifyPayment(verificationRequest);
 

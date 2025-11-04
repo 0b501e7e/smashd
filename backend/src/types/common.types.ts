@@ -24,8 +24,8 @@ export type Optional<T> = T | undefined;
 export type ID = number | string;
 
 // Database types (extending Prisma)
-export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_CONFIRMED' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
-export type UserRole = 'ADMIN' | 'STAFF' | 'CUSTOMER';
+export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_CONFIRMED' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
+export type UserRole = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
 export type MenuCategory = 'BURGER' | 'SIDE' | 'DRINK' | 'DESSERT';
 
 // Error types

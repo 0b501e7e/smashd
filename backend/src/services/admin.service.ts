@@ -1,5 +1,6 @@
 import { PrismaClient, MenuItem, Order } from '@prisma/client';
 import { IAdminService } from '../interfaces/IAdminService';
+import { INotificationService } from '../interfaces/INotificationService';
 import {
   AdminMenuItemData,
   AdminMenuItemUpdateData,
@@ -27,7 +28,10 @@ import fs from 'fs';
  * - SumUp integration and synchronization
  */
 export class AdminService implements IAdminService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private prisma: PrismaClient,
+    private notificationService?: INotificationService
+  ) {}
 
   // =====================
   // ADMIN MENU MANAGEMENT
@@ -46,7 +50,7 @@ export class AdminService implements IAdminService {
       return menuItems;
     } catch (error) {
       console.error('AdminService: Error fetching all menu items for admin:', error);
-      throw new Error('Failed to fetch menu items for admin');
+      throw new Error('Error al obtener los artículos del menú para el administrador');
     }
   }
 
@@ -67,7 +71,7 @@ export class AdminService implements IAdminService {
       return menuItem;
     } catch (error) {
       console.error('AdminService: Error creating menu item:', error);
-      throw new Error('Failed to create menu item');
+      throw new Error('Error al crear el artículo del menú');
     }
   }
 
@@ -83,9 +87,9 @@ export class AdminService implements IAdminService {
     } catch (error) {
       console.error(`AdminService: Error updating menu item ${menuItemId}:`, error);
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
-        throw new Error('Menu item not found');
+        throw new Error('Artículo del menú no encontrado');
       }
-      throw new Error('Failed to update menu item');
+      throw new Error('Error al actualizar el artículo del menú');
     }
   }
 
@@ -96,7 +100,7 @@ export class AdminService implements IAdminService {
       });
 
       if (!menuItem) {
-        throw new Error('Menu item not found');
+        throw new Error('Artículo del menú no encontrado');
       }
 
       const updatedMenuItem = await this.prisma.menuItem.update({
@@ -108,7 +112,7 @@ export class AdminService implements IAdminService {
       return updatedMenuItem;
     } catch (error) {
       console.error(`AdminService: Error updating availability for menu item ${menuItemId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to update menu item availability');
+      throw new Error(error instanceof Error ? error.message : 'Error al actualizar la disponibilidad del artículo del menú');
     }
   }
 
@@ -120,7 +124,7 @@ export class AdminService implements IAdminService {
       });
 
       if (!menuItem) {
-        throw new Error('Menu item not found');
+        throw new Error('Artículo del menú no encontrado');
       }
 
       // Delete menu item and related customization links in transaction
@@ -138,12 +142,12 @@ export class AdminService implements IAdminService {
 
       console.log(`AdminService: Menu item deleted successfully: ${deletedMenuItem.name} (ID: ${menuItemId})`);
       return {
-        message: `Menu item "${deletedMenuItem.name}" deleted successfully`,
+        message: `Artículo del menú "${deletedMenuItem.name}" eliminado exitosamente`,
         deletedMenuItem
       };
     } catch (error) {
       console.error(`AdminService: Error deleting menu item ${menuItemId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to delete menu item');
+      throw new Error(error instanceof Error ? error.message : 'Error al eliminar el artículo del menú');
     }
   }
 
@@ -171,7 +175,7 @@ export class AdminService implements IAdminService {
       return { imageUrl };
     } catch (error) {
       console.error('AdminService: Error uploading image:', error);
-      throw new Error('Failed to upload image');
+      throw new Error('Error al subir la imagen');
     }
   }
 
@@ -211,7 +215,7 @@ export class AdminService implements IAdminService {
       return orders as AdminOrderWithDetails[];
     } catch (error) {
       console.error('AdminService: Error fetching orders for admin:', error);
-      throw new Error('Failed to fetch orders for admin');
+      throw new Error('Error al obtener los pedidos para el administrador');
     }
   }
 
@@ -222,28 +226,53 @@ export class AdminService implements IAdminService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       if (order.status !== 'PAYMENT_CONFIRMED') {
-        throw new Error(`Order in status ${order.status} cannot be accepted`);
+        throw new Error(`El pedido con estado ${order.status} no puede ser aceptado`);
       }
 
+      console.log(`AdminService: Accepting order ${acceptData.orderId}`);
+      console.log(`AdminService: Order fulfillmentMethod: ${order.fulfillmentMethod}, deliveryAddress: ${order.deliveryAddress ? 'present' : 'missing'}`);
+
       const estimatedReadyTime = new Date(Date.now() + (acceptData.estimatedMinutes * 60000));
+
+      // For delivery orders, automatically set to READY status when accepted
+      // (since they need to be ready for driver pickup)
+      // For pickup orders, keep as CONFIRMED (customer will pick up)
+      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress 
+        ? 'READY' 
+        : 'CONFIRMED';
+
+      console.log(`AdminService: Setting order ${acceptData.orderId} to status: ${newStatus} (fulfillmentMethod: ${order.fulfillmentMethod}, hasDeliveryAddress: ${!!order.deliveryAddress})`);
 
       const updatedOrder = await this.prisma.order.update({
         where: { id: acceptData.orderId },
         data: {
           estimatedReadyTime,
-          status: 'CONFIRMED'
+          status: newStatus,
+          readyAt: newStatus === 'READY' ? new Date() : null
         }
       });
 
-      console.log(`AdminService: Order ${acceptData.orderId} accepted with ${acceptData.estimatedMinutes} minute estimate`);
+      console.log(`AdminService: Order ${acceptData.orderId} updated successfully. New status: ${updatedOrder.status}, readyAt: ${updatedOrder.readyAt}`);
+
+      // Send notification to customer
+      if (this.notificationService && order.userId) {
+        try {
+          await this.notificationService.sendOrderStatusUpdate(acceptData.orderId, newStatus);
+        } catch (notificationError) {
+          console.error('AdminService: Failed to send notification:', notificationError);
+          // Don't fail the accept operation if notification fails
+        }
+      }
+
+      console.log(`AdminService: Order ${acceptData.orderId} accepted with ${acceptData.estimatedMinutes} minute estimate, status: ${newStatus}`);
       return updatedOrder;
     } catch (error) {
       console.error(`AdminService: Error accepting order ${acceptData.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to accept order');
+      throw new Error(error instanceof Error ? error.message : 'Error al aceptar el pedido');
     }
   }
 
@@ -254,11 +283,11 @@ export class AdminService implements IAdminService {
       });
 
       if (!order) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       if (!['PAYMENT_CONFIRMED', 'CONFIRMED'].includes(order.status)) {
-        throw new Error(`Order in status ${order.status} cannot be declined`);
+        throw new Error(`El pedido con estado ${order.status} no puede ser rechazado`);
       }
 
       const updatedOrder = await this.prisma.order.update({
@@ -270,7 +299,7 @@ export class AdminService implements IAdminService {
       return updatedOrder;
     } catch (error) {
       console.error(`AdminService: Error declining order ${declineData.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to decline order');
+      throw new Error(error instanceof Error ? error.message : 'Error al rechazar el pedido');
     }
   }
 
@@ -293,7 +322,7 @@ export class AdminService implements IAdminService {
       return categories;
     } catch (error) {
       console.error('AdminService: Error fetching customization categories:', error);
-      throw new Error('Failed to fetch customization categories');
+      throw new Error('Error al obtener las categorías de personalización');
     }
   }
 
@@ -318,7 +347,7 @@ export class AdminService implements IAdminService {
       return category;
     } catch (error) {
       console.error('AdminService: Error creating customization category:', error);
-      throw new Error('Failed to create customization category');
+      throw new Error('Error al crear la categoría de personalización');
     }
   }
 
@@ -340,7 +369,7 @@ export class AdminService implements IAdminService {
       return options;
     } catch (error) {
       console.error('AdminService: Error fetching customization options:', error);
-      throw new Error('Failed to fetch customization options');
+      throw new Error('Error al obtener las opciones de personalización');
     }
   }
 
@@ -356,7 +385,7 @@ export class AdminService implements IAdminService {
       return optionIds;
     } catch (error) {
       console.error(`AdminService: Error fetching linked customization options for menu item ${menuItemId}:`, error);
-      throw new Error('Failed to fetch linked customization options');
+      throw new Error('Error al obtener las opciones de personalización vinculadas');
     }
   }
 
@@ -383,14 +412,14 @@ export class AdminService implements IAdminService {
       console.log(`AdminService: Updated customization options for menu item ${linkData.menuItemId}: ${linkData.optionIds.length} options linked`);
       
       return {
-        message: 'Customization options updated successfully for menu item'
+        message: 'Opciones de personalización actualizadas exitosamente para el artículo del menú'
       };
     } catch (error) {
       console.error(`AdminService: Error updating linked customization options for menu item ${linkData.menuItemId}:`, error);
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
-        throw new Error('One or more customization option IDs are invalid');
+        throw new Error('Uno o más IDs de opciones de personalización son inválidos');
       }
-      throw new Error('Failed to update linked customization options');
+      throw new Error('Error al actualizar las opciones de personalización vinculadas');
     }
   }
 
@@ -481,7 +510,7 @@ export class AdminService implements IAdminService {
 
     } catch (error) {
       console.error('AdminService: Error syncing menu to SumUp:', error);
-      throw new Error(error instanceof Error ? error.message : 'Failed to sync menu to SumUp');
+      throw new Error(error instanceof Error ? error.message : 'Error al sincronizar el menú con SumUp');
     }
   }
 } 

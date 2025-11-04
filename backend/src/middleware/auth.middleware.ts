@@ -99,6 +99,33 @@ export const isAdmin = (
 };
 
 /**
+ * Middleware to check if authenticated user has driver role
+ * Must be used after authenticateToken middleware
+ */
+export const isDriver = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    if (!req.user) {
+      sendError(res, 'Authentication required', HTTP_STATUS.UNAUTHORIZED);
+      return;
+    }
+
+    if (req.user.role !== 'DRIVER') {
+      sendError(res, 'Driver access required', HTTP_STATUS.FORBIDDEN);
+      return;
+    }
+
+    next();
+  } catch (error) {
+    console.error('Driver middleware error:', error);
+    sendError(res, 'Authorization failed', HTTP_STATUS.INTERNAL_SERVER_ERROR);
+  }
+};
+
+/**
  * Optional authentication middleware
  * Attaches user to request if token is valid, but doesn't fail if token is missing
  */

@@ -10,6 +10,7 @@ export type OrderStatus =
   | 'CONFIRMED' 
   | 'PREPARING' 
   | 'READY' 
+  | 'OUT_FOR_DELIVERY'
   | 'DELIVERED' 
   | 'CANCELLED'
   | 'PAYMENT_FAILED';
@@ -29,6 +30,8 @@ export interface CreateOrderData {
   items: OrderItemData[];
   total: number;
   userId?: number;
+  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  deliveryAddress?: string;
 }
 
 export interface CreateOrderResult {
@@ -54,6 +57,8 @@ export interface OrderStatusResponse {
   sumupCheckoutId: string | null;
   total: number;
   createdAt: Date;
+  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  deliveryAddress?: string | null;
   items: OrderItemWithDetails[];
 }
 
@@ -86,7 +91,7 @@ export interface OrderEstimateResult {
 
 export interface PaymentVerificationRequest {
   orderId: number;
-  userId: number;
+  userId?: number;
 }
 
 export interface PaymentVerificationResult {

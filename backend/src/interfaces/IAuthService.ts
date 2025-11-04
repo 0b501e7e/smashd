@@ -19,6 +19,8 @@ export interface IAuthService {
   hashPassword(password: string): Promise<string>;
   verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
   changePassword(userId: ID, currentPassword: string, newPassword: string): Promise<void>;
+  forgotPassword(email: string): Promise<void>;
+  resetPassword(token: string, newPassword: string): Promise<void>;
   
   // JWT Token Management
   generateToken(user: UserBasicInfo): string;
