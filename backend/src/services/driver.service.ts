@@ -1,7 +1,6 @@
 import { PrismaClient, Order } from '@prisma/client';
 import { IDriverService, DriverOrderDetails } from '../interfaces/IDriverService';
 import { INotificationService } from '../interfaces/INotificationService';
-import { OrderStatus } from '../types/order.types';
 
 /**
  * DriverService - Handles driver delivery operations
