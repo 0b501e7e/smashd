@@ -1,20 +1,25 @@
-// Use APP_VARIANT as recommended by Expo docs
 const IS_DEV = process.env.APP_VARIANT === 'development';
 const IS_PREVIEW = process.env.APP_VARIANT === 'preview';
 
-// Function to get the right config file based on APP_VARIANT
-const getConfig = () => {
+const getConfig = ({ config }) => {
+  console.log('📦 APP_VARIANT:', process.env.APP_VARIANT);
+  console.log('📦 NODE_ENV:', process.env.NODE_ENV);
+
   if (IS_DEV) {
-    return require('./app.config.development.js');
+    console.log('✅ Loading development config');
+    const devConfig = require('./app.config.development.js');
+    return devConfig({ config });
   }
-  
+
   if (IS_PREVIEW) {
-    // For now, use production config for preview
-    return require('./app.config.production.js');
+    console.log('✅ Loading preview config');
+    const previewConfig = require('./app.config.production.js');
+    return previewConfig({ config });
   }
-  
-  // Default to production
-  return require('./app.config.production.js');
+
+  console.log('✅ Loading production config');
+  const prodConfig = require('./app.config.production.js');
+  return prodConfig({ config });
 };
 
-module.exports = getConfig(); 
+module.exports = getConfig;
