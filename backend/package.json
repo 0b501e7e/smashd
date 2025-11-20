@@ -10,6 +10,7 @@
     "railway:build": "npm install && npm run build",
     "railway:start": "npm run deploy && npm start",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:with-db": "bash scripts/dev-with-db.sh",
     "dev:js": "nodemon server.js",
     "dev:watch": "nodemon --exec ts-node src/server.ts",
     "type-check": "tsc --noEmit",

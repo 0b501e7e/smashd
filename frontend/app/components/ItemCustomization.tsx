@@ -17,17 +17,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // --- Define Types for Fetched Customization Data ---
 type FetchedCustomizationOption = {
-  id: number; // Use number ID from DB
-  categoryId: number;
-  name: string;
-  price: number;
-  isDefaultSelected: boolean;
+    id: number; // Use number ID from DB
+    categoryId: number;
+    name: string;
+    price: number;
+    isDefaultSelected: boolean;
 };
 
 type FetchedCustomizationCategory = {
-  id: number;
-  name: string; // e.g., "Extras", "Sauces", "Toppings"
-  options: FetchedCustomizationOption[];
+    id: number;
+    name: string; // e.g., "Extras", "Sauces", "Toppings"
+    options: FetchedCustomizationOption[];
 };
 
 interface ItemCustomizationProps {
@@ -90,13 +90,13 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             }
             setSelectedOptions(initialSelections);
         } else if (!isOpen) {
-             // Clear selections when closed
+            // Clear selections when closed
             setSelectedOptions({});
         }
     }, [isOpen, item, customizationCategories]); // Depend on fetched categories
 
     // Reset image loading state
-     useEffect(() => {
+    useEffect(() => {
         if (isOpen) {
             setIsImageLoading(true);
             setImageLoadError(false);
@@ -154,7 +154,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
 
         customizationCategories.forEach(category => {
             const selectedInCategory = selectedOptions[category.id] || [];
-            
+
             selectedInCategory.forEach(optionId => {
                 const option = category.options.find(o => o.id === optionId);
                 if (option) {
@@ -204,7 +204,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                 <div className="space-y-2">
                     {category.options.map(option => (
                         <div key={option.id} className="flex items-center justify-between space-x-2 p-2 rounded hover:bg-gray-800/60">
-                           <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`option-${option.id}`}
                                     checked={selectedInCategory.includes(option.id)}
@@ -214,7 +214,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                                 <Label htmlFor={`option-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer break-words">
                                     {option.name}
                                 </Label>
-                           </div>
+                            </div>
                             {option.price > 0 && (
                                 <span className="text-xs text-gray-400">+{formatCurrency(option.price)}</span>
                             )}
@@ -225,26 +225,36 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
         );
     };
 
+    // Construct image URL the same way Menu component does
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
+    const imageSrc = item.imageUrl && apiUrl
+        ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+        : '/burger.png'; // Use fallback from frontend/public
+    const fallbackSrc = '/burger.png'; // Define fallback for error handling
+
     // --- Main Content Structure ---
     const content = (
         <div className="flex flex-col md:flex-row gap-6 md:gap-8 flex-1 min-h-0">
             {/* Image Column (Adjusted width slightly for better balance) */}
-            <div className="md:w-2/5 relative aspect-square md:aspect-auto overflow-hidden rounded-lg bg-gray-800 flex-shrink-0">
-                {(isImageLoading || imageLoadError) && (
-                    <Skeleton className="absolute inset-0 w-full h-full bg-gray-700" />
-                )}
+            <div className="md:w-2/5 h-64 relative overflow-hidden rounded-lg bg-gray-800 flex-shrink-0">                {(isImageLoading || imageLoadError) && (
+                <Skeleton className="absolute inset-0 w-full h-full bg-gray-700" />
+            )}
                 {!imageLoadError && (
                     <Image
-                         src={item.imageUrl || ''}
-                         alt={item.name}
-                         fill
-                         style={{ objectFit: 'cover' }}
-                         sizes="(max-width: 768px) 90vw, 40vw" // Adjusted sizes
-                         className={`transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
-                         onError={handleImageError}
-                         onLoad={() => setIsImageLoading(false)}
-                         priority
-                     />
+                        src={imageSrc}
+                        alt={item.name}
+                        fill
+                        className={`object-cover transition-opacity duration-300 ${isImageLoading ? 'opacity-0' : 'opacity-100'}`}
+                        sizes="(max-width: 768px) 90vw, 40vw"
+                        onError={(e) => {
+                            console.error(`ItemCustomization: Error loading image ${imageSrc}`);
+                            (e.target as HTMLImageElement).src = fallbackSrc;
+                            (e.target as HTMLImageElement).srcset = fallbackSrc;
+                            handleImageError();
+                        }}
+                        onLoad={() => setIsImageLoading(false)}
+                        priority
+                    />
                 )}
             </div>
 
@@ -262,7 +272,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                 {/* Customization Section - Allow this part to grow */}
                 {/* This inner div handles the scrolling for customization options if they overflow */}
                 {/* REMOVED overflow-y-auto FROM HERE for mobile, outer container will scroll */}
-                <div className="flex-1 min-h-0 mb-4 pr-1 custom-scrollbar"> 
+                <div className="flex-1 min-h-0 mb-4 pr-1 custom-scrollbar">
                     {item.category === 'BURGER' ? (
                         isLoadingCustomizations ? (
                             <div className="space-y-4 mt-4">
@@ -276,33 +286,33 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                             </Alert>
                         ) : (
                             customizationCategories.map((category, index) => (
-                               <React.Fragment key={category.id}>
-                                 {renderOptions(category)}
-                                 {index < customizationCategories.length - 1 && <Separator className="my-4 bg-border" />}
-                               </React.Fragment>
+                                <React.Fragment key={category.id}>
+                                    {renderOptions(category)}
+                                    {index < customizationCategories.length - 1 && <Separator className="my-4 bg-border" />}
+                                </React.Fragment>
                             ))
                         )
                     ) : (
                         <div className="mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700/50">
                             <p className="text-sm text-gray-400">Customizations available for burgers only.</p>
                         </div>
-                     )}
+                    )}
                 </div>
 
                 {/* Quantity & Price - Keep at bottom */}
                 <div className="mt-auto flex-shrink-0 pt-4">
-                     <Separator className="my-4 bg-gray-700" />
-                     <div className="flex justify-between items-center mb-4">
-                         <div className="flex items-center gap-3 mr-4">
-                             <Button variant="outline" size="icon" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1} className="h-9 w-9 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
-                                 <Minus className="h-4 w-4" />
-                             </Button>
-                             <span className="text-lg font-semibold w-10 text-center">{quantity}</span>
-                             <Button variant="outline" size="icon" onClick={() => handleQuantityChange(1)} className="h-9 w-9 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black">
-                                 <Plus className="h-4 w-4" />
-                             </Button>
-                         </div>
-                         <Button
+                    <Separator className="my-4 bg-gray-700" />
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3 mr-4">
+                            <Button variant="outline" size="icon" onClick={() => handleQuantityChange(-1)} disabled={quantity <= 1} className="h-9 w-9 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
+                                <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-lg font-semibold w-10 text-center">{quantity}</span>
+                            <Button variant="outline" size="icon" onClick={() => handleQuantityChange(1)} className="h-9 w-9 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black">
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <Button
                             onClick={handleAddToBasketClick}
                             className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-lg py-3 disabled:opacity-50"
                             disabled={isLoadingCustomizations}
@@ -312,8 +322,8 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                             ) : (
                                 `${formatCurrency(calculateTotalPrice)}`
                             )}
-                         </Button>
-                     </div>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -322,13 +332,13 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
     if (isDesktop) {
         return (
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                 {/* Desktop Dialog: Fixed max height, flex column */}
-                 <DialogContent className="sm:max-w-[800px] bg-gray-900 border-gray-700 text-white flex flex-col max-h-[90vh] p-6"> {/* Adjusted padding */}
-                     {/* Scrollable Content Area: Takes remaining space, scrolls */}
-                     <div className="flex-1 overflow-y-auto min-h-0 -mx-6 -mb-6 px-6 pb-6 custom-scrollbar"> {/* Adjust scroll container padding to account for DialogContent padding */}
-                          {content}
-                      </div>
-                  </DialogContent>
+                {/* Desktop Dialog: Fixed max height, flex column */}
+                <DialogContent className="sm:max-w-[800px] bg-gray-900 border-gray-700 text-white flex flex-col max-h-[90vh] p-6"> {/* Adjusted padding */}
+                    {/* Scrollable Content Area: Takes remaining space, scrolls */}
+                    <div className="flex-1 overflow-y-auto min-h-0 -mx-6 -mb-6 px-6 pb-6 custom-scrollbar"> {/* Adjust scroll container padding to account for DialogContent padding */}
+                        {content}
+                    </div>
+                </DialogContent>
             </Dialog>
         );
     }

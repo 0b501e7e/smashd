@@ -20,8 +20,9 @@ export function loadEnvironment(): void {
   }
   
   // Always load base .env as fallback (for production and missing vars)
+  // But don't overwrite variables that are already set from environment-specific file
   try {
-    config({ path: join(process.cwd(), '.env') });
+    config({ path: join(process.cwd(), '.env'), override: false });
     console.log(`✅ Loaded base environment config: .env`);
   } catch (error) {
     console.log(`⚠️  No .env file found`);
@@ -41,5 +42,12 @@ export function loadEnvironment(): void {
     }
   } else {
     console.log(`✅ All required environment variables are set`);
+    
+    // Log which database we're connecting to (mask password for security)
+    if (process.env.DATABASE_URL) {
+      const dbUrl = process.env.DATABASE_URL;
+      const maskedUrl = dbUrl.replace(/:[^:@]+@/, ':****@'); // Mask password
+      console.log(`🔗 Database URL: ${maskedUrl}`);
+    }
   }
 } 

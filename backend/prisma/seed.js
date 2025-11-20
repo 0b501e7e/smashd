@@ -70,6 +70,23 @@ async function main() {
   }
   console.log('Test customers created');
 
+  // Create a test driver
+  const driver = await prisma.user.upsert({
+    where: { email: 'driver@test.com' },
+    update: {},
+    create: {
+      email: 'driver@test.com',
+      name: 'Test Driver',
+      password: hashedPassword,
+      role: 'DRIVER',
+      dateOfBirth: new Date('1990-01-01'),
+      address: '123 Driver Street, Test City',
+      phoneNumber: '+1234567890',
+      acceptedTerms: true,
+    },
+  });
+  console.log('Driver user created:', driver.email);
+
   // Seed Menu Items (Keep existing logic)
   console.log('Seeding Menu Items...');
   

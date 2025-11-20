@@ -3,7 +3,7 @@ module.exports = ({ config }) => {
     ...config,
     name: "Smash'd",
     slug: "smashd-app",
-    version: "1.0.8",
+    version: "1.0.9",
     orientation: "portrait",
     icon: "./assets/images/smashd.png",
     scheme: "smashd",
@@ -24,7 +24,7 @@ module.exports = ({ config }) => {
         backgroundColor: "#ffffff"
       },
       package: "com.smashd.app",
-      versionCode: 22,
+      versionCode: 23,
       permissions: [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
