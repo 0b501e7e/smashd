@@ -44,7 +44,7 @@ const createCorsOptions = (): CorsOptions => {
     const allowedOrigins = [
       'https://smashdmotril.com',           // Production frontend
       'https://www.smashd.app',       // Production frontend with www
-      'https://admin.smashd.app',     // Admin panel
+      'https://admin.smashdmotril.com',     // Admin panel
       'https://api.smashd.app',       // API domain
       'https://smashd-one.vercel.app',
       'http://localhost:3000',        // Local development (temporary)
