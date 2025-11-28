@@ -148,10 +148,10 @@ const mockMerchantProfile = {
 describe('Payment Integration Tests - TypeScript Backend', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Clear any global locks
     (global as any)['checkout:lock:1'] = false;
-    
+
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
       return Promise.resolve(password === 'password123');
@@ -215,7 +215,7 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .expect(500);
 
       expect(response.body).toHaveProperty('error', 'Error initiating checkout');
-      expect(response.body).toHaveProperty('details', 'Order not found');
+      expect(response.body).toHaveProperty('details', 'Order not found after 5 attempts: 999');
     });
 
     it('should handle SumUp credentials not configured', async () => {

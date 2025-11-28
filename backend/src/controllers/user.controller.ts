@@ -13,7 +13,7 @@ import {
  * User Controller - Thin HTTP handler that delegates to UserService
  */
 export class UserController {
-  constructor(private userService: IUserService) {}
+  constructor(private userService: IUserService) { }
 
   /**
    * Get user profile with loyalty points
@@ -39,7 +39,7 @@ export class UserController {
 
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      
+
       if (error instanceof Error && error.message === 'User not found') {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           error: error.message
@@ -87,7 +87,7 @@ export class UserController {
 
     } catch (error) {
       console.error('Error fetching user orders:', error);
-      
+
       if (error instanceof Error && error.message.includes('Not authorized')) {
         res.status(HTTP_STATUS.FORBIDDEN).json({
           error: error.message
@@ -143,7 +143,7 @@ export class UserController {
 
     } catch (error) {
       console.error('Error fetching last order:', error);
-      
+
       if (error instanceof Error && error.message.includes('Not authorized')) {
         res.status(HTTP_STATUS.FORBIDDEN).json({
           error: error.message
@@ -198,15 +198,15 @@ export class UserController {
 
     } catch (error) {
       console.error('Error repeating order:', error);
-      
+
       if (error instanceof Error) {
-        if (error.message === 'Order not found') {
+        if (error.message === 'Order not found' || error.message === 'Pedido no encontrado') {
           res.status(HTTP_STATUS.NOT_FOUND).json({
             error: error.message
           });
           return;
         }
-        
+
         if (error.message.includes('Not authorized')) {
           res.status(HTTP_STATUS.FORBIDDEN).json({
             error: error.message

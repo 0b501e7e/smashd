@@ -218,7 +218,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
       return Promise.resolve(password === 'password123');
@@ -427,7 +427,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
     it('should repeat order successfully for authenticated user', async () => {
       // Mock: Return the order to repeat and menu items
       mockedPrisma.order.findUnique.mockResolvedValue(mockUserOrders[0]);
-      
+
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(mockMenuItems[0])
         .mockResolvedValueOnce(mockMenuItems[1]);
@@ -453,7 +453,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Order not found');
+      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
     });
 
     it('should deny access to other users orders', async () => {
@@ -475,7 +475,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
     it('should allow admin to repeat any order', async () => {
       // Mock: Return order and menu items for admin
       mockedPrisma.order.findUnique.mockResolvedValue(mockUserOrders[0]);
-      
+
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(mockMenuItems[0])
         .mockResolvedValueOnce(mockMenuItems[1]);
@@ -491,7 +491,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
     it('should handle unavailable menu items gracefully', async () => {
       // Mock: Return order with one unavailable item
       mockedPrisma.order.findUnique.mockResolvedValue(mockUserOrders[0]);
-      
+
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(mockMenuItems[0]) // Available
         .mockResolvedValueOnce(null); // Unavailable
@@ -508,7 +508,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
     it('should return empty order when all items unavailable', async () => {
       // Mock: Return order but no menu items available
       mockedPrisma.order.findUnique.mockResolvedValue(mockUserOrders[0]);
-      
+
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null);
