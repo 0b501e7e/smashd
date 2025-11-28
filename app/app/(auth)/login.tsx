@@ -43,7 +43,7 @@ export default function LoginScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: '#000000' }}>
-      <ScrollView 
+      <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -66,7 +66,7 @@ export default function LoginScreen() {
             Inicia sesión para continuar con SMASHD
           </Text>
         </View>
-        
+
         {/* Error Message */}
         {error ? (
           <Card className="mb-8" style={{ borderColor: '#FF4444', backgroundColor: 'rgba(255, 68, 68, 0.1)' }}>
@@ -118,12 +118,22 @@ export default function LoginScreen() {
                   />
                 </View>
               </View>
+
+              <View className="items-end">
+                <Link href="/forgot-password" asChild>
+                  <Button variant="link" className="p-0 h-auto">
+                    <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
+                      ¿Olvidaste tu contraseña?
+                    </Text>
+                  </Button>
+                </Link>
+              </View>
             </View>
           </View>
         </Card>
 
         {/* Login Button */}
-        <Button 
+        <Button
           className="h-16 mb-8"
           style={{ backgroundColor: '#FAB10A' }}
           onPress={handleLogin}
