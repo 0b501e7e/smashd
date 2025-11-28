@@ -8,6 +8,7 @@ export interface DriverOrderDetails {
   orderCode: string | null;
   deliveryAddress: string | null;
   status: string;
+  fulfillmentMethod: string;
   total: number;
   createdAt: Date;
   user: {

@@ -124,7 +124,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Mock bcrypt compare to always return true for login
     mockedBcrypt.compare.mockResolvedValue(true as never);
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
@@ -144,6 +144,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
     });
 
     mockedPrisma.user.findUnique.mockImplementation((args: any) => {
+      // Check ID
       if (args?.where?.id === mockAdminUser.id) {
         return Promise.resolve(mockAdminUser);
       }
@@ -153,6 +154,18 @@ describe('Driver Delivery Flow E2E Tests', () => {
       if (args?.where?.id === mockDriverUser.id) {
         return Promise.resolve(mockDriverUser);
       }
+
+      // Check Email
+      if (args?.where?.email === 'admin@smashd.com') {
+        return Promise.resolve(mockAdminUser);
+      }
+      if (args?.where?.email === 'customer@example.com') {
+        return Promise.resolve(mockCustomerUser);
+      }
+      if (args?.where?.email === 'driver@test.com') {
+        return Promise.resolve(mockDriverUser);
+      }
+
       return Promise.resolve(null);
     });
 
@@ -210,7 +223,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
         });
 
       expect(adminLoginResponse.status).toBe(200);
-      adminToken = adminLoginResponse.body.token;
+      adminToken = adminLoginResponse.body.data.token;
 
       // Step 4: Admin fetches orders (should see the delivery order)
       mockedPrisma.order.findMany.mockResolvedValue([
@@ -282,13 +295,13 @@ describe('Driver Delivery Flow E2E Tests', () => {
         });
 
       expect(driverLoginResponse.status).toBe(200);
-      driverToken = driverLoginResponse.body.token;
+      driverToken = driverLoginResponse.body.data.token;
 
       // Step 7: Driver fetches ready delivery orders (should see the order)
       mockedPrisma.order.findMany.mockImplementation((args: any) => {
-        if (args?.where?.status === 'READY' && 
-            args?.where?.fulfillmentMethod === 'DELIVERY' &&
-            args?.where?.deliveryAddress?.not !== null) {
+        if (args?.where?.status === 'READY' &&
+          args?.where?.fulfillmentMethod === 'DELIVERY' &&
+          args?.where?.deliveryAddress?.not === null) {
           return Promise.resolve([
             {
               ...readyOrder,
@@ -387,7 +400,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
 
       expect(acceptOrderResponse.status).toBe(200);
       expect(acceptOrderResponse.body.success).toBe(true);
-      expect(acceptOrderResponse.body.data.status).toBe('OUT_FOR_DELIVERY');
+      expect(acceptOrderResponse.body.data.order.status).toBe('OUT_FOR_DELIVERY');
 
       // Verify the order was updated to OUT_FOR_DELIVERY
       expect(mockedPrisma.order.update).toHaveBeenCalledWith(
@@ -424,7 +437,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
 
       expect(markDeliveredResponse.status).toBe(200);
       expect(markDeliveredResponse.body.success).toBe(true);
-      expect(markDeliveredResponse.body.data.status).toBe('DELIVERED');
+      expect(markDeliveredResponse.body.data.order.status).toBe('DELIVERED');
 
       // Verify the order was updated to DELIVERED
       expect(mockedPrisma.order.update).toHaveBeenCalledWith(
@@ -438,7 +451,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
     test('Driver should only see READY delivery orders', async () => {
       // Setup: Login as driver
       mockedBcrypt.compare.mockResolvedValue(true as never);
-      
+
       const driverLoginResponse = await request(app)
         .post('/v1/auth/login')
         .send({
@@ -447,13 +460,13 @@ describe('Driver Delivery Flow E2E Tests', () => {
         });
 
       expect(driverLoginResponse.status).toBe(200);
-      const driverToken = driverLoginResponse.body.token;
+      const driverToken = driverLoginResponse.body.data.token;
 
       // Mock: Only READY delivery orders should be returned
       mockedPrisma.order.findMany.mockImplementation((args: any) => {
-        if (args?.where?.status === 'READY' && 
-            args?.where?.fulfillmentMethod === 'DELIVERY' &&
-            args?.where?.deliveryAddress?.not !== null) {
+        if (args?.where?.status === 'READY' &&
+          args?.where?.fulfillmentMethod === 'DELIVERY' &&
+          args?.where?.deliveryAddress?.not === null) {
           return Promise.resolve([
             {
               id: 100,
@@ -487,7 +500,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
     test('Admin accepting delivery order should set status to READY', async () => {
       // Setup: Login as admin
       mockedBcrypt.compare.mockResolvedValue(true as never);
-      
+
       const adminLoginResponse = await request(app)
         .post('/v1/auth/login')
         .send({
@@ -496,7 +509,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
         });
 
       expect(adminLoginResponse.status).toBe(200);
-      const adminToken = adminLoginResponse.body.token;
+      const adminToken = adminLoginResponse.body.data.token;
 
       // Mock delivery order in PAYMENT_CONFIRMED status
       const paymentConfirmedOrder = {
@@ -552,7 +565,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
     test('Admin accepting pickup order should set status to CONFIRMED (not READY)', async () => {
       // Setup: Login as admin
       mockedBcrypt.compare.mockResolvedValue(true as never);
-      
+
       const adminLoginResponse = await request(app)
         .post('/v1/auth/login')
         .send({
@@ -561,7 +574,7 @@ describe('Driver Delivery Flow E2E Tests', () => {
         });
 
       expect(adminLoginResponse.status).toBe(200);
-      const adminToken = adminLoginResponse.body.token;
+      const adminToken = adminLoginResponse.body.data.token;
 
       // Mock pickup order in PAYMENT_CONFIRMED status
       const paymentConfirmedOrder = {

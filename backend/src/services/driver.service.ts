@@ -15,7 +15,7 @@ export class DriverService implements IDriverService {
   constructor(
     private prisma: PrismaClient,
     private notificationService: INotificationService
-  ) {}
+  ) { }
 
   /**
    * Get list of ready delivery orders
@@ -70,7 +70,7 @@ export class DriverService implements IDriverService {
           }
         });
         console.log(`DriverService: Total delivery orders with address: ${allDeliveryOrders.length}`);
-        console.log('DriverService: Delivery orders by status:', 
+        console.log('DriverService: Delivery orders by status:',
           allDeliveryOrders.reduce((acc, o) => {
             acc[o.status] = (acc[o.status] || 0) + 1;
             return acc;
@@ -83,6 +83,7 @@ export class DriverService implements IDriverService {
         orderCode: order.orderCode,
         deliveryAddress: order.deliveryAddress,
         status: order.status,
+        fulfillmentMethod: order.fulfillmentMethod,
         total: order.total,
         createdAt: order.createdAt,
         user: order.user ? {
@@ -150,6 +151,7 @@ export class DriverService implements IDriverService {
         orderCode: order.orderCode,
         deliveryAddress: order.deliveryAddress,
         status: order.status,
+        fulfillmentMethod: order.fulfillmentMethod,
         total: order.total,
         createdAt: order.createdAt,
         user: order.user ? {
@@ -362,6 +364,7 @@ export class DriverService implements IDriverService {
         orderCode: order.orderCode,
         deliveryAddress: order.deliveryAddress,
         status: order.status,
+        fulfillmentMethod: order.fulfillmentMethod,
         total: order.total,
         createdAt: order.createdAt,
         user: order.user ? {
