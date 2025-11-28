@@ -31,7 +31,7 @@ import { getSumUpCheckoutStatus } from './sumupService';
  * - Admin order management operations
  */
 export class OrderService implements IOrderService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   // =====================
   // ORDER CREATION
@@ -63,9 +63,9 @@ export class OrderService implements IOrderService {
         // Create the order with items
         const fulfillmentMethod = (orderData.fulfillmentMethod || 'PICKUP') as any;
         const isDelivery = fulfillmentMethod === 'DELIVERY';
-        
+
         console.log(`OrderService: Creating order with fulfillmentMethod: ${fulfillmentMethod}, isDelivery: ${isDelivery}, deliveryAddress: ${orderData.deliveryAddress ? 'present' : 'missing'}`);
-        
+
         const newOrder = await prisma.order.create({
           data: {
             userId: orderData.userId || null,
@@ -228,7 +228,7 @@ export class OrderService implements IOrderService {
   async getUserOrders(query: OrderHistoryQuery): Promise<OrderWithFullDetails[]> {
     try {
       const whereClause: any = { userId: query.userId };
-      
+
       if (query.status) {
         whereClause.status = { in: query.status };
       }
@@ -289,7 +289,7 @@ export class OrderService implements IOrderService {
       });
 
       if (!existingOrder) {
-        throw new Error('Order not found');
+        throw new Error('Pedido no encontrado');
       }
 
       // Check if order is in a state that can be estimated
@@ -372,12 +372,12 @@ export class OrderService implements IOrderService {
         // 4. Query SumUp API for checkout status (if checkout ID exists)
         if (order.sumupCheckoutId) {
           console.log(`OrderService: Payment verification requested for order ${orderId} with SumUp checkout ${order.sumupCheckoutId}`);
-          
+
           // Try to get SumUp status, but handle errors gracefully
           try {
             const sumupStatus = await getSumUpCheckoutStatus(order.sumupCheckoutId);
             console.log('OrderService: SumUp checkout status:', sumupStatus);
-            
+
             if (sumupStatus.status === 'PAID') {
               newStatus = 'PAYMENT_CONFIRMED';
             } else if (sumupStatus.status === 'FAILED') {
@@ -585,8 +585,8 @@ export class OrderService implements IOrderService {
       // For delivery orders, automatically set to READY status when accepted
       // (since they need to be ready for driver pickup)
       // For pickup orders, keep as CONFIRMED (customer will pick up)
-      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress 
-        ? 'READY' 
+      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress
+        ? 'READY'
         : 'CONFIRMED';
 
       const updatedOrder = await this.prisma.order.update({

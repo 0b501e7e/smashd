@@ -3,10 +3,10 @@ import { validationResult } from 'express-validator';
 import { HTTP_STATUS } from '../config/constants';
 import { AuthenticatedRequest } from '../types/common.types';
 import { IOrderService } from '../interfaces/IOrderService';
-import { 
-  CreateOrderData, 
-  UpdateOrderEstimateData, 
-  PaymentVerificationRequest 
+import {
+  CreateOrderData,
+  UpdateOrderEstimateData,
+  PaymentVerificationRequest
 } from '../types/order.types';
 
 /**
@@ -14,7 +14,7 @@ import {
  * Business logic is delegated to OrderService
  */
 export class OrderController {
-  constructor(private orderService: IOrderService) {}
+  constructor(private orderService: IOrderService) { }
 
   /**
    * Create a new order
@@ -71,7 +71,7 @@ export class OrderController {
    */
   async getOrderStatus(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
-    
+
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
@@ -98,7 +98,7 @@ export class OrderController {
       });
 
     } catch (error) {
-      if (error instanceof Error && error.message === 'Order not found') {
+      if (error instanceof Error && error.message === 'Pedido no encontrado') {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
           error: 'Pedido no encontrado'
@@ -116,7 +116,7 @@ export class OrderController {
   async updateOrderEstimate(req: Request, res: Response, next: NextFunction): Promise<void> {
     const { id } = req.params;
     const { estimatedMinutes } = req.body;
-    
+
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
@@ -124,7 +124,7 @@ export class OrderController {
       });
       return;
     }
-    
+
     if (!estimatedMinutes || typeof estimatedMinutes !== 'number') {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
@@ -132,7 +132,7 @@ export class OrderController {
       });
       return;
     }
-    
+
     try {
       const orderId = parseInt(id);
       if (isNaN(orderId)) {
@@ -148,14 +148,14 @@ export class OrderController {
       };
 
       const result = await this.orderService.updateOrderEstimate(orderId, estimateData);
-      
+
       res.json({
         success: true,
         data: result
       });
 
     } catch (error) {
-      if (error instanceof Error && error.message === 'Order not found') {
+      if (error instanceof Error && error.message === 'Pedido no encontrado') {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
           error: 'Pedido no encontrado'

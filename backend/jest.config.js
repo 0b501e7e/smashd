@@ -20,7 +20,8 @@ module.exports = {
   testTimeout: 10000,
   setupFilesAfterEnv: ['./setupTests.js'],
   testPathIgnorePatterns: [
-    '/node_modules/'
+    '/node_modules/',
+    '/dist/'
   ],
   clearMocks: true,
   restoreMocks: true,

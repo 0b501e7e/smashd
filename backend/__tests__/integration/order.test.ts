@@ -9,6 +9,14 @@ jest.mock('bcrypt', () => ({
 
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
 
+// Mock SumUp service functions
+jest.mock('../../src/services/sumupService', () => ({
+  createSumUpCheckout: jest.fn(),
+  getSumUpCheckoutStatus: jest.fn(),
+  testSumUpConnection: jest.fn(),
+  getSumUpMerchantProfile: jest.fn(),
+}));
+
 // Mock the entire Prisma client but preserve enums
 jest.mock('@prisma/client', () => {
   const actualPrisma = jest.requireActual('@prisma/client');
@@ -58,6 +66,9 @@ import { Role, OrderStatus } from '@prisma/client';
 
 // Get the mocked prisma instance
 const mockedPrisma = services.prisma as any;
+
+import * as sumupService from '../../src/services/sumupService';
+const mockedSumupService = sumupService as jest.Mocked<typeof sumupService>;
 
 // Test data
 const mockCustomerUser = {
@@ -138,7 +149,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
   beforeEach(async () => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Set up bcrypt mocks
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
@@ -173,7 +184,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(mockMenuItems[0])
         .mockResolvedValueOnce(mockMenuItems[1]);
-      
+
       mockedPrisma.$transaction.mockImplementation(async (callback: any) => {
         const mockTx = {
           order: {
@@ -235,7 +246,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
     it('should handle service errors (e.g., missing menu item)', async () => {
       // Mock: Menu item validation fails in service
       mockedPrisma.menuItem.findUnique.mockResolvedValue(null);
-      
+
       // The service will throw an error for missing menu items
       // This will be caught by the error middleware and return 500
       const response = await request(app)
@@ -253,7 +264,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
       mockedPrisma.menuItem.findUnique
         .mockResolvedValueOnce(mockMenuItems[0])
         .mockResolvedValueOnce(mockMenuItems[1]);
-      
+
       mockedPrisma.$transaction.mockRejectedValue(new Error('Database error'));
 
       const response = await request(app)
@@ -321,7 +332,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(404);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Order not found');
+      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
     });
 
     it('should return 400 for invalid order ID', async () => {
@@ -357,13 +368,13 @@ describe('Order Integration Tests - TypeScript Backend', () => {
   describe('POST /v1/orders/:id/estimate', () => {
     it('should update order estimate successfully', async () => {
       const estimateData = { estimatedMinutes: 15 };
-      
+
       // Mock: Order in PAYMENT_CONFIRMED status (can be estimated)
       const confirmableOrder = {
         ...mockOrder,
         status: OrderStatus.PAYMENT_CONFIRMED
       };
-      
+
       // Mock: Find order and update estimate
       mockedPrisma.order.findUnique.mockResolvedValue(confirmableOrder);
       mockedPrisma.order.update.mockResolvedValue({
@@ -391,7 +402,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Valid estimatedMinutes required');
+      expect(response.body).toHaveProperty('error', 'Se requiere un tiempo estimado válido (estimatedMinutes)');
     });
 
     it('should return 400 for invalid estimated minutes', async () => {
@@ -402,7 +413,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Valid estimatedMinutes required');
+      expect(response.body).toHaveProperty('error', 'Se requiere un tiempo estimado válido (estimatedMinutes)');
     });
 
     it('should return 404 for non-existent order', async () => {
@@ -416,7 +427,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(404);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Order not found');
+      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
     });
 
     it('should handle database errors', async () => {
@@ -441,7 +452,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         ...mockOrder,
         sumUpCheckoutId: 'checkout_123'
       });
-      
+
       // Mock the payment verification result
       const mockVerificationResult = {
         success: true,
@@ -452,9 +463,31 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         message: 'Payment verified successfully'
       };
 
+      // Mock SumUp status
+      mockedSumupService.getSumUpCheckoutStatus.mockResolvedValue({
+        id: 'checkout_123',
+        status: 'PAID',
+        amount: 17.98,
+        currency: 'EUR',
+        checkout_reference: 'ORDER-1'
+      } as any);
+
       // We need to mock the payment service call indirectly
       // by mocking the database update that would happen after verification
       mockedPrisma.order.update.mockResolvedValue(mockVerificationResult.order);
+
+      // Mock the final findUnique call in verifyPayment
+      mockedPrisma.order.findUnique.mockResolvedValue({
+        ...mockVerificationResult.order,
+        items: [
+          {
+            menuItem: { name: 'Burger' },
+            quantity: 1,
+            price: 10,
+            customizations: null
+          }
+        ]
+      });
 
       const response = await request(app)
         .post('/v1/orders/1/verify-payment')
@@ -490,7 +523,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Invalid order ID');
+      expect(response.body).toHaveProperty('error', 'ID de pedido inválido');
     });
 
     it('should handle database errors', async () => {

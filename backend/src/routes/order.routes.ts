@@ -15,9 +15,9 @@ const prisma = new PrismaClient();
  * @desc    Create a new order
  * @access  Private (registered users)
  */
-router.post('/', 
-  authenticateToken, 
-  validateCreateOrder, 
+router.post('/',
+  authenticateToken,
+  validateCreateOrder,
   orderController.createOrder.bind(orderController)
 );
 
@@ -50,8 +50,8 @@ router.get('/driver/:orderCode', async (req, res) => {
  * @desc    Get order status for polling
  * @access  Public
  */
-router.get('/:id/status', 
-  validateOrderId, 
+router.get('/:id/status',
+  validateOrderId,
   orderController.getOrderStatus.bind(orderController)
 );
 
@@ -60,8 +60,8 @@ router.get('/:id/status',
  * @desc    Update order estimated preparation time
  * @access  Private (admin/business)
  */
-router.post('/:id/estimate', 
-  authenticateToken, 
+router.post('/:id/estimate',
+  authenticateToken,
   orderController.updateOrderEstimate.bind(orderController)
 );
 
@@ -70,7 +70,8 @@ router.post('/:id/estimate',
  * @desc    Verify payment status with SumUp
  * @access  Private (order owner)
  */
-router.post('/:orderId/verify-payment', 
+router.post('/:orderId/verify-payment',
+  authenticateToken,
   orderController.verifyPayment.bind(orderController)
 );
 
