@@ -91,7 +91,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
   beforeEach(async () => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Set up bcrypt mocks
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
@@ -109,13 +109,13 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
     it('should register a new user successfully', async () => {
       // Mock: Check if email exists (should return null for new user)
       mockedPrisma.user.findFirst.mockResolvedValue(null);
-      
+
       // Mock: Create new user
       mockedPrisma.user.create.mockResolvedValue(mockUser);
-      
+
       // Mock: Create loyalty points
       mockedPrisma.loyaltyPoints.create.mockResolvedValue(mockLoyaltyPoints);
-      
+
       // Mock: Transaction wrapper
       mockedPrisma.$transaction.mockImplementation(async (callback: any) => {
         return callback(mockedPrisma);
@@ -152,7 +152,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Email already in use');
+      expect(response.body).toHaveProperty('error', 'El correo electrónico ya está en uso');
     });
 
     it('should return 400 for invalid email', async () => {
@@ -220,7 +220,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
       expect(response.body.data.user).toHaveProperty('id');
       expect(response.body.data.user).toHaveProperty('email', validLoginData.email);
       expect(response.body.data.user).toHaveProperty('role');
-      expect(response.body).toHaveProperty('message', 'Login successful');
+      expect(response.body).toHaveProperty('message', 'Inicio de sesión exitoso');
 
       // Verify JWT token is valid
       expect(typeof response.body.data.token).toBe('string');
@@ -258,7 +258,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Invalid credentials');
+      expect(response.body).toHaveProperty('error', 'Credenciales inválidas');
     });
 
     it('should return 400 for wrong password', async () => {
@@ -276,7 +276,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Invalid credentials');
+      expect(response.body).toHaveProperty('error', 'Credenciales inválidas');
     });
 
     it('should return 400 for invalid email format', async () => {

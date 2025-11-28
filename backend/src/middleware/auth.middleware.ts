@@ -32,25 +32,25 @@ export const authenticateToken = (
     jwt.verify(token, jwtSecret, (err, decoded) => {
       if (err) {
         console.error('JWT Verification Error:', err.message);
-        
+
         // Handle specific JWT errors
         if (err.name === 'TokenExpiredError') {
           sendError(res, 'Token has expired', HTTP_STATUS.UNAUTHORIZED);
           return;
         }
-        
+
         if (err.name === 'JsonWebTokenError') {
           sendError(res, 'Invalid token', HTTP_STATUS.FORBIDDEN);
           return;
         }
-        
+
         sendError(res, 'Token verification failed', HTTP_STATUS.FORBIDDEN);
         return;
       }
 
       // Type assertion with validation
       const payload = decoded as JwtPayload;
-      
+
       if (!payload.userId || !payload.role) {
         sendError(res, 'Invalid token payload', HTTP_STATUS.FORBIDDEN);
         return;
@@ -160,7 +160,7 @@ export const optionalAuth = (
       }
 
       const payload = decoded as JwtPayload;
-      
+
       if (payload.userId && payload.role) {
         req.user = {
           userId: payload.userId,
@@ -194,14 +194,14 @@ export const isOwnerOrAdmin = (
     }
 
     const userIdParam = req.params['userId'];
-    
+
     if (!userIdParam) {
       sendError(res, 'User ID parameter required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
-    
+
     const resourceUserId = parseInt(userIdParam, 10);
-    
+
     if (isNaN(resourceUserId)) {
       sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
       return;
