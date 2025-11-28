@@ -216,7 +216,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
       return Promise.resolve(password === 'password123');
@@ -351,7 +351,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(updateData)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Menu item not found');
+      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
     });
 
     it('should return 400 for invalid menu item ID', async () => {
@@ -390,7 +390,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ isAvailable: false })
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Menu item not found');
+      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
     });
   });
 
@@ -428,7 +428,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Menu item not found');
+      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
     });
   });
 
@@ -475,7 +475,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ estimatedMinutes: 15 })
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Validation failed');
+      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
     });
 
     it('should return 400 for order that cannot be accepted', async () => {
@@ -489,7 +489,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Validation failed');
+      expect(response.body.error).toContain('no puede ser aceptado');
     });
 
     it('should return 400 for invalid order ID', async () => {
@@ -515,7 +515,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('Validation failed');
+      expect(response.body.error).toContain('no puede ser rechazado');
     });
   });
 
@@ -572,7 +572,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
           { id: 6, name: 'BBQ Sauce', price: 0.50, categoryId: 3, createdAt: new Date(), updatedAt: new Date() }
         ]
       };
-      
+
       mockedPrisma.customizationCategory.create.mockResolvedValue(createdCategory);
 
       const response = await request(app)
@@ -664,7 +664,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('updated successfully');
+      expect(response.body.message).toContain('Opciones de personalización actualizadas exitosamente');
     });
 
     it('should handle empty option IDs array', async () => {
@@ -705,7 +705,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ optionIds: [999] })
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'One or more customization option IDs are invalid');
+      expect(response.body).toHaveProperty('error', 'Uno o más IDs de opciones de personalización son inválidos');
     });
   });
 

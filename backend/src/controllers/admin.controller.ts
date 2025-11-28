@@ -17,7 +17,7 @@ import {
  * Delegates all business logic to AdminService following established pattern
  */
 export class AdminController {
-  constructor(private adminService: IAdminService) {}
+  constructor(private adminService: IAdminService) { }
 
   // =====================
   // MENU MANAGEMENT
@@ -30,7 +30,7 @@ export class AdminController {
   async getAllMenuItems(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       console.log('AdminController: Received request for all admin menu items');
-      
+
       const menuItems = await this.adminService.getAllMenuItems();
       res.json(menuItems);
     } catch (error) {
@@ -79,7 +79,7 @@ export class AdminController {
       }
 
       const { id } = req.params;
-      
+
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Menu item ID is required'
@@ -103,7 +103,7 @@ export class AdminController {
       res.json(updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item:', error);
-      if (error instanceof Error && error.message === 'Menu item not found') {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -127,7 +127,7 @@ export class AdminController {
 
       const { id } = req.params;
       const { isAvailable } = req.body;
-      
+
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Menu item ID is required'
@@ -145,12 +145,12 @@ export class AdminController {
       }
 
       const updatedMenuItem = await this.adminService.updateMenuItemAvailability(itemId, isAvailable);
-      
+
       console.log(`AdminController: Menu item availability updated: ${updatedMenuItem.name} (ID: ${itemId}) -> ${isAvailable}`);
       res.json(updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item availability:', error);
-      if (error instanceof Error && error.message === 'Menu item not found') {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -165,7 +165,7 @@ export class AdminController {
   async deleteMenuItem(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
-      
+
       if (!id) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Menu item ID is required'
@@ -183,12 +183,12 @@ export class AdminController {
       }
 
       const result = await this.adminService.deleteMenuItem(itemId);
-      
+
       console.log(`AdminController: Menu item deleted successfully: ${result.deletedMenuItem.name} (ID: ${itemId})`);
       res.json(result);
     } catch (error) {
       console.error('AdminController: Error deleting menu item:', error);
-      if (error instanceof Error && error.message === 'Menu item not found') {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -210,7 +210,7 @@ export class AdminController {
       }
 
       const result = await this.adminService.uploadMenuItemImage(req.file);
-      
+
       console.log(`AdminController: Image uploaded successfully: ${result.imageUrl}`);
       res.json(result);
     } catch (error) {
@@ -230,7 +230,7 @@ export class AdminController {
   async getAdminOrders(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       console.log('AdminController: Received request for admin orders');
-      
+
       const orders = await this.adminService.getAdminOrders();
       res.json(orders);
     } catch (error) {
@@ -255,7 +255,7 @@ export class AdminController {
 
       const { id: orderId } = req.params;
       const { estimatedMinutes } = req.body;
-      
+
       if (!orderId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Order ID is required'
@@ -278,12 +278,17 @@ export class AdminController {
       };
 
       const updatedOrder = await this.adminService.acceptOrder(acceptData);
-      
+
       console.log(`AdminController: Order ${orderIdNum} accepted with ${estimatedMinutes} minute estimate`);
       res.json(updatedOrder);
     } catch (error) {
       console.error('AdminController: Error accepting order:', error);
-      if (error instanceof Error && (error.message.includes('not found') || error.message.includes('cannot be accepted'))) {
+      if (error instanceof Error && (
+        error.message.includes('not found') ||
+        error.message.includes('no encontrado') ||
+        error.message.includes('cannot be accepted') ||
+        error.message.includes('no puede ser aceptado')
+      )) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
       }
@@ -299,7 +304,7 @@ export class AdminController {
     try {
       const { id: orderId } = req.params;
       const { reason } = req.body;
-      
+
       if (!orderId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Order ID is required'
@@ -322,12 +327,17 @@ export class AdminController {
       };
 
       const updatedOrder = await this.adminService.declineOrder(declineData);
-      
+
       console.log(`AdminController: Order ${orderIdNum} declined and cancelled${reason ? ` (reason: ${reason})` : ''}`);
       res.json(updatedOrder);
     } catch (error) {
       console.error('AdminController: Error declining order:', error);
-      if (error instanceof Error && (error.message.includes('not found') || error.message.includes('cannot be declined'))) {
+      if (error instanceof Error && (
+        error.message.includes('not found') ||
+        error.message.includes('no encontrado') ||
+        error.message.includes('cannot be declined') ||
+        error.message.includes('no puede ser rechazado')
+      )) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
       }
@@ -346,7 +356,7 @@ export class AdminController {
   async getCustomizationCategories(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       console.log('AdminController: Received request for customization categories');
-      
+
       const categories = await this.adminService.getCustomizationCategories();
       res.json(categories);
     } catch (error) {
@@ -387,7 +397,7 @@ export class AdminController {
   async getCustomizationOptions(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       console.log('AdminController: Received request for customization options');
-      
+
       const options = await this.adminService.getCustomizationOptions();
       res.json(options);
     } catch (error) {
@@ -403,7 +413,7 @@ export class AdminController {
   async getLinkedCustomizationOptions(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { menuItemId } = req.params;
-      
+
       if (!menuItemId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Menu item ID is required'
@@ -421,7 +431,7 @@ export class AdminController {
       }
 
       const optionIds = await this.adminService.getLinkedCustomizationOptions(itemId);
-      
+
       console.log(`AdminController: Retrieved ${optionIds.length} linked customization options for menu item ${itemId}`);
       res.json({ optionIds });
     } catch (error) {
@@ -446,7 +456,7 @@ export class AdminController {
 
       const { menuItemId } = req.params;
       const { optionIds } = req.body;
-      
+
       if (!menuItemId) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           error: 'Menu item ID is required'
@@ -476,12 +486,12 @@ export class AdminController {
       };
 
       const result = await this.adminService.setLinkedCustomizationOptions(linkData);
-      
+
       console.log(`AdminController: Updated customization options for menu item ${itemId}: ${optionIds.length} options linked`);
       res.json(result);
     } catch (error) {
       console.error('AdminController: Error setting linked customization options:', error);
-      if (error instanceof Error && error.message.includes('invalid')) {
+      if (error instanceof Error && (error.message.includes('invalid') || error.message.includes('inválidos'))) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
       }
@@ -500,9 +510,9 @@ export class AdminController {
   async syncMenuToSumUp(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       console.log('AdminController: Received request to sync menu to SumUp');
-      
+
       const syncResult = await this.adminService.syncMenuToSumUp();
-      
+
       console.log(`AdminController: SumUp sync completed - ${syncResult.syncedItems} synced, success: ${syncResult.success}`);
       res.json(syncResult);
     } catch (error) {
