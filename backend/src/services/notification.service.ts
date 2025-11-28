@@ -99,14 +99,14 @@ export class NotificationService implements INotificationService {
         try {
           // Log notification details for debugging
           console.log(`📱 Sending push notification to user ${data.userId} (${user.email || 'no email'}), pushToken: ${user.pushToken.substring(0, 20)}...`);
-          
+
           await this.sendPushNotification(
-            user.pushToken, 
-            data.pushData.title || data.title, 
-            data.pushData.body || data.message, 
+            user.pushToken,
+            data.pushData.title || data.title,
+            data.pushData.body || data.message,
             data.pushData.data
           );
-          
+
           console.log(`✅ Push notification sent successfully to user ${data.userId}`);
         } catch (pushError) {
           console.error(`❌ Failed to send push notification to user ${data.userId}:`, pushError);
@@ -156,8 +156,8 @@ export class NotificationService implements INotificationService {
         sound: 'default'
       },
       'READY': {
-        title: order.fulfillmentMethod === 'DELIVERY' 
-          ? '🍔 ¡Pedido Listo para Entrega!' 
+        title: order.fulfillmentMethod === 'DELIVERY'
+          ? '🍔 ¡Pedido Listo para Entrega!'
           : '🍔 ¡Pedido Listo!',
         message: order.fulfillmentMethod === 'DELIVERY'
           ? `¡Tu pedido #${orderId} está listo! Un repartidor lo recogerá pronto.`
@@ -175,11 +175,11 @@ export class NotificationService implements INotificationService {
         title: statusData.title,
         message: statusData.message,
         emailTemplate: statusData.template,
-        metadata: { 
-          orderId, 
-          status, 
+        metadata: {
+          orderId,
+          status,
           total: order.total,
-          estimatedReadyTime: order.estimatedReadyTime 
+          estimatedReadyTime: order.estimatedReadyTime
         },
         pushData: {
           sound: statusData.sound,
@@ -197,7 +197,7 @@ export class NotificationService implements INotificationService {
     });
 
     const customerName = order.user?.name || 'Guest Customer';
-    
+
     for (const admin of adminUsers) {
       await this.sendNotification({
         userId: admin.id,
@@ -205,9 +205,9 @@ export class NotificationService implements INotificationService {
         title: '🔔 ¡Nuevo Pedido Recibido!',
         message: `Pedido #${order.id} de ${customerName} por €${order.total.toFixed(2)}`,
         emailTemplate: 'new-order-admin',
-        metadata: { 
-          orderId: order.id, 
-          total: order.total, 
+        metadata: {
+          orderId: order.id,
+          total: order.total,
           customerName,
           itemCount: order.items?.length || 0
         },
@@ -424,16 +424,14 @@ export class NotificationService implements INotificationService {
       'password-reset': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #f59e0b;">Restablecer tu contraseña</h2>
-          <p>Hola 
-            ${'${data.userName}'}
-            ,</p>
+          <p>Hola ${data.userName},</p>
           <p>Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú, haz clic en el botón:</p>
           <p style="margin: 24px 0; text-align: center;">
-            <a href="${'${data.resetUrl}'}" style="background: #f59e0b; color: #000; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            <a href="${data.resetUrl}" style="background: #f59e0b; color: #000; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
               Restablecer contraseña en la app
             </a>
           </p>
-          ${'${data.webResetUrl ? `<p style="text-align:center;"><a href="' + data.webResetUrl + '">Abrir en el navegador</a></p>` : ""}'}
+          ${data.webResetUrl ? `<p style="text-align:center;"><a href="${data.webResetUrl}">Abrir en el navegador</a></p>` : ""}
           <p style="color: #6b7280; font-size: 12px;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
         </div>
       `
@@ -468,7 +466,7 @@ export class NotificationService implements INotificationService {
     try {
       const tickets = await this.expo.sendPushNotificationsAsync([pushMessage]);
       console.log(`📱 Push notification sent: ${title}`);
-      
+
       // Handle any errors in the tickets
       tickets.forEach((ticket) => {
         if (ticket.status === 'error') {
@@ -483,7 +481,7 @@ export class NotificationService implements INotificationService {
 
   async sendBulkPushNotifications(pushTokens: string[], title: string, message: string, data?: any): Promise<void> {
     const validTokens = pushTokens.filter(token => Expo.isExpoPushToken(token));
-    
+
     if (validTokens.length === 0) {
       console.log('No valid push tokens found');
       return;
