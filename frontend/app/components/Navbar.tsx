@@ -5,12 +5,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { Menu as MenuIcon, UtensilsCrossed, User, LogOut, LogIn, UserPlus } from 'lucide-react';
+import { Menu as MenuIcon, UtensilsCrossed, User, LogOut, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
 import { useDrag } from '@use-gesture/react';
 
 export function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const sheetContentRef = useRef<HTMLDivElement>(null);
@@ -20,7 +21,21 @@ export function Navbar() {
   useEffect(() => {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
       setIsLoggedIn(!!token);
+
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          setIsAdmin(user.role === 'ADMIN');
+        } catch (e) {
+          console.error("Failed to parse user data from localStorage", e);
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+
       setIsAuthLoading(false);
     };
 
@@ -67,11 +82,11 @@ export function Navbar() {
     const MobileLink = () => (
       <SheetClose asChild>
         <Button
-            variant="ghost"
-            onClick={() => handleLinkClick(href)}
-            className="w-full justify-start text-base text-gray-700 dark:text-gray-200 hover:bg-yellow-100 dark:hover:bg-yellow-800/50"
+          variant="ghost"
+          onClick={() => handleLinkClick(href)}
+          className="w-full justify-start text-base text-gray-700 dark:text-gray-200 hover:bg-yellow-100 dark:hover:bg-yellow-800/50"
         >
-           {Icon && <Icon className="mr-2 h-5 w-5" />} {children}
+          {Icon && <Icon className="mr-2 h-5 w-5" />} {children}
         </Button>
       </SheetClose>
     );
@@ -83,6 +98,7 @@ export function Navbar() {
   const ProfileLink = NavLink({ href: '/profile', children: 'Profile', icon: User });
   const LoginLink = NavLink({ href: '/login', children: 'Login', icon: LogIn });
   const RegisterLink = NavLink({ href: '/register', children: 'Register', icon: UserPlus });
+  const AdminLink = NavLink({ href: '/admin', children: 'Admin', icon: LayoutDashboard });
 
   const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [dx], distance, cancel, last }) => {
     const triggerDistance = 50;
@@ -139,6 +155,7 @@ export function Navbar() {
             <MenuLink.DesktopLink />
             {isLoggedIn ? (
               <>
+                {isAdmin && <AdminLink.DesktopLink />}
                 <ProfileLink.DesktopLink />
                 <Button variant="ghost" onClick={handleLogout} className="text-white hover:bg-yellow-800/50 hover:text-yellow-300">
                   <LogOut className="mr-2 h-4 w-4" /> Logout
@@ -157,10 +174,10 @@ export function Navbar() {
           </div>
         </div>
 
-        <SheetContent 
-          ref={sheetContentRef} 
-          side="left" 
-          className="w-[280px] bg-white dark:bg-gray-950 p-4" 
+        <SheetContent
+          ref={sheetContentRef}
+          side="left"
+          className="w-[280px] bg-white dark:bg-gray-950 p-4"
           {...bind()}
           style={{ touchAction: 'pan-y' }}
         >
@@ -172,6 +189,7 @@ export function Navbar() {
             <Separator className="my-2" />
             {isLoggedIn ? (
               <>
+                {isAdmin && <AdminLink.MobileLink />}
                 <ProfileLink.MobileLink />
                 <SheetClose asChild>
                   <Button
