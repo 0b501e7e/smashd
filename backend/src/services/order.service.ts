@@ -213,8 +213,24 @@ export class OrderService implements IOrderService {
         }
       });
 
+
       if (!order) {
         throw new Error('Pedido no encontrado');
+      }
+
+      // FORCE AUTO-ACCEPT: Fix for orders stuck in 'PAYMENT_CONFIRMED'.
+      // If payment verified but auto-accept missed (race condition), catch it here.
+      if (order.status === 'PAYMENT_CONFIRMED' && process.env['AUTO_ACCEPT_ORDERS'] === 'true') {
+        console.log(`OrderService: Force Auto-accept triggered for order ${orderId}`);
+        try {
+          const accepted = await this.acceptOrder({ orderId, estimatedMinutes: 20 });
+          // Update local object so frontend sees the change immediately
+          (order as any).status = accepted.status;
+          (order as any).estimatedReadyTime = accepted.estimatedReadyTime;
+          (order as any).readyAt = accepted.readyAt;
+        } catch (e) {
+          console.error("OrderService: Force Auto-accept failed", e);
+        }
       }
 
       // Transform the items to include the menu item name
