@@ -7,7 +7,7 @@ export default function BetaSignup() {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        platform: 'android'
+        // platform removed
     });
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
@@ -55,7 +55,7 @@ export default function BetaSignup() {
                     </div>
                     <h1 className="text-4xl font-bold tracking-tight">You&apos;re on the list!</h1>
                     <p className="text-gray-400 text-lg">
-                        Thanks for help us test Smashd. We&apos;ve received your details.
+                        Thanks for helping us test Smashd. We&apos;ve received your details.
                     </p>
                     <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-8">
                         <h3 className="font-semibold text-white mb-2">Next Steps:</h3>
@@ -125,32 +125,6 @@ export default function BetaSignup() {
                                 className="w-full bg-black/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
                                 placeholder="you@gmail.com"
                             />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">Testing Platform</label>
-                            <div className="grid grid-cols-2 gap-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, platform: 'android' })}
-                                    className={`px-4 py-3 rounded-lg border flex items-center justify-center font-medium transition-all ${formData.platform === 'android'
-                                        ? 'bg-yellow-500 border-yellow-500 text-black'
-                                        : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
-                                        }`}
-                                >
-                                    Android
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, platform: 'ios' })}
-                                    className={`px-4 py-3 rounded-lg border flex items-center justify-center font-medium transition-all ${formData.platform === 'ios'
-                                        ? 'bg-white border-white text-black'
-                                        : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
-                                        }`}
-                                >
-                                    iOS
-                                </button>
-                            </div>
                         </div>
 
                         {status === 'error' && (

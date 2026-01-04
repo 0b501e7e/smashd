@@ -261,3 +261,11 @@ model PasswordResetToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model BetaTester {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  // Platform removed as requested
+  createdAt DateTime @default(now())
+}

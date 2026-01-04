@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
+import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
+const prisma = new PrismaClient();
 
 /**
  * POST /v1/beta/signup
@@ -12,37 +14,37 @@ router.post(
     [
         body('email').isEmail().withMessage('Please provide a valid Gmail address'),
         body('name').isString().notEmpty().withMessage('Name is required'),
-        body('platform').isIn(['android', 'ios']).withMessage('Platform must be android or ios')
+        // Platform validation removed
     ],
     async (req: Request, res: Response) => {
         // Check validation errors
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             res.status(400).json({ errors: errors.array() });
-            return; // Ensure we return void
+            return;
         }
 
         try {
-            const { email, name, platform } = req.body;
+            const { email, name } = req.body;
 
-            // In a "Real" production app, we would save this to a database model (e.g. BetaTester)
-            // For this "Lean/One-Dev" phase, we will just LOG it clearly so the dev can copy-paste.
-            // We can also append to a simple file if needed, but logging is safest for stateless deployments (Railway/Fly)
-
-            console.log('\n==================================================');
-            console.log('🚀 NEW BETA TESTER SIGNUP');
-            console.log(`📧 Email: ${email}`);
-            console.log(`👤 Name: ${name}`);
-            console.log(`📱 Platform: ${platform}`);
-            console.log(`📅 Date: ${new Date().toISOString()}`);
-            console.log('==================================================\n');
-
-            // TODO: If you want to persist this, uncomment the Prisma code below when model exists
-            /*
-            await prisma.betaTester.create({
-              data: { email, name, platform }
+            // Check if already exists to return a friendly message
+            const existing = await prisma.betaTester.findUnique({
+                where: { email }
             });
-            */
+
+            if (existing) {
+                res.status(200).json({
+                    success: true,
+                    message: "You're already on the list! Watch your inbox."
+                });
+                return;
+            }
+
+            await prisma.betaTester.create({
+                data: { email, name }
+            });
+
+            console.log(`🚀 NEW BETA TESTER SAVED: ${email} (${name})`);
 
             res.status(201).json({
                 success: true,
