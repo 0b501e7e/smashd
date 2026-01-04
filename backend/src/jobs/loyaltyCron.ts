@@ -1,4 +1,4 @@
-import * as cron from 'node-cron';
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -49,7 +49,7 @@ async function expirePoints(): Promise<void> {
       // Determine the start of the current 90-day cycle for which points *should have been* reset
       // This is essentially the most recent 90-day anniversary of their registration that has passed.
       let currentCycleStartDate = registrationDate;
-      while(addDays(currentCycleStartDate, 90) <= today) {
+      while (addDays(currentCycleStartDate, 90) <= today) {
         currentCycleStartDate = addDays(currentCycleStartDate, 90);
       }
       // currentCycleStartDate is now the beginning of the 90-day period that just ended or is ending today.
@@ -68,7 +68,7 @@ async function expirePoints(): Promise<void> {
               loyaltyPointsId: account.id,
               points: -account.points, // Deduct all current points
               reason: "POINTS_EXPIRED_90_DAY_CYCLE",
-              details: `Points expired at end of 90-day cycle. Registered: ${registrationDate.toISOString().split('T')[0]}. Cycle end: ${currentCycleStartDate.toISOString().split('T')[0]}`, 
+              details: `Points expired at end of 90-day cycle. Registered: ${registrationDate.toISOString().split('T')[0]}. Cycle end: ${currentCycleStartDate.toISOString().split('T')[0]}`,
             },
           });
 
@@ -123,17 +123,17 @@ async function handleBirthdayRewardsAndAnnualReset(): Promise<void> {
         // This is to ensure we only reset once per year
         const lastResetYear = user.loyaltyPoints.lastPointsReset ? new Date(user.loyaltyPoints.lastPointsReset).getFullYear() : 0;
         if (lastResetYear < currentYear) {
-            console.log(`Performing annual reset for user ${user.id}.`);
-            await prisma.loyaltyPoints.update({
-              where: { userId: user.id },
-              data: {
-                totalSpentThisYear: 0,
-                birthdayRewardSent: false,
-                // lastPointsReset: today, // We use lastPointsReset for 90-day cycle, maybe a new field like 'lastAnnualReset'?
-                                        // For now, we'll rely on checking the year of lastPointsReset or if birthdayRewardSent was reset
-              },
-            });
-             console.log(`Annual reset complete for user ${user.id}.`);
+          console.log(`Performing annual reset for user ${user.id}.`);
+          await prisma.loyaltyPoints.update({
+            where: { userId: user.id },
+            data: {
+              totalSpentThisYear: 0,
+              birthdayRewardSent: false,
+              // lastPointsReset: today, // We use lastPointsReset for 90-day cycle, maybe a new field like 'lastAnnualReset'?
+              // For now, we'll rely on checking the year of lastPointsReset or if birthdayRewardSent was reset
+            },
+          });
+          console.log(`Annual reset complete for user ${user.id}.`);
         }
       }
 
@@ -178,22 +178,5 @@ async function handleBirthdayRewardsAndAnnualReset(): Promise<void> {
   console.log('Scheduled job: Handle Birthday Rewards & Annual Reset - Finished');
 }
 
-/**
- * Initialize and schedule the loyalty cron jobs
- */
-export function initializeLoyaltyCron(): void {
-  // Schedule the job to run once a day at 2 AM
-  cron.schedule('0 2 * * *', async () => {
-    console.log('\n------------------------------------');
-    await expirePoints();
-    await handleBirthdayRewardsAndAnnualReset();
-    console.log('------------------------------------\n');
-  }, {
-    timezone: "Europe/Dublin" // Set your desired timezone
-  });
-
-  console.log('Loyalty points expiration cron job defined and scheduled to run daily at 2 AM Europe/Dublin.');
-}
-
-// Export for potential manual triggering or testing if needed
+// Export for API usage
 export { expirePoints, handleBirthdayRewardsAndAnnualReset }; 

@@ -15,7 +15,7 @@ import adminRoutes from './routes/admin.routes';
 import driverRoutes from './routes/driver.routes';
 import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
-import { initializeLoyaltyCron } from './jobs/loyaltyCron';
+import cronRoutes from './routes/cron.routes';
 import {
   corsMiddleware,
   logCorsConfiguration,
@@ -42,9 +42,9 @@ configureStaticFiles(app);
 
 // Root route (matches original server.js)
 app.get('/', (_req: Request, res: Response) => {
-  res.json({ 
-    status: 'Backend is running', 
-    timestamp: new Date().toISOString() 
+  res.json({
+    status: 'Backend is running',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -75,18 +75,18 @@ app.get('/health', async (_req: Request, res: Response) => {
 app.get('/v1/health', async (_req: Request, res: Response) => {
   try {
     await services.prisma.$queryRaw`SELECT 1`;
-    res.json({ 
-      status: 'healthy', 
+    res.json({
+      status: 'healthy',
       database: 'connected',
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('Health check failed:', error);
-    res.status(500).json({ 
-      status: 'unhealthy', 
+    res.status(500).json({
+      status: 'unhealthy',
       database: 'disconnected',
       error: error instanceof Error ? error.message : 'Unknown error',
-      timestamp: new Date().toISOString() 
+      timestamp: new Date().toISOString()
     });
   }
 });
@@ -101,6 +101,7 @@ app.use('/v1/admin', adminRoutes);
 app.use('/v1/driver', driverRoutes);
 app.use('/v1/payment', paymentRoutes);
 app.use('/v1/analytics', analyticsRoutes);
+app.use('/v1/cron', cronRoutes);
 
 // Test routes for validation and authentication middleware
 app.use('/v1/test', testRoutes);
@@ -119,18 +120,18 @@ const startServer = (): void => {
     console.log(`📝 Health check: http://localhost:${APP_CONFIG.PORT}/health`);
     console.log(`🧪 Test routes: http://localhost:${APP_CONFIG.PORT}/v1/test/status`);
     console.log(`💾 Database: Connected via Service Container`);
-    
-    // Initialize loyalty cron jobs
-    initializeLoyaltyCron();
+
+    // Initialize loyalty cron jobs - MOVED TO EXTERNAL CRON TRIGGER
+    // check /v1/cron/loyalty
   });
 
   // Graceful shutdown handling
   const gracefulShutdown = async (signal: string) => {
     console.log(`\n🛑 ${signal} received. Starting graceful shutdown...`);
-    
+
     server.close(async () => {
       console.log('✅ HTTP server closed');
-      
+
       try {
         await services.shutdown();
         console.log('✅ Graceful shutdown completed');
