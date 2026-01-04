@@ -1,237 +1,216 @@
 # 🍔 Smash'd - Multi-Platform Food Ordering System
 
-A comprehensive food ordering platform with web frontend, React Native mobile app, and Node.js backend with SumUp payment integration.
+A comprehensive food ordering platform featuring a Next.js web frontend, React Native mobile app (Expo), and a robust Node.js backend with SumUp payment integration.
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    Client[Web Frontend<br/>Next.js] -->|REST API| API[Backend API<br/>Express/Node.js]
+    Mobile[Mobile App<br/>React Native/Expo] -->|REST API| API
+    API -->|Query| DB[(PostgreSQL<br/>Prisma ORM)]
+    API -->|Payment| SumUp[SumUp Payment Gateway]
+    Mobile -->|Push Notifications| Expo[Expo EAS]
+```
 
 ## 📱 Platform Overview
 
-- **Backend**: Node.js + TypeScript + Prisma + PostgreSQL
-- **Frontend**: Next.js + TypeScript + Tailwind CSS  
-- **Mobile**: React Native + Expo + TypeScript
-- **Payments**: SumUp (Hosted Checkout + Native SDK)
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT + AsyncStorage/localStorage
-- **Notifications**: Push notifications via Expo
+- **Backend**: Node.js, Express, TypeScript, Prisma, PostgreSQL
+- **Frontend**: Next.js (App Router), TypeScript, Tailwind CSS, Radix UI
+- **Mobile**: React Native, Expo (Router & Secure Store), NativeWind
+- **Payments**: SumUp (Hosted Checkout for Web, Native SDK for Mobile)
+
+---
 
 ## 🚀 Development Environment Setup
 
 ### Prerequisites
 
-```bash
-# Required tools
-node >= 18.0.0
-npm >= 9.0.0
-git
-postgresql
-expo-cli (for mobile development)
-```
+Ensure you have the following installed before starting:
 
-### Quick Start (All Platforms)
+- **Node.js**: >= 18.0.0 (Recommended: LTS)
+- **npm**: >= 9.0.0
+- **Git**: Latest version
+- **Docker**: For running the local PostgreSQL database
+- **Expo CLI**: `npm install -g expo-cli` (For mobile development)
 
-```bash
-# Clone and setup
-git clone <repository-url>
-cd smashd
+### Quick Start (Manual Setup)
 
-# Install all dependencies
-npm run install:all  # (if you create this script)
+Since this is a monorepo structure without a root package manager, you will need to set up each service independently.
 
-# Or install manually:
-cd backend && npm install
-cd ../frontend && npm install  
-cd ../app && npm install
-```
-
-## 🔧 Environment Configuration
-
-### Backend (.env.development)
-```env
-# Database
-DATABASE_URL="postgresql://user@localhost:5432/smashd_dev?schema=public"
-
-# API
-NODE_ENV=development
-PORT=5001
-JWT_SECRET="development-secret"
-
-# SumUp (use your real keys for testing)
-SUMUP_CLIENT_ID=cc_classic_xBuYRPZElJofF1DmpYo7Yq74k0Ay5
-SUMUP_CLIENT_SECRET=cc_sk_classic_...
-SUMUP_MERCHANT_EMAIL=your@email.com
-SUMUP_WEBHOOK_SECRET="dev_webhook_secret"
-
-# URLs
-FRONTEND_URL="http://localhost:3000"
-ALLOWED_ORIGINS="http://localhost:3000,http://localhost:19006,http://192.168.1.100:3000"
-```
-
-### Frontend (.env.local)
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5001/v1
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-### React Native (.env)
-```env
-EXPO_PUBLIC_API_URL=http://localhost:5001/v1
-EXPO_PUBLIC_SUMUP_PUBLIC_KEY=sup_pk_...
-EXPO_PUBLIC_APP_ENV=development
-```
-
-## 🏃‍♂️ Development Workflow
-
-### Start All Services
+#### 1. Database Setup
+Start the local PostgreSQL instance using Docker.
 
 ```bash
-# Terminal 1: Backend
-cd backend
-npm run dev
-
-# Terminal 2: Frontend
-cd frontend  
-npm run dev
-
-# Terminal 3: React Native
-cd app
-expo start
+# From the project root
+docker-compose -f docker-compose.dev.yml up -d
 ```
 
-### Development Profiles
+#### 2. Backend Setup
+Configure and start the API server.
 
-#### 1. **Full Stack Development**
-```bash
-# Backend + Frontend + Database
-npm run dev:web
-```
-
-#### 2. **Mobile Development**  
-```bash
-# Backend + React Native
-npm run dev:mobile
-```
-
-#### 3. **Backend Only**
-```bash
-# API development and testing
-cd backend && npm run dev
-```
-
-## 🔄 API Endpoints Alignment
-
-### Current Status:
-- ✅ Authentication (`/v1/auth/*`)
-- ✅ Menu Management (`/v1/menu/*`)  
-- ✅ Order Management (`/v1/orders/*`)
-- ✅ User Management (`/v1/users/*`)
-- ✅ Payment Integration (`/v1/payment/*`)
-- ⚠️ Analytics (`/v1/analytics/*`) - Web only
-- ⚠️ Admin Panel - Web only
-
-### Platform-Specific Differences:
-
-| Feature | Web Frontend | React Native | Status |
-|---------|--------------|--------------|---------|
-| Authentication | JWT + localStorage | JWT + AsyncStorage | ✅ Aligned |
-| Payment Flow | SumUp Hosted Checkout | SumUp Native SDK | ⚠️ Different approaches |
-| Guest Mode | Basic support | Full guest flow | ⚠️ Enhance web |
-| Push Notifications | Not implemented | Full Expo integration | ⚠️ Missing on web |
-| Analytics Dashboard | Full admin panel | Not implemented | ⚠️ Missing on mobile |
-
-## 🧪 Testing Strategy
-
-### Backend API Testing
 ```bash
 cd backend
-npm run test
-npm run test:integration
+
+# Install dependencies
+npm install
+
+# Configure Environment
+cp .env.example .env
+# Edit .env and ensure DATABASE_URL matches your docker configuration:
+# DATABASE_URL="postgresql://senan:postgres@localhost:5432/smashd?schema=public"
+
+# Database Migration
+npm run start # Runs migrations and starts server
+# OR for development with auto-restart:
+npm run dev
 ```
 
-### Frontend Testing  
+#### 3. Frontend Setup
+Launch the web customer interface.
+
 ```bash
 cd frontend
-npm run test
-npm run build  # Verify production build
+
+# Install dependencies
+npm install
+
+# Configure Environment
+cp .env.example .env.local
+# Verify NEXT_PUBLIC_API_URL points to your backend (default: http://localhost:5001/v1)
+
+# Start Development Server
+npm run dev
+# Accessible at http://localhost:3000
 ```
 
-### React Native Testing
+#### 4. Mobile App Setup
+Launch the Expo development server.
+
 ```bash
 cd app
-npm run test
-expo build:ios --simulator  # iOS testing
-expo build:android  # Android testing
+
+# Install dependencies
+npm install
+
+# Configure Environment
+# Create a .env file based on your project requirements (see env.d.ts)
+# EXPO_PUBLIC_API_URL=http://localhost:5001/v1
+
+# Start Expo Go
+npx expo start
+# Scan the QR code with your phone or press 'i' for iOS Simulator / 'a' for Android Emulator
 ```
 
-## 📱 Mobile Development Setup
+---
 
-### iOS Development
-```bash
-cd app
-expo run:ios
-# Requires Xcode and iOS Simulator
+## 📁 Project Structure
+
+### Backend (`/backend`)
+```
+├── prisma/             # Database schema and seeds
+├── src/
+│   ├── config/         # Environment and app configuration
+│   ├── controllers/    # Request handlers
+│   ├── middleware/     # Auth and validation middleware
+│   ├── routes/         # API route definitions
+│   ├── services/       # Business logic layer
+│   └── app.ts          # Express app entry point
+└── __tests__/          # Unit and integration tests
 ```
 
-### Android Development  
-```bash
-cd app
-expo run:android  
-# Requires Android Studio and Android SDK
+### Frontend (`/frontend`)
+```
+├── app/                # Next.js App Router pages
+├── components/         # Reusable UI components (shadcn/ui)
+├── lib/                # Utilities and API clients
+└── public/             # Static assets
 ```
 
-### Web Testing (React Native)
-```bash
-cd app
-expo start --web
-# Test React Native app in browser
+### Mobile App (`/app`)
+```
+├── app/                # Expo Router file-based navigation
+├── components/         # React Native components
+├── contexts/           # React Context (Auth, Cart, etc.)
+└── services/           # API interaction layer
 ```
 
-## 🚀 Deployment
+---
 
-### Backend (Production)
-- Platform: Railway/Heroku
-- Database: PostgreSQL (Railway/Neon)
-- Environment: Production `.env`
+## 🏃‍♂️ Detailed "Run Locally" Guide
 
-### Frontend (Production)
-- Platform: Vercel/Netlify
-- Environment: Production env vars
+### Running Services Independently
+For full-stack development, you typically need **three terminal windows** open:
 
-### React Native (Production)
-- Platform: Expo EAS Build
-- iOS: App Store Connect
-- Android: Google Play Console
+1.  **Terminal 1 (DB & Backend)**: `docker-compose up -d && cd backend && npm run dev`
+2.  **Terminal 2 (Web)**: `cd frontend && npm run dev`
+3.  **Terminal 3 (Mobile)**: `cd app && npx expo start`
 
-## 🔍 Development Tips
+### Testing with Mobile Devices
+If testing the mobile app on a physical device, `localhost` will not work.
+1.  Find your computer's local IP address (e.g., `192.168.1.50`).
+2.  Update `.env` in `backend` to allow this origin if CORS is strict.
+3.  Update `EXPO_PUBLIC_API_URL` in `app/.env` to `http://192.168.1.50:5001/v1`.
+4.  Restart both servers.
 
-### API Development
-- Use Prisma Studio for database inspection: `npx prisma studio`
-- Test SumUp integration: `curl http://localhost:5001/v1/test/sumup-connection`
-- Monitor logs: Backend shows all API calls and database queries
+---
 
-### Frontend Development  
-- Use Next.js dev tools for debugging
-- Test responsive design across devices
-- Verify payment flow end-to-end
+## 🛠 Best Practices & Workflow
 
-### React Native Development
-- Use Expo dev tools for debugging  
-- Test on physical devices for best experience
-- Use Expo Go app for quick testing
+### Git Workflow
+- **Main Branch**: `main` is the production-ready branch. Do not push directly.
+- **Feature Branches**: Create branches for all changes: `feature/my-new-feature` or `fix/payment-bug`.
+- **Pull Requests**: All changes require a PR review before merging.
 
-### Common Issues & Solutions
-- **API Connection Issues**: Check CORS settings in backend
-- **Payment Integration**: Verify SumUp credentials in environment
-- **Database Issues**: Run `npx prisma generate && npx prisma db push`
-- **React Native Metro Issues**: Clear cache with `expo r -c`
+### Code Style
+- **TypeScript**: Strict mode is enabled. Avoid `any` types.
+- **Linting**: Run `npm run lint` (in respective folders) before committing.
+- **Formatting**: We use Prettier. Ensure your editor is configured to format on save.
 
-## 📚 Additional Resources
+### Testing Strategy
+- **Backend**:
+    - Unit Tests: `npm run test:unit`
+    - Integration Tests: `npm run test:integration` (Requires running DB)
+- **Frontend/Mobile**:
+    - Jest is configured for component testing.
+    - `npm test` runs the test suite.
 
-- [Backend API Documentation](./backend/README.md)
-- [Frontend Development Guide](./frontend/README.md)  
-- [React Native Development Guide](./app/README.md)
-- [SumUp Integration Guide](./docs/SUMUP_INTEGRATION.md)
+---
 
-## 🤝 Contributing
+## 🌍 Production Setup & Deployment
 
-1. Create feature branch from `main`
-2. Develop and test across platforms
-3. Ensure API parity between web/mobile
-4. Submit PR with platform testing notes
+### Backend (Railway / VPS)
+1.  **Build**: `npm run build` (Compiles TS to JS in `dist/`).
+2.  **Environment**: ensure `NODE_ENV=production`. Set strict `ALLOWED_ORIGINS`.
+3.  **Database**: Use a managed PostgreSQL provider (e.g., Railway, Neon, AWS RDS). Apply migrations via `npx prisma migrate deploy`.
+
+### Frontend (Vercel)
+1.  Connect your repository to Vercel.
+2.  Set Root Directory to `frontend`.
+3.  Add Environment Variables (`NEXT_PUBLIC_...`).
+4.  Vercel automatically detects Next.js and builds using `npm run build`.
+
+### Mobile (Expo EAS)
+1.  Install EAS CLI: `npm install -g eas-cli`.
+2.  Login: `eas login`.
+3.  Configure Build: Update `eas.json` for build profiles (dev/preview/production).
+4.  **Build for Stores**:
+    ```bash
+    cd app
+    eas build --platform ios
+    eas build --platform android
+    ```
+5.  **OTA Updates**: Use `eas update` to push non-native changes instantly.
+
+---
+
+## ❓ Troubleshooting
+
+**Q: Backend cannot connect to Database?**
+A: Check if Docker is running (`docker ps`). Ensure the `DATABASE_URL` matches the exposed port (default 5432).
+
+**Q: CORS Errors on Frontend?**
+A: Add your frontend URL (e.g., `http://localhost:3000`) to `ALLOWED_ORIGINS` in `backend/.env`.
+
+**Q: "Network Error" on Android Emulator?**
+A: Android emulators see host `localhost` as `10.0.2.2`. Use that IP or your machine's LAN IP.
