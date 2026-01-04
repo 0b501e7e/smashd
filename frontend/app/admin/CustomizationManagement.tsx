@@ -346,7 +346,7 @@ const CustomizationManagement = () => {
                             {editingCategory ? 'Edit Category' : 'Add New Category'}
                         </DialogTitle>
                         <DialogDescription className="text-gray-400">
-                            Categories group options like "Extras", "Sauces", etc.
+                            Categories group options like &quot;Extras&quot;, &quot;Sauces&quot;, etc.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
