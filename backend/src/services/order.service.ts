@@ -400,7 +400,20 @@ export class OrderService implements IOrderService {
         }
 
         // 6. Update order status
-        const updatedOrder = await this.updateOrderStatus(orderId, newStatus);
+        let updatedOrder = await this.updateOrderStatus(orderId, newStatus);
+
+        // AUTO-ACCEPT LOGIC FOR TESTING/BETA
+        if (newStatus === 'PAYMENT_CONFIRMED' && process.env['AUTO_ACCEPT_ORDERS'] === 'true') {
+          console.log(`OrderService: AUTO_ACCEPT_ORDERS is active. Automatically accepting order ${orderId}`);
+          try {
+            // Default to 20 minutes for auto-accepted orders
+            updatedOrder = await this.acceptOrder({ orderId, estimatedMinutes: 20 });
+            newStatus = updatedOrder.status as OrderStatus; // Update status local var for the response
+          } catch (autoAcceptError) {
+            console.error('OrderService: Failed to auto-accept order:', autoAcceptError);
+            // Don't fail the request, just log it. The order will remain in PAYMENT_CONFIRMED (Awaiting manual accept)
+          }
+        }
 
         // 7. Get full order details with items for frontend display
         const orderDetails = await this.prisma.order.findUnique({
@@ -436,7 +449,9 @@ export class OrderService implements IOrderService {
         return {
           message: 'Verificación de pago completada',
           orderId: updatedOrder.id,
-          sumupStatus: newStatus === 'PAYMENT_CONFIRMED' ? 'PAID' : 'PENDING',
+          // If auto-accepted, the status in DB is now CONFIRMED/PREPARING, so we map that to 'PAID' or better for the frontend check
+          // The frontend mainly looks for status !== 'AWAITING_PAYMENT' to succeed
+          sumupStatus: 'PAID',
           loyaltyPointsAwarded,
           ...transformedOrder  // Include full order details for frontend
         };

@@ -15,6 +15,7 @@ import adminRoutes from './routes/admin.routes';
 import driverRoutes from './routes/driver.routes';
 import paymentRoutes from './routes/payment.routes';
 import analyticsRoutes from './routes/analytics.routes';
+import betaRoutes from './routes/beta.routes';
 import cronRoutes from './routes/cron.routes';
 import {
   corsMiddleware,
@@ -101,6 +102,7 @@ app.use('/v1/admin', adminRoutes);
 app.use('/v1/driver', driverRoutes);
 app.use('/v1/payment', paymentRoutes);
 app.use('/v1/analytics', analyticsRoutes);
+app.use('/v1/beta', betaRoutes);
 app.use('/v1/cron', cronRoutes);
 
 // Test routes for validation and authentication middleware
