@@ -17,7 +17,7 @@ import { ID, MenuCategory } from '../types/common.types';
  * Contains all menu-related business logic
  */
 export class MenuService implements IMenuService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   /**
    * Helper method to convert Prisma result to MenuItem with proper typing
@@ -42,15 +42,15 @@ export class MenuService implements IMenuService {
     } = options;
 
     const where: any = {};
-    
+
     if (!includeUnavailable) {
       where.isAvailable = true;
     }
-    
+
     if (category) {
       where.category = category;
     }
-    
+
     if (searchTerm) {
       where.OR = [
         { name: { contains: searchTerm, mode: 'insensitive' } },
@@ -58,9 +58,9 @@ export class MenuService implements IMenuService {
       ];
     }
 
-    const orderByField = orderBy === 'name' ? { name: orderDirection } 
-                      : orderBy === 'price' ? { price: orderDirection }
-                      : { category: orderDirection };
+    const orderByField = orderBy === 'name' ? { name: orderDirection }
+      : orderBy === 'price' ? { price: orderDirection }
+        : { category: orderDirection };
 
     const items = await this.prisma.menuItem.findMany({
       where,
@@ -89,7 +89,7 @@ export class MenuService implements IMenuService {
    */
   async getMenuItemById(id: ID): Promise<MenuItem | null> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -116,7 +116,7 @@ export class MenuService implements IMenuService {
    */
   async createMenuItem(data: MenuItemCreateData): Promise<MenuItem> {
     const { isAvailable = true, ...itemData } = data;
-    
+
     const item = await this.prisma.menuItem.create({
       data: {
         ...itemData,
@@ -142,7 +142,7 @@ export class MenuService implements IMenuService {
    */
   async updateMenuItem(id: ID, data: MenuItemUpdateData): Promise<MenuItem> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -179,7 +179,7 @@ export class MenuService implements IMenuService {
    */
   async deleteMenuItem(id: ID): Promise<void> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -203,7 +203,7 @@ export class MenuService implements IMenuService {
    */
   async toggleMenuItemAvailability(id: ID, isAvailable: boolean): Promise<MenuItem> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -245,7 +245,7 @@ export class MenuService implements IMenuService {
    */
   async getCustomizationsByCategory(categoryId: ID): Promise<CustomizationOption[]> {
     const numericId = typeof categoryId === 'string' ? parseInt(categoryId) : categoryId;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid category ID');
     }
@@ -262,7 +262,7 @@ export class MenuService implements IMenuService {
    */
   async getMenuItemCustomizations(menuItemId: ID): Promise<Record<string, CustomizationOption[]>> {
     const numericId = typeof menuItemId === 'string' ? parseInt(menuItemId) : menuItemId;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -277,24 +277,28 @@ export class MenuService implements IMenuService {
       }
     });
 
+    // Initialize with expected categories to ensure consistent response structure
+    const groupedOptions: Record<string, CustomizationOption[]> = {
+      Extras: [],
+      Sauces: [],
+      Toppings: []
+    };
+
     // Group options by category
-    const groupedOptions: Record<string, CustomizationOption[]> = {};
-    
     for (const link of linkedOptions) {
       const option = link.customizationOption;
       const categoryName = option.category.name;
-      
-      if (!groupedOptions[categoryName]) {
-        groupedOptions[categoryName] = [];
+
+      // Only add to groupedOptions if it's one of the expected categories
+      if (groupedOptions[categoryName] !== undefined) {
+        groupedOptions[categoryName].push({
+          id: option.id,
+          name: option.name,
+          price: option.price,
+          categoryId: option.categoryId,
+          category: option.category
+        });
       }
-      
-      groupedOptions[categoryName].push({
-        id: option.id,
-        name: option.name,
-        price: option.price,
-        categoryId: option.categoryId,
-        category: option.category
-      });
     }
 
     return groupedOptions;
@@ -305,7 +309,7 @@ export class MenuService implements IMenuService {
    */
   async createCustomizationCategory(data: CustomizationCategoryCreateData): Promise<CustomizationCategory> {
     const { options = [], ...categoryData } = data;
-    
+
     return await this.prisma.customizationCategory.create({
       data: {
         ...categoryData,
@@ -348,7 +352,7 @@ export class MenuService implements IMenuService {
    */
   async linkCustomizationOptions(menuItemId: ID, optionIds: number[]): Promise<void> {
     const numericId = typeof menuItemId === 'string' ? parseInt(menuItemId) : menuItemId;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
@@ -378,7 +382,7 @@ export class MenuService implements IMenuService {
    */
   async getLinkedCustomizationOptions(menuItemId: ID): Promise<number[]> {
     const numericId = typeof menuItemId === 'string' ? parseInt(menuItemId) : menuItemId;
-    
+
     if (isNaN(numericId)) {
       throw new Error('Invalid menu item ID');
     }
