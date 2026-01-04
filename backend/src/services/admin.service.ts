@@ -31,7 +31,7 @@ export class AdminService implements IAdminService {
   constructor(
     private prisma: PrismaClient,
     private notificationService?: INotificationService
-  ) {}
+  ) { }
 
   // =====================
   // ADMIN MENU MANAGEMENT
@@ -241,8 +241,8 @@ export class AdminService implements IAdminService {
       // For delivery orders, automatically set to READY status when accepted
       // (since they need to be ready for driver pickup)
       // For pickup orders, keep as CONFIRMED (customer will pick up)
-      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress 
-        ? 'READY' 
+      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress
+        ? 'READY'
         : 'CONFIRMED';
 
       console.log(`AdminService: Setting order ${acceptData.orderId} to status: ${newStatus} (fulfillmentMethod: ${order.fulfillmentMethod}, hasDeliveryAddress: ${!!order.deliveryAddress})`);
@@ -351,6 +351,121 @@ export class AdminService implements IAdminService {
     }
   }
 
+  async updateCustomizationCategory(categoryId: number, data: { name: string }): Promise<CustomizationCategoryWithOptions> {
+    try {
+      const updatedCategory = await this.prisma.customizationCategory.update({
+        where: { id: categoryId },
+        data,
+        include: {
+          options: true
+        }
+      });
+      return updatedCategory;
+    } catch (error) {
+      console.error(`AdminService: Error updating customization category ${categoryId}:`, error);
+      throw new Error('Error al actualizar la categoría de personalización');
+    }
+  }
+
+  async deleteCustomizationCategory(categoryId: number): Promise<{ message: string }> {
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const options = await tx.customizationOption.findMany({
+          where: { categoryId }
+        });
+
+        const optionIds = options.map(o => o.id);
+
+        if (optionIds.length > 0) {
+          // Delete link table records for all options in this category
+          await tx.menuItemCustomizationOption.deleteMany({
+            where: { customizationOptionId: { in: optionIds } }
+          });
+
+          // Delete options
+          await tx.customizationOption.deleteMany({
+            where: { categoryId }
+          });
+        }
+
+        // Delete any join table entries for the category itself if they exist (old schema support)
+        await tx.menuItemCustomizationCategory.deleteMany({
+          where: { categoryId }
+        });
+
+        // Finally delete category
+        await tx.customizationCategory.delete({
+          where: { id: categoryId }
+        });
+      });
+
+      return { message: 'Categoría de personalización eliminada exitosamente' };
+    } catch (error) {
+      console.error(`AdminService: Error deleting customization category ${categoryId}:`, error);
+      throw new Error('Error al eliminar la categoría de personalización');
+    }
+  }
+
+  async createCustomizationOption(data: { name: string, price: number, categoryId: number }): Promise<CustomizationOptionWithCategory> {
+    try {
+      const option = await this.prisma.customizationOption.create({
+        data: {
+          name: data.name,
+          price: data.price,
+          categoryId: data.categoryId
+        },
+        include: {
+          category: {
+            select: { id: true, name: true }
+          }
+        }
+      });
+      return option as CustomizationOptionWithCategory;
+    } catch (error) {
+      console.error('AdminService: Error creating customization option:', error);
+      throw new Error('Error al crear la opción de personalización');
+    }
+  }
+
+  async updateCustomizationOption(optionId: number, data: Partial<{ name: string, price: number }>): Promise<CustomizationOptionWithCategory> {
+    try {
+      const updatedOption = await this.prisma.customizationOption.update({
+        where: { id: optionId },
+        data,
+        include: {
+          category: {
+            select: { id: true, name: true }
+          }
+        }
+      });
+      return updatedOption as CustomizationOptionWithCategory;
+    } catch (error) {
+      console.error(`AdminService: Error updating customization option ${optionId}:`, error);
+      throw new Error('Error al actualizar la opción de personalización');
+    }
+  }
+
+  async deleteCustomizationOption(optionId: number): Promise<{ message: string }> {
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // Delete link table records first
+        await tx.menuItemCustomizationOption.deleteMany({
+          where: { customizationOptionId: optionId }
+        });
+
+        // Delete option
+        await tx.customizationOption.delete({
+          where: { id: optionId }
+        });
+      });
+      return { message: 'Opción de personalización eliminada exitosamente' };
+    } catch (error) {
+      console.error(`AdminService: Error deleting customization option ${optionId}:`, error);
+      throw new Error('Error al eliminar la opción de personalización');
+    }
+  }
+
+
   async getCustomizationOptions(): Promise<CustomizationOptionWithCategory[]> {
     try {
       const options = await this.prisma.customizationOption.findMany({
@@ -410,7 +525,7 @@ export class AdminService implements IAdminService {
       });
 
       console.log(`AdminService: Updated customization options for menu item ${linkData.menuItemId}: ${linkData.optionIds.length} options linked`);
-      
+
       return {
         message: 'Opciones de personalización actualizadas exitosamente para el artículo del menú'
       };
@@ -431,15 +546,15 @@ export class AdminService implements IAdminService {
     try {
       // Get SumUp access token
       const accessToken = await getSumupAccessToken();
-      
+
       // Fetch all available menu items
       const menuItems = await this.prisma.menuItem.findMany({
         where: { isAvailable: true }
       });
-      
+
       let syncedItems = 0;
       const errors: string[] = [];
-      
+
       // Process each menu item
       for (const item of menuItems) {
         try {
@@ -449,7 +564,7 @@ export class AdminService implements IAdminService {
             price: item.price.toString(), // SumUp expects string
             category: item.category
           };
-          
+
           // If we already have a SumUp product ID, update it
           if (item.sumupProductId) {
             await makeHttpRequest({
@@ -461,9 +576,9 @@ export class AdminService implements IAdminService {
                 'Content-Type': 'application/json'
               }
             }, JSON.stringify(productData));
-            
+
             syncedItems++;
-          } 
+          }
           // Otherwise create a new product
           else {
             const response = await makeHttpRequest({
@@ -475,13 +590,13 @@ export class AdminService implements IAdminService {
                 'Content-Type': 'application/json'
               }
             }, JSON.stringify(productData));
-            
+
             // Store SumUp product ID in our database
             await this.prisma.menuItem.update({
               where: { id: item.id },
               data: { sumupProductId: response.id }
             });
-            
+
             syncedItems++;
           }
         } catch (itemError) {
@@ -489,9 +604,9 @@ export class AdminService implements IAdminService {
           errors.push(`${item.name}: ${itemError instanceof Error ? itemError.message : 'Unknown error'}`);
         }
       }
-      
+
       const success = errors.length === 0;
-      const message = success 
+      const message = success
         ? `Successfully synced ${syncedItems} menu items to SumUp`
         : `Synced ${syncedItems} items with ${errors.length} errors`;
 

@@ -72,19 +72,19 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
   }, []);
 
   // Fetch IDs of options currently linked to the menu item
-  const fetchLinkedOptionIds = useCallback(async (menuItemId: number) => {
+  const fetchLinkedOptionIds = useCallback(async (menuItemId: number): Promise<Set<number>> => {
     const token = localStorage.getItem('token');
     if (!token) {
       setError("Authentication token not found.");
       return new Set<number>(); // Return empty set on auth error
     }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu-items/${menuItemId}/linked-customization-options`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${menuItemId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) throw new Error('Failed to fetch linked customization options');
-      const data: number[] = await response.json(); // Expecting an array of IDs
-      return new Set(data);
+      const data = await response.json(); // Expecting { optionIds: number[] }
+      return new Set(data.optionIds || []);
     } catch (err) {
       console.error("Fetch Linked Options Error:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching linked options');
@@ -136,7 +136,7 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu-items/${item.id}/linked-customization-options`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${item.id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -149,7 +149,7 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
         const errorData = await response.json().catch(() => ({})); // Try to parse error response
         throw new Error(errorData.error || `Failed to save changes (status: ${response.status})`);
       }
-      
+
       // if (onCustomizationsUpdated) onCustomizationsUpdated();
       onClose();
     } catch (err) {
@@ -159,7 +159,7 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
       setIsSaving(false);
     }
   };
-  
+
   const handleClose = () => {
     if (!isSaving) {
       onClose();
@@ -223,9 +223,9 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
                           className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black h-5 w-5"
                         />
                         <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer text-gray-100 text-sm">
-                          {option.name} 
+                          {option.name}
                           {option.price > 0 && (
-                            <span className="text-xs text-gray-400 ml-2">(+${option.price.toFixed(2)})</span>
+                            <span className="text-xs text-gray-400 ml-2">(+€{option.price.toFixed(2)})</span>
                           )}
                         </Label>
                       </div>
@@ -238,9 +238,9 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
               <Button type="button" variant="outline" onClick={handleClose} disabled={isSaving} className="hover:bg-gray-700">
                 Cancel
               </Button>
-              <Button 
-                type="button" 
-                onClick={handleSaveChanges} 
+              <Button
+                type="button"
+                onClick={handleSaveChanges}
                 disabled={isSaving || isLoading}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
               >

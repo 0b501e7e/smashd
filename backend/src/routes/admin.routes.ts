@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { AdminController } from '../controllers/admin.controller';
 import { services } from '../config/services';
-import { 
-  authenticateToken, 
+import {
+  authenticateToken,
   isAdmin,
   validateCreateMenuItem,
   validateUpdateMenuItem,
@@ -34,9 +34,15 @@ router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.b
 router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));
 
 // Customization management
-router.get('/customization-categories', adminController.getCustomizationCategories.bind(adminController));
-router.post('/customization-categories', validateCreateCustomizationCategory, adminController.createCustomizationCategory.bind(adminController));
-router.get('/customization-options', adminController.getCustomizationOptions.bind(adminController));
+router.get('/customization-categories', (req: Request, res: Response, next: NextFunction) => adminController.getCustomizationCategories(req, res, next));
+router.post('/customization-categories', validateCreateCustomizationCategory, (req: Request, res: Response, next: NextFunction) => adminController.createCustomizationCategory(req, res, next));
+router.put('/customization-categories/:id', (req: Request, res: Response, next: NextFunction) => adminController.updateCustomizationCategory(req, res, next));
+router.delete('/customization-categories/:id', (req: Request, res: Response, next: NextFunction) => adminController.deleteCustomizationCategory(req, res, next));
+
+router.get('/customization-options', (req: Request, res: Response, next: NextFunction) => adminController.getCustomizationOptions(req, res, next));
+router.post('/customization-options', (req: Request, res: Response, next: NextFunction) => adminController.createCustomizationOption(req, res, next));
+router.put('/customization-options/:id', (req: Request, res: Response, next: NextFunction) => adminController.updateCustomizationOption(req, res, next));
+router.delete('/customization-options/:id', (req: Request, res: Response, next: NextFunction) => adminController.deleteCustomizationOption(req, res, next));
 router.get('/customization-options/:menuItemId', validateMenuItemId, adminController.getLinkedCustomizationOptions.bind(adminController));
 router.post('/customization-options/:menuItemId', validateMenuItemId, adminController.setLinkedCustomizationOptions.bind(adminController));
 

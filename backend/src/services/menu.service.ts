@@ -277,28 +277,24 @@ export class MenuService implements IMenuService {
       }
     });
 
-    // Initialize with expected categories to ensure consistent response structure
-    const groupedOptions: Record<string, CustomizationOption[]> = {
-      Extras: [],
-      Sauces: [],
-      Toppings: []
-    };
+    // Group options by category dynamically
+    const groupedOptions: Record<string, CustomizationOption[]> = {};
 
-    // Group options by category
     for (const link of linkedOptions) {
       const option = link.customizationOption;
       const categoryName = option.category.name;
 
-      // Only add to groupedOptions if it's one of the expected categories
-      if (groupedOptions[categoryName] !== undefined) {
-        groupedOptions[categoryName].push({
-          id: option.id,
-          name: option.name,
-          price: option.price,
-          categoryId: option.categoryId,
-          category: option.category
-        });
+      if (!groupedOptions[categoryName]) {
+        groupedOptions[categoryName] = [];
       }
+
+      groupedOptions[categoryName].push({
+        id: option.id,
+        name: option.name,
+        price: option.price,
+        categoryId: option.categoryId,
+        category: option.category
+      });
     }
 
     return groupedOptions;

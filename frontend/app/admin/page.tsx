@@ -7,6 +7,7 @@ import OrderManagement from './OrderManagement';
 import StockManagement from './StockManagement';
 import AdminSettings from './Settings';
 import Analytics from './Analytics';
+import CustomizationManagement from './CustomizationManagement';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('menu');
@@ -49,6 +50,13 @@ export default function AdminDashboardPage() {
               Analytics
             </button>
             <button
+              onClick={() => setActiveTab('customizations')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+                          ${activeTab === 'customizations' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
+            >
+              Customizations
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'settings' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
@@ -63,6 +71,7 @@ export default function AdminDashboardPage() {
         {activeTab === 'orders' && <OrderManagement />}
         {activeTab === 'stock' && <StockManagement />}
         {activeTab === 'analytics' && <Analytics />}
+        {activeTab === 'customizations' && <CustomizationManagement />}
         {activeTab === 'settings' && <AdminSettings />}
 
         {/* TODO: Add components for managing restaurant details, etc. */}

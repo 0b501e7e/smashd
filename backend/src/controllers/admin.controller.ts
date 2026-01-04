@@ -391,6 +391,107 @@ export class AdminController {
   }
 
   /**
+   * Update customization category
+   * PUT /v1/admin/customization-categories/:id
+   */
+  async updateCustomizationCategory(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const categoryData = req.body;
+
+      if (!id) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Category ID is required' });
+        return;
+      }
+
+      const updatedCategory = await this.adminService.updateCustomizationCategory(parseInt(id), categoryData);
+      res.json(updatedCategory);
+    } catch (error) {
+      console.error('AdminController: Error updating customization category:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Delete customization category
+   * DELETE /v1/admin/customization-categories/:id
+   */
+  async deleteCustomizationCategory(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Category ID is required' });
+        return;
+      }
+
+      const result = await this.adminService.deleteCustomizationCategory(parseInt(id));
+      res.json(result);
+    } catch (error) {
+      console.error('AdminController: Error deleting customization category:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Create customization option
+   * POST /v1/admin/customization-options
+   */
+  async createCustomizationOption(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const optionData = req.body;
+      const option = await this.adminService.createCustomizationOption(optionData);
+      res.status(HTTP_STATUS.CREATED).json(option);
+    } catch (error) {
+      console.error('AdminController: Error creating customization option:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Update customization option
+   * PUT /v1/admin/customization-options/:id
+   */
+  async updateCustomizationOption(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const optionData = req.body;
+
+      if (!id) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Option ID is required' });
+        return;
+      }
+
+      const updatedOption = await this.adminService.updateCustomizationOption(parseInt(id), optionData);
+      res.json(updatedOption);
+    } catch (error) {
+      console.error('AdminController: Error updating customization option:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Delete customization option
+   * DELETE /v1/admin/customization-options/:id
+   */
+  async deleteCustomizationOption(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+
+      if (!id) {
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Option ID is required' });
+        return;
+      }
+
+      const result = await this.adminService.deleteCustomizationOption(parseInt(id));
+      res.json(result);
+    } catch (error) {
+      console.error('AdminController: Error deleting customization option:', error);
+      next(error);
+    }
+  }
+
+  /**
    * Get all customization options with category info
    * GET /v1/admin/customization-options
    */

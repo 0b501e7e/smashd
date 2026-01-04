@@ -4,7 +4,7 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart } from 'lucide-react';
+import { TrendingUp, TrendingDown, Euro, ShoppingCart } from 'lucide-react';
 import { RevenueAnalytics } from '../../../lib/analyticsApi';
 
 interface RevenueChartProps {
@@ -60,21 +60,21 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis 
-              dataKey="weekStart" 
+            <XAxis
+              dataKey="weekStart"
               stroke="#9CA3AF"
               fontSize={12}
             />
-            <YAxis 
+            <YAxis
               stroke="#9CA3AF"
               fontSize={12}
               tickFormatter={(value) => `€${Math.round(value)}`}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Line 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke="#10B981" 
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke="#10B981"
               strokeWidth={2}
               dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6, stroke: '#10B981', strokeWidth: 2 }}
@@ -92,7 +92,7 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
         <Card className="bg-gray-900 border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-400" />
+            <Euro className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-400">
@@ -151,21 +151,21 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="weekStart" 
+              <XAxis
+                dataKey="weekStart"
                 stroke="#9CA3AF"
                 fontSize={12}
               />
-              <YAxis 
+              <YAxis
                 stroke="#9CA3AF"
                 fontSize={12}
                 tickFormatter={(value) => formatCurrency(value)}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Line 
-                type="monotone" 
-                dataKey="revenue" 
-                stroke="#10B981" 
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#10B981"
                 strokeWidth={3}
                 dot={{ fill: '#10B981', strokeWidth: 2, r: 5 }}
                 activeDot={{ r: 7, stroke: '#10B981', strokeWidth: 2 }}
@@ -187,25 +187,25 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="weekStart" 
+              <XAxis
+                dataKey="weekStart"
                 stroke="#9CA3AF"
                 fontSize={12}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="revenue"
                 orientation="left"
                 stroke="#9CA3AF"
                 fontSize={12}
                 tickFormatter={(value) => `€${Math.round(value)}`}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="orders"
                 orientation="right"
                 stroke="#9CA3AF"
                 fontSize={12}
               />
-              <Tooltip 
+              <Tooltip
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
@@ -226,17 +226,17 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
                   return null;
                 }}
               />
-              <Bar 
+              <Bar
                 yAxisId="revenue"
-                dataKey="revenue" 
-                fill="#10B981" 
+                dataKey="revenue"
+                fill="#10B981"
                 name="Revenue"
                 opacity={0.8}
               />
-              <Bar 
+              <Bar
                 yAxisId="orders"
-                dataKey="orders" 
-                fill="#3B82F6" 
+                dataKey="orders"
+                fill="#3B82F6"
                 name="Orders"
                 opacity={0.6}
               />

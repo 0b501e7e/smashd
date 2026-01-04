@@ -86,8 +86,8 @@ const MenuList = () => {
 
   const fetchMenuItems = useCallback(async (showLoadingIndicator = true) => {
     if (showLoadingIndicator) {
-        setIsLoading(true); // Initial load indicator
-        setIsApiLoading(true); // Or API loading indicator
+      setIsLoading(true); // Initial load indicator
+      setIsApiLoading(true); // Or API loading indicator
     }
     setError(null);
     setApiError(null);
@@ -101,7 +101,7 @@ const MenuList = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/menu`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -207,17 +207,17 @@ const MenuList = () => {
   return (
     <div className="mt-10"> { /* Increased top margin */}
       <div className="flex justify-between items-center mb-6"> { /* Increased bottom margin */}
-          <h2 className="text-2xl font-semibold text-yellow-300">Menu Items</h2>
-          {/* Assume AddMenuItemForm uses a Button internally */}
-          <AddMenuItemForm onItemAdded={() => fetchMenuItems(false)} />
+        <h2 className="text-2xl font-semibold text-yellow-300">Menu Items</h2>
+        {/* Assume AddMenuItemForm uses a Button internally */}
+        <AddMenuItemForm onItemAdded={() => fetchMenuItems(false)} />
       </div>
 
       {/* Use Alert for API errors (add/edit/delete failures) */}
       {apiError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTitle>Operation Failed</AlertTitle>
-            <AlertDescription>{apiError}</AlertDescription>
-          </Alert>
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Operation Failed</AlertTitle>
+          <AlertDescription>{apiError}</AlertDescription>
+        </Alert>
       )}
 
       {/* Update Table styling */}
@@ -243,7 +243,7 @@ const MenuList = () => {
                 <TableCell className="text-gray-300">{item.description}</TableCell>
                 <TableCell className="text-white text-right">€{item.price.toFixed(2)}</TableCell>
                 <TableCell className="text-center space-x-1"> { /* Add space */}
-                   {/* Edit button styling is okay */}
+                  {/* Edit button styling is okay */}
                   <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)} className="text-yellow-400 hover:text-yellow-300" title="Edit Item">
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -251,7 +251,7 @@ const MenuList = () => {
                   <Button variant="ghost" size="icon" onClick={() => handleOpenCustomizationModal(item)} className="text-blue-400 hover:text-blue-300" title="Manage Customizations">
                     <Settings2 className="h-4 w-4" />
                   </Button>
-                   {/* Delete button uses ghost variant + orange text */}
+                  {/* Delete button uses ghost variant + orange text */}
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)} className="text-orange-400 hover:text-orange-300" title="Delete Item">
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -289,10 +289,10 @@ const MenuList = () => {
           {isApiLoading && <div className="flex justify-center items-center py-4"><Loader2 className="h-6 w-6 animate-spin text-yellow-400" /></div>}
           {apiError && (
             <Alert variant="destructive" className="my-2">
-                <AlertTitle>Deletion Failed</AlertTitle>
-                <AlertDescription>{apiError}</AlertDescription>
+              <AlertTitle>Deletion Failed</AlertTitle>
+              <AlertDescription>{apiError}</AlertDescription>
             </Alert>
-           )}
+          )}
           <AlertDialogFooter className="pt-4"> { /* Add padding */}
             <AlertDialogCancel onClick={cancelDeleteItem} disabled={isApiLoading}>Cancel</AlertDialogCancel> {/* Default styling is ok */}
             {/* Remove variant="destructive" from AlertDialogAction */}
@@ -304,14 +304,14 @@ const MenuList = () => {
       </AlertDialog>
 
       {/* Placeholder for ManageCustomizationsModal - will be created next */}
-      
+
       <ManageCustomizationsModal
         item={itemForCustomization}
         isOpen={isCustomizationModalOpen}
         onClose={handleCloseCustomizationModal}
-        // onCustomizationsUpdated={() => fetchMenuItems(false)} // Might not need to refetch all menu items
+      // onCustomizationsUpdated={() => fetchMenuItems(false)} // Might not need to refetch all menu items
       />
-      
+
     </div>
   );
 };

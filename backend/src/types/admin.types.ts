@@ -66,6 +66,15 @@ export interface CreateCustomizationCategoryData {
   }[];
 }
 
+export interface UpdateCustomizationCategoryData {
+  name: string;
+}
+
+export interface UpdateCustomizationOptionData {
+  name?: string;
+  price?: number;
+}
+
 export interface CustomizationOptionWithCategory extends CustomizationOption {
   category: {
     id: number;

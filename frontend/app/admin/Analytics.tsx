@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Skeleton } from '../../components/ui/skeleton';
 import { Alert, AlertDescription } from '../../components/ui/alert';
-import { TrendingUp, TrendingDown, Users, ShoppingCart, DollarSign, Clock, BarChart3, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, ShoppingCart, Euro, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import RevenueChart from './analytics/RevenueChart';
 import MenuPerformanceChart from './analytics/MenuPerformanceChart';
 import CustomerAnalyticsChart from './analytics/CustomerAnalyticsChart';
@@ -80,7 +80,7 @@ export default function Analytics() {
           </div>
           <Skeleton className="h-10 w-24" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
@@ -94,7 +94,7 @@ export default function Analytics() {
             </Card>
           ))}
         </div>
-        
+
         <Skeleton className="h-96 w-full" />
       </div>
     );
@@ -105,10 +105,10 @@ export default function Analytics() {
       <Alert className="border-red-200 bg-red-50">
         <AlertDescription className="text-red-800">
           {error}
-          <Button 
-            onClick={loadAnalyticsData} 
-            variant="outline" 
-            size="sm" 
+          <Button
+            onClick={loadAnalyticsData}
+            variant="outline"
+            size="sm"
             className="ml-4"
           >
             Try Again
@@ -175,13 +175,13 @@ export default function Analytics() {
               Current Week ({formatDate(currentWeek.weekStartDate)} - {formatDate(currentWeek.weekEndDate)})
             </h3>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Total Revenue */}
             <Card className="bg-gray-900 border-gray-700">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-gray-300">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-400" />
+                <Euro className="h-4 w-4 text-green-400" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-400">

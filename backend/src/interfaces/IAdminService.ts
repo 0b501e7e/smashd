@@ -21,7 +21,7 @@ export interface IAdminService {
   // =====================
   // ADMIN MENU MANAGEMENT
   // =====================
-  
+
   /**
    * Get all menu items for admin (including unavailable ones)
    * @returns List of all menu items
@@ -68,7 +68,7 @@ export interface IAdminService {
   // =====================
   // ADMIN ORDER MANAGEMENT
   // =====================
-  
+
   /**
    * Get orders for admin dashboard
    * @returns List of orders with details
@@ -92,7 +92,7 @@ export interface IAdminService {
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================
-  
+
   /**
    * Get all customization categories with options
    * @returns List of categories with their options
@@ -105,6 +105,43 @@ export interface IAdminService {
    * @returns Created category
    */
   createCustomizationCategory(categoryData: CreateCustomizationCategoryData): Promise<CustomizationCategoryWithOptions>;
+
+  /**
+   * Update customization category
+   * @param categoryId - ID of category to update
+   * @param data - New data for the category
+   * @returns Updated category
+   */
+  updateCustomizationCategory(categoryId: number, data: { name: string }): Promise<CustomizationCategoryWithOptions>;
+
+  /**
+   * Delete customization category and all its options
+   * @param categoryId - ID of category to delete
+   * @returns Success message
+   */
+  deleteCustomizationCategory(categoryId: number): Promise<{ message: string }>;
+
+  /**
+   * Create new customization option within a category
+   * @param data - Option data including categoryId
+   * @returns Created option with category info
+   */
+  createCustomizationOption(data: { name: string, price: number, categoryId: number }): Promise<CustomizationOptionWithCategory>;
+
+  /**
+   * Update customization option
+   * @param optionId - ID of option to update
+   * @param data - New data for the option
+   * @returns Updated option
+   */
+  updateCustomizationOption(optionId: number, data: Partial<{ name: string, price: number }>): Promise<CustomizationOptionWithCategory>;
+
+  /**
+   * Delete customization option
+   * @param optionId - ID of option to delete
+   * @returns Success message
+   */
+  deleteCustomizationOption(optionId: number): Promise<{ message: string }>;
 
   /**
    * Get all customization options with category info
@@ -129,7 +166,7 @@ export interface IAdminService {
   // =====================
   // SUMUP INTEGRATION
   // =====================
-  
+
   /**
    * Sync menu items to SumUp product catalog
    * @returns Sync operation results

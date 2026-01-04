@@ -224,7 +224,7 @@ export default function OrderManagement() {
                 <div className="mb-4 md:mb-0">
                   <h3 className="text-lg font-medium text-white">Order ID: {order.id} (User: {order.user?.name || order.user?.email || order.userId || 'Guest'})</h3>
                   <p className="text-sm text-gray-300">Received: {new Date(order.createdAt).toLocaleString()}</p>
-                  <p className="text-sm text-gray-300">Total: ${order.total.toFixed(2)}</p>
+                  <p className="text-sm text-gray-300">Total: €{order.total.toFixed(2)}</p>
                   <p className="text-sm text-gray-300">Status: <span className={`font-semibold ${order.status === 'PAYMENT_CONFIRMED' ? 'text-yellow-400' : order.status === 'CONFIRMED' ? 'text-green-400' : order.status === 'READY' ? 'text-blue-400' : 'text-red-400'}`}>{order.status}</span></p>
                   {order.fulfillmentMethod && (
                     <p className="text-sm text-gray-300">
