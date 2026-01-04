@@ -109,7 +109,7 @@ export default function BetaSignup() {
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full bg-black/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
-                                placeholder="Senan G"
+                                placeholder="John Doe"
                             />
                         </div>
 

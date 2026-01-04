@@ -168,6 +168,22 @@ export class OrderService implements IOrderService {
 
   async getOrderStatus(orderId: number): Promise<OrderStatusResponse> {
     try {
+      // LAZY VERIFICATION: If order is pending, check upstream status before returning details.
+      // This fixes the mobile app issue where verifyPayment is never triggered.
+      const checkOrder = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { status: true, sumupCheckoutId: true }
+      });
+
+      if (checkOrder?.status === 'AWAITING_PAYMENT' && checkOrder.sumupCheckoutId) {
+        console.log(`OrderService: Lazy verification triggered for order ${orderId}`);
+        try {
+          await this.verifyPayment({ orderId });
+        } catch (e) {
+          console.warn(`OrderService: Lazy verification failed for order ${orderId}`, e);
+        }
+      }
+
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
         select: {
