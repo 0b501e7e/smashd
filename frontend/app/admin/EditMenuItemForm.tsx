@@ -75,6 +75,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       }
       setImagePreview(null); // Clear preview when closing
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, isOpen]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,9 +134,9 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     const { name, value } = e.target;
     let processedValue: string | number | boolean = value;
     if (name === 'price') {
-        processedValue = parseFloat(value) || 0;
+      processedValue = parseFloat(value) || 0;
     } else if (name === 'isAvailable') {
-        processedValue = value === 'true';
+      processedValue = value === 'true';
     }
 
     setEditedItem(prev => prev ? {
@@ -166,13 +167,13 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
         return; // Stop if image upload failed
       }
     }
-    
+
     // If after attempting upload (if a file was selected) or if no file was ever selected,
     // and there's STILL no finalImageUrl, then it's an error (e.g. initial item had no image and none was provided)
     if (!finalImageUrl) {
-        setError("Menu item image is required. Please upload an image or ensure one was previously set.");
-        setIsLoading(false);
-        return;
+      setError("Menu item image is required. Please upload an image or ensure one was previously set.");
+      setIsLoading(false);
+      return;
     }
 
     const token = localStorage.getItem('token');
@@ -181,11 +182,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setIsLoading(false);
       return;
     }
-    
+
     const itemDataToUpdate = {
-        ...editedItem,
-        imageUrl: finalImageUrl,
-        isAvailable: editedItem.isAvailable === undefined ? true : editedItem.isAvailable // Default to true if not set
+      ...editedItem,
+      imageUrl: finalImageUrl,
+      isAvailable: editedItem.isAvailable === undefined ? true : editedItem.isAvailable // Default to true if not set
     };
 
     try {
@@ -212,9 +213,9 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
   };
 
   const handleClose = () => {
-     if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
-     }
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
     setError(null);
     setSelectedFile(null);
     setImagePreview(null);
@@ -254,10 +255,10 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
             </div>
             <div>
               <Label htmlFor={`category-edit-${item.id}`} className="text-gray-300">Category</Label>
-              <select 
-                name="category" 
+              <select
+                name="category"
                 id={`category-edit-${item.id}`}
-                value={editedItem.category} 
+                value={editedItem.category}
                 onChange={handleChange}
                 className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
               >
@@ -291,18 +292,18 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
                 required
               />
             </div>
-             <div>
-                <Label htmlFor={`isAvailable-edit-${item.id}`} className="text-gray-300">Available</Label>
-                <select
-                    name="isAvailable"
-                    id={`isAvailable-edit-${item.id}`}
-                    value={editedItem.isAvailable === undefined ? 'true' : String(editedItem.isAvailable)}
-                    onChange={handleChange}
-                    className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                </select>
+            <div>
+              <Label htmlFor={`isAvailable-edit-${item.id}`} className="text-gray-300">Available</Label>
+              <select
+                name="isAvailable"
+                id={`isAvailable-edit-${item.id}`}
+                value={editedItem.isAvailable === undefined ? 'true' : String(editedItem.isAvailable)}
+                onChange={handleChange}
+                className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
             </div>
             <div>
               <Label htmlFor={`imageUrl-edit-${item.id}`} className="text-gray-300">Menu Item Image</Label>
@@ -317,7 +318,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               {/* Show new image preview if a file is selected, otherwise show existing image */}
               {imagePreview && (
                 <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
-                   {/* Use unoptimized for blob URLs to avoid Next.js image optimization errors */}
+                  {/* Use unoptimized for blob URLs to avoid Next.js image optimization errors */}
                   <Image src={imagePreview} alt={selectedFile ? "New image preview" : "Current image"} layout="fill" objectFit="contain" unoptimized={imagePreview.startsWith('blob:') || !imagePreview.startsWith('/')} />
                 </div>
               )}

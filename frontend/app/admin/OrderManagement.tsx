@@ -40,7 +40,7 @@ interface Order {
   deliveryAddress?: string | null;
   orderCode?: string | null;
   // Frontend-specific state for managing prep time selection
-  selectedPrepTime?: number | null; 
+  selectedPrepTime?: number | null;
 }
 
 export default function OrderManagement() {
@@ -63,7 +63,7 @@ export default function OrderManagement() {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = React.useCallback(async () => {
     setIsLoading(true);
     // setError(null); // Keep previous error for a moment if it's a refresh
     try {
@@ -97,8 +97,8 @@ export default function OrderManagement() {
       if (newOrdersDetected && orders.length > 0) { // Play sound only if there were existing orders and new ones arrived
         playNotificationSound();
       }
-      
-      setOrders(fetchedOrders.map(o => ({...o, selectedPrepTime: o.selectedPrepTime || null })));
+
+      setOrders(fetchedOrders.map(o => ({ ...o, selectedPrepTime: o.selectedPrepTime || null })));
       setError(null); // Clear error on successful fetch
     } catch (err: any) {
       setError(err.message || 'Failed to fetch orders');
@@ -106,14 +106,14 @@ export default function OrderManagement() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [orders.length]); // orders.length used in the newOrdersDetected check logic
 
   useEffect(() => {
     fetchOrders();
     // Optional: Set up polling for new orders
     const intervalId = setInterval(fetchOrders, 30000); // Poll every 30 seconds
     return () => clearInterval(intervalId);
-  }, []);
+  }, [fetchOrders]);
 
   const handleAcceptOrder = async (orderId: number, prepTimeMinutes: number | null) => {
     if (prepTimeMinutes === null) {
@@ -204,7 +204,7 @@ export default function OrderManagement() {
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-semibold text-yellow-400">Order Management</h2>
-        <button 
+        <button
           onClick={fetchOrders} // Manual refresh button
           className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded transition duration-150 text-sm"
           disabled={isLoading}
@@ -238,7 +238,7 @@ export default function OrderManagement() {
                     </p>
                   )}
                   {order.items.map(item => (
-                      <p key={item.id} className="text-xs text-gray-400 pl-2">- {item.quantity}x {item.menuItem.name}</p>
+                    <p key={item.id} className="text-xs text-gray-400 pl-2">- {item.quantity}x {item.menuItem.name}</p>
                   ))}
                   {(order.status === 'CONFIRMED' || order.status === 'Accepted') && order.estimatedReadyTime && (
                     <p className="text-sm text-gray-300">Est. Ready: {new Date(order.estimatedReadyTime).toLocaleTimeString()}</p>
@@ -280,10 +280,10 @@ export default function OrderManagement() {
                       </>
                     )}
                     {order.status === 'CONFIRMED' && (
-                        <p className='text-green-400 font-semibold'>Order Confirmed</p>
+                      <p className='text-green-400 font-semibold'>Order Confirmed</p>
                     )}
-                     {order.status === 'CANCELLED' && (
-                        <p className='text-red-400 font-semibold'>Order Cancelled</p>
+                    {order.status === 'CANCELLED' && (
+                      <p className='text-red-400 font-semibold'>Order Cancelled</p>
                     )}
                   </div>
                 </div>

@@ -53,9 +53,9 @@ export default function BetaSignup() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h1 className="text-4xl font-bold tracking-tight">You're on the list!</h1>
+                    <h1 className="text-4xl font-bold tracking-tight">You&apos;re on the list!</h1>
                     <p className="text-gray-400 text-lg">
-                        Thanks for help us test Smashd. We've received your details.
+                        Thanks for help us test Smashd. We&apos;ve received your details.
                     </p>
                     <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-8">
                         <h3 className="font-semibold text-white mb-2">Next Steps:</h3>
@@ -134,8 +134,8 @@ export default function BetaSignup() {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, platform: 'android' })}
                                     className={`px-4 py-3 rounded-lg border flex items-center justify-center font-medium transition-all ${formData.platform === 'android'
-                                            ? 'bg-yellow-500 border-yellow-500 text-black'
-                                            : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
+                                        ? 'bg-yellow-500 border-yellow-500 text-black'
+                                        : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
                                         }`}
                                 >
                                     Android
@@ -144,8 +144,8 @@ export default function BetaSignup() {
                                     type="button"
                                     onClick={() => setFormData({ ...formData, platform: 'ios' })}
                                     className={`px-4 py-3 rounded-lg border flex items-center justify-center font-medium transition-all ${formData.platform === 'ios'
-                                            ? 'bg-white border-white text-black'
-                                            : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
+                                        ? 'bg-white border-white text-black'
+                                        : 'bg-black/50 border-zinc-700 text-gray-400 hover:border-zinc-500'
                                         }`}
                                 >
                                     iOS
