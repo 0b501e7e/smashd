@@ -47,14 +47,14 @@ export const createImageFileFilter = (allowedMimeTypes: string[]) => {
     // Check file extension
     const fileExtension = path.extname(file.originalname).toLowerCase();
     const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
-    
+
     // Check MIME type
     if (!allowedMimeTypes.includes(file.mimetype) || !allowedExtensions.includes(fileExtension)) {
       const error = new Error('Only image files (jpg, jpeg, png, gif) are allowed!') as any;
       error.code = 'INVALID_FILE_TYPE';
       return cb(error, false);
     }
-    
+
     cb(null, true);
   };
 };
@@ -62,10 +62,47 @@ export const createImageFileFilter = (allowedMimeTypes: string[]) => {
 /**
  * Creates a configured Multer instance
  */
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+
+/**
+ * Creates a configured Multer instance
+ */
 export const createUploader = (config: UploadConfig): multer.Multer => {
-  const storage = createDiskStorage(config.destination);
+  let storage;
+
+  // Check if Cloudinary credentials are available
+  if (
+    process.env['CLOUDINARY_CLOUD_NAME'] &&
+    process.env['CLOUDINARY_API_KEY'] &&
+    process.env['CLOUDINARY_API_SECRET']
+  ) {
+    console.log('☁️ Configuring Cloudinary storage for uploads');
+
+    // Configure Cloudinary
+    cloudinary.config({
+      cloud_name: process.env['CLOUDINARY_CLOUD_NAME'],
+      api_key: process.env['CLOUDINARY_API_KEY'],
+      api_secret: process.env['CLOUDINARY_API_SECRET']
+    });
+
+    // Create Cloudinary storage
+    storage = new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: {
+        folder: 'smashd-menu-items',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        // transformation: [{ width: 800, height: 800, crop: 'limit' }], // Optional optimizations
+      } as any
+    });
+  } else {
+    // Fallback to disk storage if no credentials
+    console.log('💾 Using local disk storage for uploads (no Cloudinary credentials found)');
+    storage = createDiskStorage(config.destination);
+  }
+
   const fileFilter = createImageFileFilter(config.allowedMimeTypes);
-  
+
   return multer({
     storage,
     fileFilter,
@@ -84,51 +121,51 @@ export const uploadMenuItemImage = createUploader(MENU_IMAGE_CONFIG);
  * Middleware to handle file upload errors
  */
 export const handleUploadErrors = (
-  error: any, 
-  _req: Request, 
-  res: Response, 
+  error: any,
+  _req: Request,
+  res: Response,
   next: NextFunction
 ): void => {
   if (error instanceof multer.MulterError) {
     switch (error.code) {
       case 'LIMIT_FILE_SIZE':
-        sendValidationError(res, [{ 
-          field: 'file', 
-          message: `File size too large. Maximum size is ${MENU_IMAGE_CONFIG.maxFileSize / (1024 * 1024)}MB` 
+        sendValidationError(res, [{
+          field: 'file',
+          message: `File size too large. Maximum size is ${MENU_IMAGE_CONFIG.maxFileSize / (1024 * 1024)}MB`
         }], 'File upload failed');
         return;
-      
+
       case 'LIMIT_FILE_COUNT':
-        sendValidationError(res, [{ 
-          field: 'file', 
-          message: 'Too many files uploaded' 
+        sendValidationError(res, [{
+          field: 'file',
+          message: 'Too many files uploaded'
         }], 'File upload failed');
         return;
-      
+
       case 'LIMIT_UNEXPECTED_FILE':
-        sendValidationError(res, [{ 
-          field: 'file', 
-          message: 'Unexpected file field' 
+        sendValidationError(res, [{
+          field: 'file',
+          message: 'Unexpected file field'
         }], 'File upload failed');
         return;
-      
+
       default:
-        sendValidationError(res, [{ 
-          field: 'file', 
-          message: 'File upload error' 
+        sendValidationError(res, [{
+          field: 'file',
+          message: 'File upload error'
         }], 'File upload failed');
         return;
     }
   }
-  
+
   if (error && error.code === 'INVALID_FILE_TYPE') {
-    sendValidationError(res, [{ 
-      field: 'file', 
-      message: error.message 
+    sendValidationError(res, [{
+      field: 'file',
+      message: error.message
     }], 'File validation failed');
     return;
   }
-  
+
   // Pass other errors to the global error handler
   next(error);
 };
@@ -139,21 +176,21 @@ export const handleUploadErrors = (
 export const requireFile = (fieldName: string = 'image') => {
   return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.file && fieldName === 'image') {
-      sendValidationError(res, [{ 
-        field: fieldName, 
-        message: 'File is required' 
+      sendValidationError(res, [{
+        field: fieldName,
+        message: 'File is required'
       }], 'File validation failed');
       return;
     }
-    
+
     if (!req.files || !(req.files as { [fieldname: string]: Express.Multer.File[] })[fieldName]) {
-      sendValidationError(res, [{ 
-        field: fieldName, 
-        message: 'File is required' 
+      sendValidationError(res, [{
+        field: fieldName,
+        message: 'File is required'
       }], 'File validation failed');
       return;
     }
-    
+
     next();
   };
 };
@@ -173,13 +210,13 @@ export const getFileUrl = (file: Express.Multer.File, baseUrl?: string): string 
   if (!file) {
     throw new Error('No file provided');
   }
-  
+
   // Convert backslashes to forward slashes for URLs
   const filePath = file.path.replace(/\\/g, '/');
-  
+
   // Remove 'public/' prefix if present (since static files are served from public)
   const publicPath = filePath.startsWith('public/') ? filePath.substring(7) : filePath;
-  
+
   // Return full URL if baseUrl provided, otherwise return path
   return baseUrl ? `${baseUrl}/${publicPath}` : `/${publicPath}`;
 };

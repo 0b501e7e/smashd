@@ -160,6 +160,12 @@ export class AdminService implements IAdminService {
 
       // Convert path to URL format (e.g., 'public/images/menu-items/image.jpg' -> '/images/menu-items/image.jpg')
       const normalizedPath = file.path.replace(/\\/g, '/');
+
+      // Check if it's already a full URL (from Cloudinary)
+      if (normalizedPath.startsWith('http')) {
+        return { imageUrl: normalizedPath };
+      }
+
       const imageUrl = normalizedPath.startsWith('public/')
         ? normalizedPath.substring(6) // Remove 'public' but keep the leading slash: '/images/menu-items/...'
         : (normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath);
