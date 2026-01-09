@@ -90,28 +90,31 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   };
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found for image upload.");
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      setError("Cloudinary configuration missing. Please checking environment variables.");
       return null;
     }
-    const imageData = new FormData();
-    imageData.append('menuItemImage', file);
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu-items/upload-image`, {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // 'Content-Type': 'multipart/form-data' is set automatically by browser for FormData
-        },
-        body: imageData,
+        body: formData,
       });
+
       const result = await response.json();
+
       if (!response.ok) {
-        throw new Error(result.error || result.message || `Failed to upload image: ${response.statusText}`);
+        throw new Error(result.error?.message || `Failed to upload image: ${response.statusText}`);
       }
-      return result.data.imageUrl; // Assuming the backend returns { data: { imageUrl: "/path/to/image.jpg" } }
+
+      return result.secure_url;
     } catch (uploadError) {
       console.error("Image Upload Error:", uploadError);
       setError(uploadError instanceof Error ? uploadError.message : 'An unknown error occurred during image upload');

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { validationResult } from 'express-validator';
 import { HTTP_STATUS } from '../config/constants';
 import { AuthenticatedRequest } from '../types/common.types';
@@ -179,26 +179,7 @@ export class AdminController {
     }
   }
 
-  /**
-   * Upload menu item image
-   * POST /v1/admin/menu-items/upload-image
-   */
-  async uploadMenuItemImage(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-      if (!req.file) {
-        sendError(res, 'No file uploaded', HTTP_STATUS.BAD_REQUEST);
-        return;
-      }
 
-      const result = await this.adminService.uploadMenuItemImage(req.file);
-
-      console.log(`AdminController: Image uploaded successfully: ${result.imageUrl}`);
-      sendSuccess(res, result);
-    } catch (error) {
-      console.error('AdminController: Error uploading image:', error);
-      next(error);
-    }
-  }
 
   // =====================
   // ORDER MANAGEMENT

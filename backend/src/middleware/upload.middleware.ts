@@ -62,45 +62,10 @@ export const createImageFileFilter = (allowedMimeTypes: string[]) => {
 /**
  * Creates a configured Multer instance
  */
-import { v2 as cloudinary } from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
-
-/**
- * Creates a configured Multer instance
- */
+// Basic multer instance for local file handling (fallback/legacy)
 export const createUploader = (config: UploadConfig): multer.Multer => {
-  let storage;
-
-  // Check if Cloudinary credentials are available
-  if (
-    process.env['CLOUDINARY_CLOUD_NAME'] &&
-    process.env['CLOUDINARY_API_KEY'] &&
-    process.env['CLOUDINARY_API_SECRET']
-  ) {
-    console.log('☁️ Configuring Cloudinary storage for uploads');
-
-    // Configure Cloudinary
-    cloudinary.config({
-      cloud_name: process.env['CLOUDINARY_CLOUD_NAME'],
-      api_key: process.env['CLOUDINARY_API_KEY'],
-      api_secret: process.env['CLOUDINARY_API_SECRET']
-    });
-
-    // Create Cloudinary storage
-    storage = new CloudinaryStorage({
-      cloudinary: cloudinary,
-      params: {
-        folder: 'smashd-menu-items',
-        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-        // transformation: [{ width: 800, height: 800, crop: 'limit' }], // Optional optimizations
-      } as any
-    });
-  } else {
-    // Fallback to disk storage if no credentials
-    console.log('💾 Using local disk storage for uploads (no Cloudinary credentials found)');
-    storage = createDiskStorage(config.destination);
-  }
-
+  console.log('💾 Using local disk storage for uploads');
+  const storage = createDiskStorage(config.destination);
   const fileFilter = createImageFileFilter(config.allowedMimeTypes);
 
   return multer({

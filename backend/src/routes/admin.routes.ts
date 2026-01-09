@@ -8,8 +8,7 @@ import {
   validateUpdateMenuItem,
   validateOrderId,
   validateCreateCustomizationCategory,
-  validateMenuItemId,
-  uploadMenuItemImage
+  validateMenuItemId
 } from '../middleware';
 
 const router = Router();
@@ -26,7 +25,6 @@ router.post('/menu', validateCreateMenuItem, adminController.createMenuItem.bind
 router.put('/menu/:id', validateUpdateMenuItem, adminController.updateMenuItem.bind(adminController));
 router.patch('/menu/:id/availability', adminController.updateMenuItemAvailability.bind(adminController));
 router.delete('/menu/:id', adminController.deleteMenuItem.bind(adminController));
-router.post('/menu-items/upload-image', uploadMenuItemImage.single('menuItemImage'), adminController.uploadMenuItemImage.bind(adminController));
 
 // Order management
 router.get('/orders', adminController.getAdminOrders.bind(adminController));
