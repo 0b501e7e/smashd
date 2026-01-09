@@ -34,12 +34,12 @@ export default function StockManagement() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json' // Optional, but good practice
           }
-        }); 
+        });
+        const result = await response.json();
         if (!response.ok) {
-          throw new Error(`Failed to fetch menu items: ${response.statusText}`);
+          throw new Error(result.error || result.message || `Failed to fetch menu items: ${response.statusText}`);
         }
-        const data = await response.json();
-        setMenuItems(data.items || data); // Adjust based on your API response structure
+        setMenuItems(result.data || []);
       } catch (err: any) {
         setError(err.message || 'An unknown error occurred');
         console.error("Error fetching menu items:", err);
@@ -82,8 +82,9 @@ export default function StockManagement() {
         body: JSON.stringify({ isAvailable: !currentIsAvailable }), // Ensure this matches backend expectation
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        throw new Error(`Failed to update stock status: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to update stock status: ${response.statusText}`);
       }
       // Optionally, re-fetch or update from response if needed
       // const updatedItem = await response.json();

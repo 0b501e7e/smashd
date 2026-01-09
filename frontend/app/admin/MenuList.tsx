@@ -107,12 +107,11 @@ const MenuList = () => {
         },
       });
 
+      const result = await response.json();
       if (!response.ok) {
-        throw new Error(`Failed to fetch menu items: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to fetch menu items: ${response.statusText}`);
       }
-
-      const data: MenuItem[] = await response.json();
-      setMenuItems(data);
+      setMenuItems(result.data || []);
     } catch (err) {
       console.error('Fetch Menu Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -171,9 +170,9 @@ const MenuList = () => {
           'Authorization': `Bearer ${token}`,
         },
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` })); // Graceful JSON parse error handling
-        throw new Error(errorData.error || `Failed to delete menu item: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to delete menu item: ${response.statusText}`);
       }
       setIsDeleteDialogOpen(false);
       setItemToDelete(null);

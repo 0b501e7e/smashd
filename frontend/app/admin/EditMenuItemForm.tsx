@@ -118,12 +118,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
         },
         body: imageData,
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status} during image upload` }));
-        throw new Error(errorData.error || `Failed to upload image: ${response.statusText}`);
-      }
       const result = await response.json();
-      return result.imageUrl;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || `Failed to upload image: ${response.statusText}`);
+      }
+      return result.data.imageUrl;
     } catch (uploadError) {
       console.error("Image Upload Error:", uploadError);
       setError(uploadError instanceof Error ? uploadError.message : 'An unknown error occurred during image upload');
@@ -202,9 +201,9 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
         },
         body: JSON.stringify(itemDataToUpdate),
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
-        throw new Error(errorData.error || `Failed to update menu item: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to update menu item: ${response.statusText}`);
       }
       setIsLoading(false);
       onItemUpdated();

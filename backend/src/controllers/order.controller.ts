@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import { HTTP_STATUS } from '../config/constants';
 import { AuthenticatedRequest } from '../types/common.types';
 import { IOrderService } from '../interfaces/IOrderService';
+import { sendSuccess, sendError, sendValidationError } from '../utils/response.utils';
 import {
   CreateOrderData,
   UpdateOrderEstimateData,
@@ -23,10 +24,7 @@ export class OrderController {
   async createOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        errors: errors.array()
-      });
+      sendValidationError(res, errors.array() as any);
       return;
     }
 
@@ -48,17 +46,10 @@ export class OrderController {
 
       console.log(`OrderController: Received order from service:`, result.order.id);
 
-      const response = {
-        success: true,
-        data: {
-          order: result.order,
-          message: result.message
-        }
-      };
-
-      console.log(`OrderController: Sending response with order ID:`, response.data.order.id);
-
-      res.status(HTTP_STATUS.CREATED).json(response);
+      sendSuccess(res, {
+        order: result.order,
+        message: result.message
+      }, 'Order created successfully', HTTP_STATUS.CREATED);
 
     } catch (error) {
       next(error);
@@ -73,36 +64,24 @@ export class OrderController {
     const { id } = req.params;
 
     if (!id) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        error: 'Order ID is required'
-      });
+      sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     try {
       const orderId = parseInt(id);
       if (isNaN(orderId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const orderStatus = await this.orderService.getOrderStatus(orderId);
 
-      res.json({
-        success: true,
-        data: orderStatus
-      });
+      sendSuccess(res, orderStatus);
 
     } catch (error) {
-      if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Pedido no encontrado')) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          success: false,
-          error: 'Order not found'
-        });
+      if (error instanceof Error && error.message === 'Order not found') {
+        sendError(res, 'Order not found', HTTP_STATUS.NOT_FOUND);
         return;
       }
       next(error);
@@ -118,28 +97,19 @@ export class OrderController {
     const { estimatedMinutes } = req.body;
 
     if (!id) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        error: 'Order ID is required'
-      });
+      sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     if (!estimatedMinutes || typeof estimatedMinutes !== 'number') {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        error: 'Valid estimated time is required (estimatedMinutes)'
-      });
+      sendError(res, 'Valid estimated time is required (estimatedMinutes)', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     try {
       const orderId = parseInt(id);
       if (isNaN(orderId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -149,17 +119,11 @@ export class OrderController {
 
       const result = await this.orderService.updateOrderEstimate(orderId, estimateData);
 
-      res.json({
-        success: true,
-        data: result
-      });
+      sendSuccess(res, result);
 
     } catch (error) {
-      if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Pedido no encontrado')) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          success: false,
-          error: 'Order not found'
-        });
+      if (error instanceof Error && error.message === 'Order not found') {
+        sendError(res, 'Order not found', HTTP_STATUS.NOT_FOUND);
         return;
       }
       next(error);
@@ -174,20 +138,14 @@ export class OrderController {
     const { orderId } = req.params;
 
     if (!orderId) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        success: false,
-        error: 'Order ID is required'
-      });
+      sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     try {
       const orderIdInt = parseInt(orderId);
       if (isNaN(orderIdInt)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          success: false,
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -195,10 +153,7 @@ export class OrderController {
 
       const result = await this.orderService.verifyPayment(verificationRequest);
 
-      res.json({
-        success: true,
-        data: result
-      });
+      sendSuccess(res, result);
 
     } catch (error) {
       next(error);

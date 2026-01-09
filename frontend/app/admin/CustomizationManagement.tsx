@@ -72,9 +72,9 @@ const CustomizationManagement = () => {
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-categories`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            if (!response.ok) throw new Error('Failed to fetch customization categories');
-            const data = await response.json();
-            setCategories(data);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch customization categories');
+            setCategories(result.data || []);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
@@ -108,7 +108,8 @@ const CustomizationManagement = () => {
                 body: JSON.stringify(body),
             });
 
-            if (!response.ok) throw new Error('Failed to save category');
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || result.message || 'Failed to save category');
 
             await fetchCategories();
             setIsCategoryModalOpen(false);
@@ -150,7 +151,8 @@ const CustomizationManagement = () => {
                 }),
             });
 
-            if (!response.ok) throw new Error('Failed to save option');
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || result.message || 'Failed to save option');
 
             await fetchCategories();
             setIsOptionModalOpen(false);
@@ -179,7 +181,8 @@ const CustomizationManagement = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (!response.ok) throw new Error('Deletion failed');
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || result.message || 'Deletion failed');
 
             await fetchCategories();
             setIsDeleteDialogOpen(false);

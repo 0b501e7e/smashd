@@ -80,11 +80,11 @@ export default function OrderManagement() {
           'Authorization': `Bearer ${token}`,
         },
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.error || errorData.message || `HTTP error ${response.status}`);
+        throw new Error(result.error || result.message || `HTTP error ${response.status}`);
       }
-      const fetchedOrders: Order[] = await response.json();
+      const fetchedOrders: Order[] = result.data || [];
 
       let newOrdersDetected = false;
       fetchedOrders.forEach(order => {
@@ -136,11 +136,11 @@ export default function OrderManagement() {
         },
         body: JSON.stringify({ estimatedMinutes: prepTimeMinutes }),
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.error || errorData.message || `Failed to accept order: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to accept order: ${response.statusText}`);
       }
-      const updatedOrder = await response.json();
+      const updatedOrder = result.data;
       setOrders(prevOrders =>
         prevOrders.map(order => (order.id === orderId ? { ...order, ...updatedOrder, selectedPrepTime: prepTimeMinutes } : order))
       );
@@ -170,11 +170,11 @@ export default function OrderManagement() {
           'Authorization': `Bearer ${token}`,
         },
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: response.statusText }));
-        throw new Error(errorData.error || errorData.message || `Failed to decline order: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to decline order: ${response.statusText}`);
       }
-      const updatedOrder = await response.json();
+      const updatedOrder = result.data;
       setOrders(prevOrders =>
         prevOrders.map(order => (order.id === orderId ? { ...order, ...updatedOrder } : order))
       );

@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { HTTP_STATUS } from '../config/constants';
 import { AuthenticatedRequest } from '../types/common.types';
 import { IUserService } from '../interfaces/IUserService';
+import { sendSuccess, sendError } from '../utils/response.utils';
 import {
   UserProfileQuery,
   UserOrdersQuery,
@@ -22,9 +23,7 @@ export class UserController {
   async getUserProfile(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       if (!req.user?.userId) {
-        res.status(HTTP_STATUS.UNAUTHORIZED).json({
-          error: 'User not authenticated'
-        });
+        sendError(res, 'User not authenticated', HTTP_STATUS.UNAUTHORIZED);
         return;
       }
 
@@ -34,22 +33,16 @@ export class UserController {
       };
 
       const profileData = await this.userService.getUserProfile(query);
-
-      res.json(profileData);
-
+      sendSuccess(res, profileData);
     } catch (error) {
       console.error('Error fetching user profile:', error);
 
       if (error instanceof Error && error.message === 'User not found') {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          error: error.message
-        });
+        sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
         return;
       }
 
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: 'Error fetching user profile'
-      });
+      sendError(res, 'Error fetching user profile', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -61,16 +54,12 @@ export class UserController {
     const { userId } = req.params;
 
     if (!userId) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        error: 'User ID is required'
-      });
+      sendError(res, 'User ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     if (!req.user?.userId) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        error: 'User not authenticated'
-      });
+      sendError(res, 'User not authenticated', HTTP_STATUS.UNAUTHORIZED);
       return;
     }
 
@@ -83,21 +72,16 @@ export class UserController {
       };
 
       const orders = await this.userService.getUserOrders(query);
-      res.json(orders);
-
+      sendSuccess(res, orders);
     } catch (error) {
       console.error('Error fetching user orders:', error);
 
       if (error instanceof Error && error.message.includes('Not authorized')) {
-        res.status(HTTP_STATUS.FORBIDDEN).json({
-          error: error.message
-        });
+        sendError(res, error.message, HTTP_STATUS.FORBIDDEN);
         return;
       }
 
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: 'Error fetching user orders'
-      });
+      sendError(res, 'Error fetching user orders', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -109,16 +93,12 @@ export class UserController {
     const { userId } = req.params;
 
     if (!userId) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        error: 'User ID is required'
-      });
+      sendError(res, 'User ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     if (!req.user?.userId) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        error: 'User not authenticated'
-      });
+      sendError(res, 'User not authenticated', HTTP_STATUS.UNAUTHORIZED);
       return;
     }
 
@@ -133,27 +113,20 @@ export class UserController {
       const lastOrder = await this.userService.getUserLastOrder(query);
 
       if (!lastOrder) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({
-          error: 'No previous orders found'
-        });
+        sendError(res, 'No previous orders found', HTTP_STATUS.NOT_FOUND);
         return;
       }
 
-      res.json(lastOrder);
-
+      sendSuccess(res, lastOrder);
     } catch (error) {
       console.error('Error fetching last order:', error);
 
       if (error instanceof Error && error.message.includes('Not authorized')) {
-        res.status(HTTP_STATUS.FORBIDDEN).json({
-          error: error.message
-        });
+        sendError(res, error.message, HTTP_STATUS.FORBIDDEN);
         return;
       }
 
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: 'Error fetching last order'
-      });
+      sendError(res, 'Error fetching last order', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -165,25 +138,19 @@ export class UserController {
     const { orderId } = req.params;
 
     if (!orderId) {
-      res.status(HTTP_STATUS.BAD_REQUEST).json({
-        error: 'Order ID is required'
-      });
+      sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
       return;
     }
 
     if (!req.user?.userId) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        error: 'User not authenticated'
-      });
+      sendError(res, 'User not authenticated', HTTP_STATUS.UNAUTHORIZED);
       return;
     }
 
     try {
       const orderIdInt = parseInt(orderId);
       if (isNaN(orderIdInt)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -194,30 +161,23 @@ export class UserController {
       };
 
       const result = await this.userService.repeatOrder(query);
-      res.json(result);
-
+      sendSuccess(res, result);
     } catch (error) {
       console.error('Error repeating order:', error);
 
       if (error instanceof Error) {
-        if (error.message === 'Order not found' || error.message === 'Order not found') {
-          res.status(HTTP_STATUS.NOT_FOUND).json({
-            error: error.message
-          });
+        if (error.message === 'Order not found') {
+          sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
           return;
         }
 
         if (error.message.includes('Not authorized')) {
-          res.status(HTTP_STATUS.FORBIDDEN).json({
-            error: error.message
-          });
+          sendError(res, error.message, HTTP_STATUS.FORBIDDEN);
           return;
         }
       }
 
-      res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: 'Error repeating order'
-      });
+      sendError(res, 'Error repeating order', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
-} 
+}

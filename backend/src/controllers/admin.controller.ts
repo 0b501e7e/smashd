@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import { HTTP_STATUS } from '../config/constants';
 import { AuthenticatedRequest } from '../types/common.types';
 import { IAdminService } from '../interfaces/IAdminService';
+import { sendSuccess, sendError, sendValidationError } from '../utils/response.utils';
 import {
   AdminMenuItemData,
   AdminMenuItemUpdateData,
@@ -32,7 +33,7 @@ export class AdminController {
       console.log('AdminController: Received request for all admin menu items');
 
       const menuItems = await this.adminService.getAllMenuItems();
-      res.json(menuItems);
+      sendSuccess(res, menuItems);
     } catch (error) {
       console.error('AdminController: Error fetching all admin menu items:', error);
       next(error);
@@ -47,9 +48,7 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
@@ -57,7 +56,7 @@ export class AdminController {
       const menuItem = await this.adminService.createMenuItem(menuItemData);
 
       console.log(`AdminController: Menu item created successfully: ${menuItemData.name} (ID: ${menuItem.id})`);
-      res.status(HTTP_STATUS.CREATED).json(menuItem);
+      sendSuccess(res, menuItem, 'Menu item created successfully', HTTP_STATUS.CREATED);
     } catch (error) {
       console.error('AdminController: Error creating menu item:', error);
       next(error);
@@ -72,27 +71,21 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
       const { id } = req.params;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Menu item ID is required'
-        });
+        sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const itemId = parseInt(id);
 
       if (isNaN(itemId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid menu item ID'
-        });
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -100,11 +93,11 @@ export class AdminController {
       const updatedMenuItem = await this.adminService.updateMenuItem(itemId, updateData);
 
       console.log(`AdminController: Menu item updated successfully: ${updateData.name} (ID: ${itemId})`);
-      res.json(updatedMenuItem);
+      sendSuccess(res, updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+      if (error instanceof Error && error.message === 'Menu item not found') {
+        sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
         return;
       }
       next(error);
@@ -119,9 +112,7 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
@@ -129,29 +120,25 @@ export class AdminController {
       const { isAvailable } = req.body;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Menu item ID is required'
-        });
+        sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const itemId = parseInt(id);
 
       if (isNaN(itemId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid menu item ID'
-        });
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const updatedMenuItem = await this.adminService.updateMenuItemAvailability(itemId, isAvailable);
 
       console.log(`AdminController: Menu item availability updated: ${updatedMenuItem.name} (ID: ${itemId}) -> ${isAvailable}`);
-      res.json(updatedMenuItem);
+      sendSuccess(res, updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item availability:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+      if (error instanceof Error && error.message === 'Menu item not found') {
+        sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
         return;
       }
       next(error);
@@ -167,29 +154,25 @@ export class AdminController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Menu item ID is required'
-        });
+        sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const itemId = parseInt(id);
 
       if (isNaN(itemId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid menu item ID'
-        });
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const result = await this.adminService.deleteMenuItem(itemId);
 
       console.log(`AdminController: Menu item deleted successfully: ${result.deletedMenuItem.name} (ID: ${itemId})`);
-      res.json(result);
+      sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error deleting menu item:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
-        res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+      if (error instanceof Error && error.message === 'Menu item not found') {
+        sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
         return;
       }
       next(error);
@@ -203,16 +186,14 @@ export class AdminController {
   async uploadMenuItemImage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'No file uploaded'
-        });
+        sendError(res, 'No file uploaded', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const result = await this.adminService.uploadMenuItemImage(req.file);
 
       console.log(`AdminController: Image uploaded successfully: ${result.imageUrl}`);
-      res.json(result);
+      sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error uploading image:', error);
       next(error);
@@ -232,7 +213,7 @@ export class AdminController {
       console.log('AdminController: Received request for admin orders');
 
       const orders = await this.adminService.getAdminOrders();
-      res.json(orders);
+      sendSuccess(res, orders);
     } catch (error) {
       console.error('AdminController: Error fetching admin orders:', error);
       next(error);
@@ -247,9 +228,7 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
@@ -257,18 +236,14 @@ export class AdminController {
       const { estimatedMinutes } = req.body;
 
       if (!orderId) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Order ID is required'
-        });
+        sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const orderIdNum = parseInt(orderId);
 
       if (isNaN(orderIdNum)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -280,16 +255,14 @@ export class AdminController {
       const updatedOrder = await this.adminService.acceptOrder(acceptData);
 
       console.log(`AdminController: Order ${orderIdNum} accepted with ${estimatedMinutes} minute estimate`);
-      res.json(updatedOrder);
+      sendSuccess(res, updatedOrder);
     } catch (error) {
       console.error('AdminController: Error accepting order:', error);
       if (error instanceof Error && (
         error.message.includes('not found') ||
-        error.message.includes('not found') ||
-        error.message.includes('cannot be accepted') ||
         error.message.includes('cannot be accepted')
       )) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
         return;
       }
       next(error);
@@ -306,18 +279,14 @@ export class AdminController {
       const { reason } = req.body;
 
       if (!orderId) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Order ID is required'
-        });
+        sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const orderIdNum = parseInt(orderId);
 
       if (isNaN(orderIdNum)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid order ID'
-        });
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -329,16 +298,14 @@ export class AdminController {
       const updatedOrder = await this.adminService.declineOrder(declineData);
 
       console.log(`AdminController: Order ${orderIdNum} declined and cancelled${reason ? ` (reason: ${reason})` : ''}`);
-      res.json(updatedOrder);
+      sendSuccess(res, updatedOrder);
     } catch (error) {
       console.error('AdminController: Error declining order:', error);
       if (error instanceof Error && (
         error.message.includes('not found') ||
-        error.message.includes('not found') ||
-        error.message.includes('cannot be declined') ||
         error.message.includes('cannot be declined')
       )) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
         return;
       }
       next(error);
@@ -358,7 +325,7 @@ export class AdminController {
       console.log('AdminController: Received request for customization categories');
 
       const categories = await this.adminService.getCustomizationCategories();
-      res.json(categories);
+      sendSuccess(res, categories);
     } catch (error) {
       console.error('AdminController: Error fetching customization categories:', error);
       next(error);
@@ -373,9 +340,7 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
@@ -383,7 +348,7 @@ export class AdminController {
       const category = await this.adminService.createCustomizationCategory(categoryData);
 
       console.log(`AdminController: Customization category created: ${categoryData.name} with ${categoryData.options.length} options`);
-      res.status(HTTP_STATUS.CREATED).json(category);
+      sendSuccess(res, category, 'Customization category created successfully', HTTP_STATUS.CREATED);
     } catch (error) {
       console.error('AdminController: Error creating customization category:', error);
       next(error);
@@ -400,12 +365,12 @@ export class AdminController {
       const categoryData = req.body;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Category ID is required' });
+        sendError(res, 'Category ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const updatedCategory = await this.adminService.updateCustomizationCategory(parseInt(id), categoryData);
-      res.json(updatedCategory);
+      sendSuccess(res, updatedCategory);
     } catch (error) {
       console.error('AdminController: Error updating customization category:', error);
       next(error);
@@ -421,12 +386,12 @@ export class AdminController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Category ID is required' });
+        sendError(res, 'Category ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const result = await this.adminService.deleteCustomizationCategory(parseInt(id));
-      res.json(result);
+      sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error deleting customization category:', error);
       next(error);
@@ -441,7 +406,7 @@ export class AdminController {
     try {
       const optionData = req.body;
       const option = await this.adminService.createCustomizationOption(optionData);
-      res.status(HTTP_STATUS.CREATED).json(option);
+      sendSuccess(res, option, 'Customization option created successfully', HTTP_STATUS.CREATED);
     } catch (error) {
       console.error('AdminController: Error creating customization option:', error);
       next(error);
@@ -458,12 +423,12 @@ export class AdminController {
       const optionData = req.body;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Option ID is required' });
+        sendError(res, 'Option ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const updatedOption = await this.adminService.updateCustomizationOption(parseInt(id), optionData);
-      res.json(updatedOption);
+      sendSuccess(res, updatedOption);
     } catch (error) {
       console.error('AdminController: Error updating customization option:', error);
       next(error);
@@ -479,12 +444,12 @@ export class AdminController {
       const { id } = req.params;
 
       if (!id) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Option ID is required' });
+        sendError(res, 'Option ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const result = await this.adminService.deleteCustomizationOption(parseInt(id));
-      res.json(result);
+      sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error deleting customization option:', error);
       next(error);
@@ -500,7 +465,7 @@ export class AdminController {
       console.log('AdminController: Received request for customization options');
 
       const options = await this.adminService.getCustomizationOptions();
-      res.json(options);
+      sendSuccess(res, options);
     } catch (error) {
       console.error('AdminController: Error fetching customization options:', error);
       next(error);
@@ -516,25 +481,21 @@ export class AdminController {
       const { menuItemId } = req.params;
 
       if (!menuItemId) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Menu item ID is required'
-        });
+        sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const itemId = parseInt(menuItemId);
 
       if (isNaN(itemId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid menu item ID'
-        });
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const optionIds = await this.adminService.getLinkedCustomizationOptions(itemId);
 
       console.log(`AdminController: Retrieved ${optionIds.length} linked customization options for menu item ${itemId}`);
-      res.json({ optionIds });
+      sendSuccess(res, { optionIds });
     } catch (error) {
       console.error('AdminController: Error fetching linked customization options:', error);
       next(error);
@@ -549,9 +510,7 @@ export class AdminController {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          errors: errors.array()
-        });
+        sendValidationError(res, errors.array() as any);
         return;
       }
 
@@ -559,25 +518,19 @@ export class AdminController {
       const { optionIds } = req.body;
 
       if (!menuItemId) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Menu item ID is required'
-        });
+        sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const itemId = parseInt(menuItemId);
 
       if (isNaN(itemId)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'Invalid menu item ID'
-        });
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       if (!Array.isArray(optionIds)) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({
-          error: 'optionIds must be an array'
-        });
+        sendError(res, 'optionIds must be an array', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
@@ -589,11 +542,11 @@ export class AdminController {
       const result = await this.adminService.setLinkedCustomizationOptions(linkData);
 
       console.log(`AdminController: Updated customization options for menu item ${itemId}: ${optionIds.length} options linked`);
-      res.json(result);
+      sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error setting linked customization options:', error);
-      if (error instanceof Error && (error.message.includes('invalid') || error.message.includes('invalid'))) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
+      if (error instanceof Error && error.message.includes('invalid')) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
         return;
       }
       next(error);
@@ -615,10 +568,10 @@ export class AdminController {
       const syncResult = await this.adminService.syncMenuToSumUp();
 
       console.log(`AdminController: SumUp sync completed - ${syncResult.syncedItems} synced, success: ${syncResult.success}`);
-      res.json(syncResult);
+      sendSuccess(res, syncResult);
     } catch (error) {
       console.error('AdminController: Error syncing menu to SumUp:', error);
       next(error);
     }
   }
-} 
+}

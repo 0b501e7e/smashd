@@ -107,12 +107,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
         },
         body: imageData,
       });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status} during image upload` }));
-        throw new Error(errorData.error || `Failed to upload image: ${response.statusText}`);
-      }
       const result = await response.json();
-      return result.imageUrl; // Assuming the backend returns { imageUrl: "/path/to/image.jpg" }
+      if (!response.ok) {
+        throw new Error(result.error || result.message || `Failed to upload image: ${response.statusText}`);
+      }
+      return result.data.imageUrl; // Assuming the backend returns { data: { imageUrl: "/path/to/image.jpg" } }
     } catch (uploadError) {
       console.error("Image Upload Error:", uploadError);
       setError(uploadError instanceof Error ? uploadError.message : 'An unknown error occurred during image upload');
@@ -175,9 +174,9 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
         },
         body: JSON.stringify({ ...formData, price, imageUrl: finalImageUrl }),
       });
+      const result = await response.json();
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
-        throw new Error(errorData.error || `Failed to add menu item: ${response.statusText}`);
+        throw new Error(result.error || result.message || `Failed to add menu item: ${response.statusText}`);
       }
       setIsLoading(false);
       setIsOpen(false);

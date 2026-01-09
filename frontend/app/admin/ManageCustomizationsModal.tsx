@@ -62,9 +62,9 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error('Failed to fetch all customization options');
-      const data: CustomizationOptionWithCategory[] = await response.json();
-      setAllOptions(data);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch all customization options');
+      setAllOptions(result.data || []);
     } catch (err) {
       console.error("Fetch All Options Error:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching options');
@@ -82,9 +82,10 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${menuItemId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error('Failed to fetch linked customization options');
-      const data = await response.json(); // Expecting { optionIds: number[] }
-      return new Set(data.optionIds || []);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch linked customization options');
+      // Expecting result.data to be { optionIds: number[] }
+      return new Set(result.data?.optionIds || []);
     } catch (err) {
       console.error("Fetch Linked Options Error:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching linked options');
@@ -145,9 +146,10 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
         body: JSON.stringify({ optionIds: Array.from(linkedOptionIds) }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})); // Try to parse error response
-        throw new Error(errorData.error || `Failed to save changes (status: ${response.status})`);
+        throw new Error(result.error || result.message || `Failed to save changes (status: ${response.status})`);
       }
 
       // if (onCustomizationsUpdated) onCustomizationsUpdated();

@@ -14,7 +14,7 @@ export const analyticsController = {
   getCurrentWeekAnalytics: async (_req: Request, res: Response) => {
     try {
       const analytics = await analyticsService.getCurrentWeekAnalytics();
-      
+
       sendSuccess(res, analytics, 'Current week analytics retrieved successfully');
     } catch (error: any) {
       console.error('Error getting current week analytics:', error);
@@ -29,14 +29,14 @@ export const analyticsController = {
   getWeeklyAnalyticsRange: async (req: Request, res: Response) => {
     try {
       const weeks = parseInt(req.query['weeks'] as string) || 4;
-      
+
       // Calculate start date (weeks ago from now)
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
-      
+
       const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
-      
+
       sendSuccess(res, {
         analytics,
         period: {
@@ -58,13 +58,13 @@ export const analyticsController = {
   getRevenueAnalytics: async (req: Request, res: Response) => {
     try {
       const weeks = parseInt(req.query['weeks'] as string) || 8;
-      
+
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
-      
+
       const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
-      
+
       // Calculate trends
       const revenueData = analytics.map(week => ({
         weekStart: week.weekStartDate,
@@ -111,17 +111,17 @@ export const analyticsController = {
   getMenuPerformance: async (req: Request, res: Response) => {
     try {
       const weeks = parseInt(req.query['weeks'] as string) || 4;
-      
+
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
-      
+
       const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
-      
+
       // Aggregate menu data across all weeks
       const itemAggregation = new Map();
       const categoryAggregation = new Map();
-      
+
       for (const week of analytics) {
         if (week.menuMetrics?.items) {
           for (const item of week.menuMetrics.items) {
@@ -135,7 +135,7 @@ export const analyticsController = {
                 totalOrders: 0
               });
             }
-            
+
             const agg = itemAggregation.get(item.itemId);
             agg.totalRevenue += item.revenue;
             agg.totalQuantity += item.totalQuantity;
@@ -152,7 +152,7 @@ export const analyticsController = {
                 totalOrders: 0
               });
             }
-            
+
             const agg = categoryAggregation.get(category.category);
             agg.totalRevenue += category.revenue;
             agg.totalOrders += category.orderCount;
@@ -190,13 +190,13 @@ export const analyticsController = {
   getCustomerAnalytics: async (req: Request, res: Response) => {
     try {
       const weeks = parseInt(req.query['weeks'] as string) || 4;
-      
+
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
-      
+
       const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
-      
+
       const customerData = analytics.map(week => ({
         weekStart: week.weekStartDate,
         newCustomers: week.newCustomers,
@@ -211,8 +211,8 @@ export const analyticsController = {
         avgReturningCustomersPerWeek: customerData.reduce((sum, week) => sum + week.returningCustomers, 0) / weeks
       };
 
-      const retentionRate = totals.totalReturningCustomers > 0 
-        ? (totals.totalReturningCustomers / (totals.totalNewCustomers + totals.totalReturningCustomers)) * 100 
+      const retentionRate = totals.totalReturningCustomers > 0
+        ? (totals.totalReturningCustomers / (totals.totalNewCustomers + totals.totalReturningCustomers)) * 100
         : 0;
 
       sendSuccess(res, {
@@ -239,11 +239,12 @@ export const analyticsController = {
       const userId = (req as any).user?.id; // From auth middleware
 
       if (!eventType) {
-        return sendError(res, 'Event type is required', 400);
+        sendError(res, 'Event type is required', 400);
+        return;
       }
 
       await analyticsService.trackEvent(eventType, userId, sessionId, metadata);
-      
+
       sendSuccess(res, null, 'Event tracked successfully');
     } catch (error: any) {
       console.error('Error tracking event:', error);
@@ -258,7 +259,7 @@ export const analyticsController = {
   generateWeeklyAnalytics: async (req: Request, res: Response) => {
     try {
       const { weekStartDate } = req.body;
-      
+
       let startDate: Date;
       if (weekStartDate) {
         startDate = new Date(weekStartDate);
@@ -273,7 +274,7 @@ export const analyticsController = {
       }
 
       const analytics = await analyticsService.generateWeeklyAnalytics(startDate);
-      
+
       sendSuccess(res, analytics, 'Weekly analytics generated successfully');
     } catch (error: any) {
       console.error('Error generating weekly analytics:', error);
