@@ -351,7 +351,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(updateData)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
+      expect(response.body).toHaveProperty('error', 'Menu item not found');
     });
 
     it('should return 400 for invalid menu item ID', async () => {
@@ -390,7 +390,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ isAvailable: false })
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
+      expect(response.body).toHaveProperty('error', 'Menu item not found');
     });
   });
 
@@ -428,7 +428,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Artículo del menú no encontrado');
+      expect(response.body).toHaveProperty('error', 'Menu item not found');
     });
   });
 
@@ -475,7 +475,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ estimatedMinutes: 15 })
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
+      expect(response.body).toHaveProperty('error', 'Order not found');
     });
 
     it('should return 400 for order that cannot be accepted', async () => {
@@ -489,7 +489,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('no puede ser aceptado');
+      expect(response.body.error).toContain('cannot be accepted');
     });
 
     it('should return 400 for invalid order ID', async () => {
@@ -515,7 +515,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
-      expect(response.body.error).toContain('no puede ser rechazado');
+      expect(response.body.error).toContain('cannot be declined');
     });
   });
 
@@ -664,7 +664,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Opciones de personalización actualizadas exitosamente');
+      expect(response.body.message).toContain('Customization options updated successfully');
     });
 
     it('should handle empty option IDs array', async () => {
@@ -705,7 +705,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ optionIds: [999] })
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'Uno o más IDs de opciones de personalización son inválidos');
+      expect(response.body).toHaveProperty('error', 'One or more customization option IDs are invalid');
     });
   });
 

@@ -152,7 +152,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'El correo electrónico ya está en uso');
+      expect(response.body).toHaveProperty('error', 'Email already in use');
     });
 
     it('should return 400 for invalid email', async () => {
@@ -220,7 +220,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
       expect(response.body.data.user).toHaveProperty('id');
       expect(response.body.data.user).toHaveProperty('email', validLoginData.email);
       expect(response.body.data.user).toHaveProperty('role');
-      expect(response.body).toHaveProperty('message', 'Inicio de sesión exitoso');
+      expect(response.body).toHaveProperty('message', 'Login successful');
 
       // Verify JWT token is valid
       expect(typeof response.body.data.token).toBe('string');
@@ -258,7 +258,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Credenciales inválidas');
+      expect(response.body).toHaveProperty('error', 'Invalid credentials');
     });
 
     it('should return 400 for wrong password', async () => {
@@ -276,7 +276,7 @@ describe('Authentication Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Credenciales inválidas');
+      expect(response.body).toHaveProperty('error', 'Invalid credentials');
     });
 
     it('should return 400 for invalid email format', async () => {

@@ -453,7 +453,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(404);
 
-      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
+      expect(response.body).toHaveProperty('error', 'Order not found');
     });
 
     it('should deny access to other users orders', async () => {

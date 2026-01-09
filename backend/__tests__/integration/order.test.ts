@@ -332,7 +332,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(404);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
+      expect(response.body).toHaveProperty('error', 'Order not found');
     });
 
     it('should return 400 for invalid order ID', async () => {
@@ -402,7 +402,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Se requiere un tiempo estimado válido (estimatedMinutes)');
+      expect(response.body).toHaveProperty('error', 'Valid estimated time is required (estimatedMinutes)');
     });
 
     it('should return 400 for invalid estimated minutes', async () => {
@@ -413,7 +413,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Se requiere un tiempo estimado válido (estimatedMinutes)');
+      expect(response.body).toHaveProperty('error', 'Valid estimated time is required (estimatedMinutes)');
     });
 
     it('should return 404 for non-existent order', async () => {
@@ -427,7 +427,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(404);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Pedido no encontrado');
+      expect(response.body).toHaveProperty('error', 'Order not found');
     });
 
     it('should handle database errors', async () => {
@@ -523,7 +523,7 @@ describe('Order Integration Tests - TypeScript Backend', () => {
         .expect(400);
 
       expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'ID de pedido inválido');
+      expect(response.body).toHaveProperty('error', 'Invalid order ID');
     });
 
     it('should handle database errors', async () => {
