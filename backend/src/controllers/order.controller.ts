@@ -75,7 +75,7 @@ export class OrderController {
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'ID de pedido requerido'
+        error: 'Order ID is required'
       });
       return;
     }
@@ -85,7 +85,7 @@ export class OrderController {
       if (isNaN(orderId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'ID de pedido inválido'
+          error: 'Invalid order ID'
         });
         return;
       }
@@ -98,10 +98,10 @@ export class OrderController {
       });
 
     } catch (error) {
-      if (error instanceof Error && error.message === 'Pedido no encontrado') {
+      if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Pedido no encontrado')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
-          error: 'Pedido no encontrado'
+          error: 'Order not found'
         });
         return;
       }
@@ -120,7 +120,7 @@ export class OrderController {
     if (!id) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'ID de pedido requerido'
+        error: 'Order ID is required'
       });
       return;
     }
@@ -128,7 +128,7 @@ export class OrderController {
     if (!estimatedMinutes || typeof estimatedMinutes !== 'number') {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'Se requiere un tiempo estimado válido (estimatedMinutes)'
+        error: 'Valid estimated time is required (estimatedMinutes)'
       });
       return;
     }
@@ -138,7 +138,7 @@ export class OrderController {
       if (isNaN(orderId)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'ID de pedido inválido'
+          error: 'Invalid order ID'
         });
         return;
       }
@@ -155,10 +155,10 @@ export class OrderController {
       });
 
     } catch (error) {
-      if (error instanceof Error && error.message === 'Pedido no encontrado') {
+      if (error instanceof Error && (error.message === 'Order not found' || error.message === 'Pedido no encontrado')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({
           success: false,
-          error: 'Pedido no encontrado'
+          error: 'Order not found'
         });
         return;
       }
@@ -176,7 +176,7 @@ export class OrderController {
     if (!orderId) {
       res.status(HTTP_STATUS.BAD_REQUEST).json({
         success: false,
-        error: 'ID de pedido requerido'
+        error: 'Order ID is required'
       });
       return;
     }
@@ -186,7 +186,7 @@ export class OrderController {
       if (isNaN(orderIdInt)) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: 'ID de pedido inválido'
+          error: 'Invalid order ID'
         });
         return;
       }

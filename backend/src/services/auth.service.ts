@@ -3,13 +3,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { IAuthService } from '../interfaces/IAuthService';
 import crypto from 'crypto';
-import { 
-  RegisterRequest, 
-  LoginRequest, 
-  LoginResponse, 
+import {
+  RegisterRequest,
+  LoginRequest,
+  LoginResponse,
   RegisterResponse,
   AuthUser,
-  UserBasicInfo 
+  UserBasicInfo
 } from '../types/auth.types';
 import { ID, UserRole } from '../types/common.types';
 import { APP_CONFIG } from '../config/constants';
@@ -19,7 +19,7 @@ import { APP_CONFIG } from '../config/constants';
  * Contains all authentication and user management business logic
  */
 export class AuthService implements IAuthService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   /**
    * Register a new user
@@ -30,7 +30,7 @@ export class AuthService implements IAuthService {
     // Check if email already exists (case-insensitive)
     const emailExists = await this.validateEmailUnique(email);
     if (!emailExists) {
-      throw new Error('El correo electrónico ya está en uso');
+      throw new Error('Email already in use');
     }
 
     // Hash password
@@ -61,7 +61,7 @@ export class AuthService implements IAuthService {
 
     return {
       id: result.id,
-      message: 'Usuario registrado exitosamente'
+      message: 'User registered successfully'
     };
   }
 
@@ -74,13 +74,13 @@ export class AuthService implements IAuthService {
     // Find user by email with password for authentication
     const user = await this.getUserForAuthentication(email);
     if (!user) {
-      throw new Error('Credenciales inválidas');
+      throw new Error('Invalid credentials');
     }
 
     // Verify password
     const isValidPassword = await this.verifyPassword(password, user.password);
     if (!isValidPassword) {
-      throw new Error('Credenciales inválidas');
+      throw new Error('Invalid credentials');
     }
 
     // Generate JWT token
@@ -105,9 +105,9 @@ export class AuthService implements IAuthService {
    */
   async getUserById(id: ID): Promise<AuthUser | null> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
-      throw new Error('ID de usuario inválido');
+      throw new Error('Invalid user ID');
     }
 
     const user = await this.prisma.user.findUnique({
@@ -187,9 +187,9 @@ export class AuthService implements IAuthService {
    */
   async updateUserProfile(id: ID, updateData: Partial<AuthUser>): Promise<AuthUser> {
     const numericId = typeof id === 'string' ? parseInt(id) : id;
-    
+
     if (isNaN(numericId)) {
-      throw new Error('ID de usuario inválido');
+      throw new Error('Invalid user ID');
     }
 
     // Remove sensitive fields that shouldn't be updated this way
@@ -236,9 +236,9 @@ export class AuthService implements IAuthService {
    */
   async changePassword(userId: ID, currentPassword: string, newPassword: string): Promise<void> {
     const numericId = typeof userId === 'string' ? parseInt(userId) : userId;
-    
+
     if (isNaN(numericId)) {
-      throw new Error('ID de usuario inválido');
+      throw new Error('Invalid user ID');
     }
 
     // Get current user with password
@@ -248,13 +248,13 @@ export class AuthService implements IAuthService {
     });
 
     if (!user) {
-      throw new Error('Usuario no encontrado');
+      throw new Error('User not found');
     }
 
     // Verify current password
     const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
-      throw new Error('La contraseña actual es incorrecta');
+      throw new Error('Current password is incorrect');
     }
 
     // Hash new password and update
@@ -294,7 +294,7 @@ export class AuthService implements IAuthService {
         resetUrl: appUrl,
         webResetUrl: webUrl,
       });
-      await services.notificationService.sendEmail(user.email, 'Restablecer tu contraseña', html);
+      await services.notificationService.sendEmail(user.email, 'Reset your password', html);
     } catch (err) {
       console.error('Password reset email send failed:', err);
     }
@@ -304,7 +304,7 @@ export class AuthService implements IAuthService {
    * Reset password with provided token
    */
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    if (!token) throw new Error('Token inválido o expirado');
+    if (!token) throw new Error('Invalid or expired token');
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     const record = await this.prisma.passwordResetToken.findFirst({
@@ -313,7 +313,7 @@ export class AuthService implements IAuthService {
     });
 
     if (!record || !record.user || record.expiresAt < new Date()) {
-      throw new Error('Token inválido o expirado');
+      throw new Error('Invalid or expired token');
     }
 
     const hashed = await this.hashPassword(newPassword);
@@ -341,7 +341,7 @@ export class AuthService implements IAuthService {
     try {
       return jwt.verify(token, APP_CONFIG.JWT_SECRET);
     } catch (error) {
-      throw new Error('Token inválido o expirado');
+      throw new Error('Invalid or expired token');
     }
   }
 
@@ -374,7 +374,7 @@ export class AuthService implements IAuthService {
    */
   async initializeLoyaltyPoints(userId: number, tx?: any): Promise<void> {
     const prismaClient = tx || this.prisma;
-    
+
     await prismaClient.loyaltyPoints.create({
       data: {
         userId: userId,

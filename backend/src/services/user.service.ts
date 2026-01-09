@@ -31,7 +31,7 @@ import {
  * - User statistics and analytics
  */
 export class UserService implements IUserService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   // =====================
   // USER PROFILE MANAGEMENT
@@ -41,8 +41,8 @@ export class UserService implements IUserService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: query.userId },
-        include: { 
-          loyaltyPoints: query.includeLoyalty !== false 
+        include: {
+          loyaltyPoints: query.includeLoyalty !== false
         }
       });
 
@@ -62,7 +62,7 @@ export class UserService implements IUserService {
       return profileData;
     } catch (error) {
       console.error(`UserService: Error fetching user profile ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al obtener el perfil del usuario');
+      throw new Error(error instanceof Error ? error.message : 'Failed to retrieve user profile');
     }
   }
 
@@ -97,7 +97,7 @@ export class UserService implements IUserService {
       return profileData;
     } catch (error) {
       console.error(`UserService: Error updating user profile ${updateQuery.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al actualizar el perfil del usuario');
+      throw new Error(error instanceof Error ? error.message : 'Failed to update user profile');
     }
   }
 
@@ -111,7 +111,7 @@ export class UserService implements IUserService {
       return user as UserWithLoyalty | null;
     } catch (error) {
       console.error(`UserService: Error fetching user with loyalty ${userId}:`, error);
-      throw new Error('Error al obtener el usuario con datos de lealtad');
+      throw new Error('Failed to retrieve user with loyalty data');
     }
   }
 
@@ -133,7 +133,7 @@ export class UserService implements IUserService {
       }
 
       const whereClause: any = { userId: query.userId };
-      
+
       if (query.status) {
         whereClause.status = { in: query.status };
       }
@@ -160,7 +160,7 @@ export class UserService implements IUserService {
       return orders as UserOrderWithDetails[];
     } catch (error) {
       console.error(`UserService: Error fetching user orders for user ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al obtener los pedidos del usuario');
+      throw new Error(error instanceof Error ? error.message : 'Failed to retrieve user orders');
     }
   }
 
@@ -210,7 +210,7 @@ export class UserService implements IUserService {
       return lastOrder as LastOrderResult | null;
     } catch (error) {
       console.error(`UserService: Error fetching last order for user ${query.userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al obtener el último pedido');
+      throw new Error(error instanceof Error ? error.message : 'Failed to retrieve last order');
     }
   }
 
@@ -282,7 +282,7 @@ export class UserService implements IUserService {
       return statistics;
     } catch (error) {
       console.error(`UserService: Error generating statistics for user ${userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al generar las estadísticas del usuario');
+      throw new Error(error instanceof Error ? error.message : 'Failed to generate user statistics');
     }
   }
 
@@ -302,7 +302,7 @@ export class UserService implements IUserService {
       });
 
       if (!order) {
-        throw new Error('Pedido no encontrado');
+        throw new Error('Order not found');
       }
 
       // Validate user can repeat this order
@@ -313,13 +313,13 @@ export class UserService implements IUserService {
       });
 
       if (!accessValidation.isAuthorized) {
-        throw new Error(accessValidation.reason || 'No autorizado para repetir este pedido');
+        throw new Error(accessValidation.reason || 'Not authorized to repeat this order');
       }
 
       // Check availability of items and prepare response
       const availableItems: RepeatOrderItemData[] = [];
       const unavailableItems: string[] = [];
-      let message = 'Todos los artículos de tu pedido anterior están disponibles y listos para agregarse al carrito.';
+      let message = 'All items from your previous order are available and ready to be added to the cart.';
 
       for (const orderItem of order.items) {
         const currentMenuItem = await this.prisma.menuItem.findUnique({
@@ -340,7 +340,7 @@ export class UserService implements IUserService {
       }
 
       if (unavailableItems.length > 0) {
-        message = `Algunos artículos ya no están disponibles: ${unavailableItems.join(', ')}. Los artículos disponibles están listos para agregarse al carrito.`;
+        message = `Some items are no longer available: ${unavailableItems.join(', ')}. Available items are ready to be added to the cart.`;
       }
 
       const result: RepeatOrderResult = {
@@ -353,7 +353,7 @@ export class UserService implements IUserService {
       return result;
     } catch (error) {
       console.error(`UserService: Error repeating order ${query.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al repetir el pedido');
+      throw new Error(error instanceof Error ? error.message : 'Failed to repeat order');
     }
   }
 
@@ -417,7 +417,7 @@ export class UserService implements IUserService {
       // Calculate additional loyalty metrics
       const currentYear = new Date().getFullYear();
       const yearStart = new Date(currentYear, 0, 1);
-      
+
       const ordersThisYear = await this.prisma.order.findMany({
         where: {
           userId,
@@ -444,7 +444,7 @@ export class UserService implements IUserService {
       return loyaltyData;
     } catch (error) {
       console.error(`UserService: Error fetching loyalty data for user ${userId}:`, error);
-      throw new Error('Error al obtener los datos de lealtad');
+      throw new Error('Failed to retrieve loyalty data');
     }
   }
 
@@ -465,7 +465,7 @@ export class UserService implements IUserService {
       return result.points;
     } catch (error) {
       console.error(`UserService: Error updating loyalty points for user ${userId}:`, error);
-      throw new Error('Error al actualizar los puntos de lealtad');
+      throw new Error('Failed to update loyalty points');
     }
   }
 
@@ -504,14 +504,14 @@ export class UserService implements IUserService {
       return userProfiles;
     } catch (error) {
       console.error(`UserService: Error searching users with term "${searchTerm}":`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al buscar usuarios');
+      throw new Error(error instanceof Error ? error.message : 'Failed to search users');
     }
   }
 
   async getFilteredUserOrders(
-    userId: number, 
-    filters: UserOrderFilters, 
-    requestingUserId: number, 
+    userId: number,
+    filters: UserOrderFilters,
+    requestingUserId: number,
     requestingUserRole: string
   ): Promise<UserOrderWithDetails[]> {
     try {
@@ -560,7 +560,7 @@ export class UserService implements IUserService {
       return orders as UserOrderWithDetails[];
     } catch (error) {
       console.error(`UserService: Error fetching filtered orders for user ${userId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al obtener los pedidos filtrados');
+      throw new Error(error instanceof Error ? error.message : 'Failed to retrieve filtered orders');
     }
   }
 } 

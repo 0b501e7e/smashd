@@ -15,8 +15,6 @@ import {
   ImageUploadResult
 } from '../types/admin.types';
 import { getSumupAccessToken, makeHttpRequest } from './sumupService';
-import path from 'path';
-import fs from 'fs';
 
 /**
  * AdminService - Handles admin-related business logic
@@ -50,7 +48,7 @@ export class AdminService implements IAdminService {
       return menuItems;
     } catch (error) {
       console.error('AdminService: Error fetching all menu items for admin:', error);
-      throw new Error('Error al obtener los artículos del menú para el administrador');
+      throw new Error('Failed to retrieve menu items for admin');
     }
   }
 
@@ -71,7 +69,7 @@ export class AdminService implements IAdminService {
       return menuItem;
     } catch (error) {
       console.error('AdminService: Error creating menu item:', error);
-      throw new Error('Error al crear el artículo del menú');
+      throw new Error('Failed to create menu item');
     }
   }
 
@@ -87,9 +85,9 @@ export class AdminService implements IAdminService {
     } catch (error) {
       console.error(`AdminService: Error updating menu item ${menuItemId}:`, error);
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
-        throw new Error('Artículo del menú no encontrado');
+        throw new Error('Menu item not found');
       }
-      throw new Error('Error al actualizar el artículo del menú');
+      throw new Error('Failed to update menu item');
     }
   }
 
@@ -100,7 +98,7 @@ export class AdminService implements IAdminService {
       });
 
       if (!menuItem) {
-        throw new Error('Artículo del menú no encontrado');
+        throw new Error('Menu item not found');
       }
 
       const updatedMenuItem = await this.prisma.menuItem.update({
@@ -112,7 +110,7 @@ export class AdminService implements IAdminService {
       return updatedMenuItem;
     } catch (error) {
       console.error(`AdminService: Error updating availability for menu item ${menuItemId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al actualizar la disponibilidad del artículo del menú');
+      throw new Error(error instanceof Error ? error.message : 'Failed to update menu item availability');
     }
   }
 
@@ -124,7 +122,7 @@ export class AdminService implements IAdminService {
       });
 
       if (!menuItem) {
-        throw new Error('Artículo del menú no encontrado');
+        throw new Error('Menu item not found');
       }
 
       // Delete menu item and related customization links in transaction
@@ -142,40 +140,35 @@ export class AdminService implements IAdminService {
 
       console.log(`AdminService: Menu item deleted successfully: ${deletedMenuItem.name} (ID: ${menuItemId})`);
       return {
-        message: `Artículo del menú "${deletedMenuItem.name}" eliminado exitosamente`,
+        message: `Menu item "${deletedMenuItem.name}" deleted successfully`,
         deletedMenuItem
       };
     } catch (error) {
       console.error(`AdminService: Error deleting menu item ${menuItemId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al eliminar el artículo del menú');
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete menu item');
     }
   }
 
   async uploadMenuItemImage(file: Express.Multer.File): Promise<ImageUploadResult> {
     try {
-      // Create upload directory if it doesn't exist
-      const uploadDir = path.join(process.cwd(), 'public', 'images', 'menu-items');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      // The file has already been saved to disk by the Multer diskStorage middleware.
+      // We just need to return the public URL based on the file path.
+
+      if (!file.path) {
+        throw new Error('Image file path is missing');
       }
 
-      // Generate unique filename
-      const fileExtension = path.extname(file.originalname);
-      const timestamp = Date.now();
-      const filename = `menu-item-${timestamp}${fileExtension}`;
-      const filepath = path.join(uploadDir, filename);
+      // Convert path to URL format (e.g., 'public/images/menu-items/image.jpg' -> '/images/menu-items/image.jpg')
+      const normalizedPath = file.path.replace(/\\/g, '/');
+      const imageUrl = normalizedPath.startsWith('public/')
+        ? normalizedPath.substring(6) // Remove 'public' but keep the leading slash: '/images/menu-items/...'
+        : (normalizedPath.startsWith('/') ? normalizedPath : '/' + normalizedPath);
 
-      // Save file
-      fs.writeFileSync(filepath, file.buffer);
-
-      // Generate URL
-      const imageUrl = `/images/menu-items/${filename}`;
-
-      console.log(`AdminService: Image uploaded successfully: ${filename}`);
+      console.log(`AdminService: Image processed successfully: ${file.filename}`);
       return { imageUrl };
     } catch (error) {
-      console.error('AdminService: Error uploading image:', error);
-      throw new Error('Error al subir la imagen');
+      console.error('AdminService: Error processing uploaded image:', error);
+      throw new Error('Failed to upload image');
     }
   }
 
@@ -215,7 +208,7 @@ export class AdminService implements IAdminService {
       return orders as AdminOrderWithDetails[];
     } catch (error) {
       console.error('AdminService: Error fetching orders for admin:', error);
-      throw new Error('Error al obtener los pedidos para el administrador');
+      throw new Error('Failed to retrieve orders for admin');
     }
   }
 
@@ -226,11 +219,11 @@ export class AdminService implements IAdminService {
       });
 
       if (!order) {
-        throw new Error('Pedido no encontrado');
+        throw new Error('Order not found');
       }
 
       if (order.status !== 'PAYMENT_CONFIRMED') {
-        throw new Error(`El pedido con estado ${order.status} no puede ser aceptado`);
+        throw new Error(`Order with status ${order.status} cannot be accepted`);
       }
 
       console.log(`AdminService: Accepting order ${acceptData.orderId}`);
@@ -272,7 +265,7 @@ export class AdminService implements IAdminService {
       return updatedOrder;
     } catch (error) {
       console.error(`AdminService: Error accepting order ${acceptData.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al aceptar el pedido');
+      throw new Error(error instanceof Error ? error.message : 'Failed to accept order');
     }
   }
 
@@ -283,11 +276,11 @@ export class AdminService implements IAdminService {
       });
 
       if (!order) {
-        throw new Error('Pedido no encontrado');
+        throw new Error('Order not found');
       }
 
       if (!['PAYMENT_CONFIRMED', 'CONFIRMED'].includes(order.status)) {
-        throw new Error(`El pedido con estado ${order.status} no puede ser rechazado`);
+        throw new Error(`Order with status ${order.status} cannot be declined`);
       }
 
       const updatedOrder = await this.prisma.order.update({
@@ -299,7 +292,7 @@ export class AdminService implements IAdminService {
       return updatedOrder;
     } catch (error) {
       console.error(`AdminService: Error declining order ${declineData.orderId}:`, error);
-      throw new Error(error instanceof Error ? error.message : 'Error al rechazar el pedido');
+      throw new Error(error instanceof Error ? error.message : 'Failed to decline order');
     }
   }
 
@@ -322,7 +315,7 @@ export class AdminService implements IAdminService {
       return categories;
     } catch (error) {
       console.error('AdminService: Error fetching customization categories:', error);
-      throw new Error('Error al obtener las categorías de personalización');
+      throw new Error('Failed to retrieve customization categories');
     }
   }
 
@@ -347,7 +340,7 @@ export class AdminService implements IAdminService {
       return category;
     } catch (error) {
       console.error('AdminService: Error creating customization category:', error);
-      throw new Error('Error al crear la categoría de personalización');
+      throw new Error('Failed to create customization category');
     }
   }
 
@@ -363,7 +356,7 @@ export class AdminService implements IAdminService {
       return updatedCategory;
     } catch (error) {
       console.error(`AdminService: Error updating customization category ${categoryId}:`, error);
-      throw new Error('Error al actualizar la categoría de personalización');
+      throw new Error('Failed to update customization category');
     }
   }
 
@@ -399,10 +392,10 @@ export class AdminService implements IAdminService {
         });
       });
 
-      return { message: 'Categoría de personalización eliminada exitosamente' };
+      return { message: 'Customization category deleted successfully' };
     } catch (error) {
       console.error(`AdminService: Error deleting customization category ${categoryId}:`, error);
-      throw new Error('Error al eliminar la categoría de personalización');
+      throw new Error('Failed to delete customization category');
     }
   }
 
@@ -423,7 +416,7 @@ export class AdminService implements IAdminService {
       return option as CustomizationOptionWithCategory;
     } catch (error) {
       console.error('AdminService: Error creating customization option:', error);
-      throw new Error('Error al crear la opción de personalización');
+      throw new Error('Failed to create customization option');
     }
   }
 
@@ -441,7 +434,7 @@ export class AdminService implements IAdminService {
       return updatedOption as CustomizationOptionWithCategory;
     } catch (error) {
       console.error(`AdminService: Error updating customization option ${optionId}:`, error);
-      throw new Error('Error al actualizar la opción de personalización');
+      throw new Error('Failed to update customization option');
     }
   }
 
@@ -458,10 +451,10 @@ export class AdminService implements IAdminService {
           where: { id: optionId }
         });
       });
-      return { message: 'Opción de personalización eliminada exitosamente' };
+      return { message: 'Customization option deleted successfully' };
     } catch (error) {
       console.error(`AdminService: Error deleting customization option ${optionId}:`, error);
-      throw new Error('Error al eliminar la opción de personalización');
+      throw new Error('Failed to delete customization option');
     }
   }
 
@@ -484,7 +477,7 @@ export class AdminService implements IAdminService {
       return options;
     } catch (error) {
       console.error('AdminService: Error fetching customization options:', error);
-      throw new Error('Error al obtener las opciones de personalización');
+      throw new Error('Failed to retrieve customization options');
     }
   }
 
@@ -500,7 +493,7 @@ export class AdminService implements IAdminService {
       return optionIds;
     } catch (error) {
       console.error(`AdminService: Error fetching linked customization options for menu item ${menuItemId}:`, error);
-      throw new Error('Error al obtener las opciones de personalización vinculadas');
+      throw new Error('Failed to retrieve linked customization options');
     }
   }
 
@@ -527,14 +520,14 @@ export class AdminService implements IAdminService {
       console.log(`AdminService: Updated customization options for menu item ${linkData.menuItemId}: ${linkData.optionIds.length} options linked`);
 
       return {
-        message: 'Opciones de personalización actualizadas exitosamente para el artículo del menú'
+        message: 'Customization options updated successfully for menu item'
       };
     } catch (error) {
       console.error(`AdminService: Error updating linked customization options for menu item ${linkData.menuItemId}:`, error);
       if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
-        throw new Error('Uno o más IDs de opciones de personalización son inválidos');
+        throw new Error('One or more customization option IDs are invalid');
       }
-      throw new Error('Error al actualizar las opciones de personalización vinculadas');
+      throw new Error('Failed to update linked customization options');
     }
   }
 
@@ -625,7 +618,7 @@ export class AdminService implements IAdminService {
 
     } catch (error) {
       console.error('AdminService: Error syncing menu to SumUp:', error);
-      throw new Error(error instanceof Error ? error.message : 'Error al sincronizar el menú con SumUp');
+      throw new Error(error instanceof Error ? error.message : 'Failed to sync menu with SumUp');
     }
   }
 } 

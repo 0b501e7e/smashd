@@ -9,7 +9,7 @@ import { sendSuccess, sendError } from '../utils/response.utils';
  * Business logic is delegated to DriverService
  */
 export class DriverController {
-  constructor(private driverService: IDriverService) {}
+  constructor(private driverService: IDriverService) { }
 
   /**
    * Get list of ready delivery orders
@@ -33,7 +33,7 @@ export class DriverController {
     try {
       const driverId = req.user?.userId;
       if (!driverId) {
-        sendError(res, 'ID de repartidor requerido', HTTP_STATUS.UNAUTHORIZED);
+        sendError(res, 'Driver ID is required', HTTP_STATUS.UNAUTHORIZED);
         return;
       }
 
@@ -55,25 +55,25 @@ export class DriverController {
       const driverId = req.user?.userId;
 
       if (isNaN(orderId)) {
-        sendError(res, 'ID de pedido inválido', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       if (!driverId) {
-        sendError(res, 'ID de repartidor requerido', HTTP_STATUS.UNAUTHORIZED);
+        sendError(res, 'Driver ID is required', HTTP_STATUS.UNAUTHORIZED);
         return;
       }
 
       const order = await this.driverService.acceptOrder(orderId, driverId);
-      sendSuccess(res, { order }, 'Pedido aceptado exitosamente');
+      sendSuccess(res, { order }, 'Order accepted successfully');
     } catch (error) {
       console.error('DriverController: Error accepting order:', error);
       if (error instanceof Error) {
-        const statusCode = error.message.includes('not found') 
-          ? HTTP_STATUS.NOT_FOUND 
-          : error.message.includes('not ready') 
-          ? HTTP_STATUS.BAD_REQUEST 
-          : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+        const statusCode = error.message.includes('not found')
+          ? HTTP_STATUS.NOT_FOUND
+          : error.message.includes('not ready')
+            ? HTTP_STATUS.BAD_REQUEST
+            : HTTP_STATUS.INTERNAL_SERVER_ERROR;
         sendError(res, error.message, statusCode);
         return;
       }
@@ -91,25 +91,25 @@ export class DriverController {
       const driverId = req.user?.userId;
 
       if (isNaN(orderId)) {
-        sendError(res, 'ID de pedido inválido', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       if (!driverId) {
-        sendError(res, 'ID de repartidor requerido', HTTP_STATUS.UNAUTHORIZED);
+        sendError(res, 'Driver ID is required', HTTP_STATUS.UNAUTHORIZED);
         return;
       }
 
       const order = await this.driverService.markDelivered(orderId, driverId);
-      sendSuccess(res, { order }, 'Pedido marcado como entregado exitosamente');
+      sendSuccess(res, { order }, 'Order marked as delivered successfully');
     } catch (error) {
       console.error('DriverController: Error marking order as delivered:', error);
       if (error instanceof Error) {
-        const statusCode = error.message.includes('not found') 
-          ? HTTP_STATUS.NOT_FOUND 
-          : error.message.includes('not out for delivery') 
-          ? HTTP_STATUS.BAD_REQUEST 
-          : HTTP_STATUS.INTERNAL_SERVER_ERROR;
+        const statusCode = error.message.includes('not found')
+          ? HTTP_STATUS.NOT_FOUND
+          : error.message.includes('not out for delivery')
+            ? HTTP_STATUS.BAD_REQUEST
+            : HTTP_STATUS.INTERNAL_SERVER_ERROR;
         sendError(res, error.message, statusCode);
         return;
       }
@@ -126,14 +126,14 @@ export class DriverController {
       const orderId = parseInt(req.params['orderId'] || '', 10);
 
       if (isNaN(orderId)) {
-        sendError(res, 'ID de pedido inválido', HTTP_STATUS.BAD_REQUEST);
+        sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const order = await this.driverService.getOrderDetails(orderId);
 
       if (!order) {
-        sendError(res, 'Pedido no encontrado', HTTP_STATUS.NOT_FOUND);
+        sendError(res, 'Order not found', HTTP_STATUS.NOT_FOUND);
         return;
       }
 

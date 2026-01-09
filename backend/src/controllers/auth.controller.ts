@@ -7,7 +7,7 @@ import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from '
  * Auth Controller - Thin HTTP handler that delegates to AuthService
  */
 export class AuthController {
-  constructor(private authService: IAuthService) {}
+  constructor(private authService: IAuthService) { }
 
   /**
    * User Registration Controller
@@ -26,11 +26,11 @@ export class AuthController {
 
     } catch (error) {
       console.error('Registration error:', error);
-      
+
       if (error instanceof Error && (error.message === 'El correo electrónico ya está en uso' || error.message === 'Email already in use')) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: error.message.includes('correo') ? error.message : 'El correo electrónico ya está en uso'
+          error: error.message.includes('email') ? error.message : 'Email already in use'
         });
         return;
       }
@@ -51,16 +51,16 @@ export class AuthController {
       res.json({
         success: true,
         data: result,
-        message: 'Inicio de sesión exitoso'
+        message: 'Login successful'
       });
 
     } catch (error) {
       console.error('Login error:', error);
-      
+
       if (error instanceof Error && (error.message === 'Credenciales inválidas' || error.message === 'Invalid credentials')) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
-          error: error.message.includes('Credenciales') ? error.message : 'Credenciales inválidas'
+          error: error.message.includes('credentials') ? error.message : 'Invalid credentials'
         });
         return;
       }
@@ -77,11 +77,11 @@ export class AuthController {
     try {
       const { email } = req.body as { email?: string };
       if (!email) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, error: 'El correo electrónico es requerido' });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, error: 'Email is required' });
         return;
       }
       await this.authService.forgotPassword(email);
-      res.json({ success: true, message: 'Si existe una cuenta, se ha enviado un correo de restablecimiento' });
+      res.json({ success: true, message: 'If an account exists, a reset email has been sent' });
     } catch (error) {
       next(error);
     }
@@ -95,16 +95,16 @@ export class AuthController {
     try {
       const { token, password } = req.body as { token?: string; password?: string };
       if (!token || !password) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, error: 'El token y la contraseña son requeridos' });
+        res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, error: 'Token and password are required' });
         return;
       }
       await this.authService.resetPassword(token, password);
-      res.json({ success: true, message: 'Contraseña actualizada exitosamente' });
+      res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
       if (error instanceof Error && (error.message.includes('Token inválido') || error.message.includes('Invalid or expired token'))) {
-        res.status(HTTP_STATUS.BAD_REQUEST).json({ 
-          success: false, 
-          error: error.message.includes('Token inválido') ? error.message : 'Token inválido o expirado' 
+        res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          error: error.message.includes('Invalid token') ? error.message : 'Invalid or expired token'
         });
         return;
       }

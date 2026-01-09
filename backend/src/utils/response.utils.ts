@@ -8,7 +8,7 @@ import { HTTP_STATUS, HttpStatus } from '../config/constants';
 export const sendSuccess = <T>(
   res: Response,
   data: T,
-  message = 'Éxito',
+  message = 'Success',
   statusCode: HttpStatus = HTTP_STATUS.OK
 ): void => {
   const response: ApiResponse<T> = {
@@ -40,7 +40,7 @@ export const sendError = (
 export const sendValidationError = (
   res: Response,
   errors: Array<{ field: string; message: string }>,
-  message = 'Validación fallida'
+  message = 'Validation failed'
 ): void => {
   const response: ApiResponse = {
     success: false,

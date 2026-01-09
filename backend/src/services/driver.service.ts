@@ -103,7 +103,7 @@ export class DriverService implements IDriverService {
       }));
     } catch (error) {
       console.error('DriverService: Error fetching ready delivery orders:', error);
-      throw new Error('Error al obtener los pedidos de entrega listos');
+      throw new Error('Failed to retrieve ready delivery orders');
     }
   }
 
@@ -171,7 +171,7 @@ export class DriverService implements IDriverService {
       }));
     } catch (error) {
       console.error(`DriverService: Error fetching active orders for driver ${driverId}:`, error);
-      throw new Error('Error al obtener los pedidos de entrega activos');
+      throw new Error('Failed to retrieve active delivery orders');
     }
   }
 
@@ -188,19 +188,19 @@ export class DriverService implements IDriverService {
       });
 
       if (!order) {
-        throw new Error('Pedido no encontrado');
+        throw new Error('Order not found');
       }
 
       if (order.status !== 'READY') {
-        throw new Error(`El pedido no está listo para entrega. Estado actual: ${order.status}`);
+        throw new Error(`Order is not ready for delivery. Current status: ${order.status}`);
       }
 
       if (order.fulfillmentMethod !== 'DELIVERY') {
-        throw new Error('El pedido no es un pedido de entrega');
+        throw new Error('Order is not a delivery order');
       }
 
       if (!order.deliveryAddress) {
-        throw new Error('El pedido no tiene dirección de entrega');
+        throw new Error('Order does not have a delivery address');
       }
 
       // Update order status
@@ -222,16 +222,16 @@ export class DriverService implements IDriverService {
             await this.notificationService.sendNotification({
               userId: order.userId, // This should be the customer's ID, not the driver's
               type: 'ORDER_STATUS_UPDATE',
-              title: 'Tu pedido está en camino',
-              message: `El repartidor ha recogido tu pedido #${orderId} y está en camino a tu dirección.`,
+              title: 'Your order is on its way',
+              message: `The driver has picked up your order #${orderId} and is on the way to your address.`,
               metadata: {
                 orderId: orderId,
                 status: 'OUT_FOR_DELIVERY',
                 deliveryAddress: order.deliveryAddress
               },
               pushData: {
-                title: 'Tu pedido está en camino',
-                body: `El repartidor ha recogido tu pedido #${orderId} y está en camino.`
+                title: 'Your order is on its way',
+                body: `The driver has picked up your order #${orderId} and is on the way.`
               }
             });
             console.log(`DriverService: Notification sent to customer ${order.userId} successfully`);
@@ -246,7 +246,7 @@ export class DriverService implements IDriverService {
       return updatedOrder;
     } catch (error) {
       console.error(`DriverService: Error accepting order ${orderId}:`, error);
-      throw error instanceof Error ? error : new Error('Error al aceptar el pedido');
+      throw error instanceof Error ? error : new Error('Failed to accept order');
     }
   }
 
@@ -262,11 +262,11 @@ export class DriverService implements IDriverService {
       });
 
       if (!order) {
-        throw new Error('Pedido no encontrado');
+        throw new Error('Order not found');
       }
 
       if (order.status !== 'OUT_FOR_DELIVERY') {
-        throw new Error(`El pedido no está en camino. Estado actual: ${order.status}`);
+        throw new Error(`Order is not out for delivery. Current status: ${order.status}`);
       }
 
       // Update order status
@@ -293,15 +293,15 @@ export class DriverService implements IDriverService {
               await this.notificationService.sendNotification({
                 userId: order.userId, // This should be the customer's ID, not the driver's
                 type: 'ORDER_STATUS_UPDATE',
-                title: 'Pedido entregado',
-                message: `Tu pedido #${orderId} ha sido entregado exitosamente. ¡Gracias por tu compra!`,
+                title: 'Order delivered',
+                message: `Your order #${orderId} has been successfully delivered. Thank you for your purchase!`,
                 metadata: {
                   orderId: orderId,
                   status: 'DELIVERED'
                 },
                 pushData: {
-                  title: 'Pedido entregado',
-                  body: `Tu pedido #${orderId} ha sido entregado exitosamente.`
+                  title: 'Order delivered',
+                  body: `Your order #${orderId} has been successfully delivered.`
                 }
               });
               console.log(`DriverService: Delivery notification sent to customer ${order.userId} successfully`);
@@ -317,7 +317,7 @@ export class DriverService implements IDriverService {
       return updatedOrder;
     } catch (error) {
       console.error(`DriverService: Error marking order ${orderId} as delivered:`, error);
-      throw error instanceof Error ? error : new Error('Error al marcar el pedido como entregado');
+      throw error instanceof Error ? error : new Error('Failed to mark order as delivered');
     }
   }
 
@@ -384,7 +384,7 @@ export class DriverService implements IDriverService {
       };
     } catch (error) {
       console.error(`DriverService: Error fetching order details ${orderId}:`, error);
-      throw error instanceof Error ? error : new Error('Error al obtener los detalles del pedido');
+      throw error instanceof Error ? error : new Error('Failed to retrieve order details');
     }
   }
 }

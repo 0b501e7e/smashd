@@ -200,7 +200,7 @@ export class UserController {
       console.error('Error repeating order:', error);
 
       if (error instanceof Error) {
-        if (error.message === 'Order not found' || error.message === 'Pedido no encontrado') {
+        if (error.message === 'Order not found' || error.message === 'Order not found') {
           res.status(HTTP_STATUS.NOT_FOUND).json({
             error: error.message
           });

@@ -144,24 +144,24 @@ export class NotificationService implements INotificationService {
 
     const statusMessages = {
       'PAYMENT_CONFIRMED': {
-        title: '✅ ¡Pago Confirmado!',
-        message: `El pago de tu pedido #${orderId} ha sido confirmado. ¡Empezaremos a prepararlo pronto!`,
+        title: '✅ Payment Confirmed!',
+        message: `Your payment for order #${orderId} has been confirmed. We'll start preparing it soon!`,
         template: 'payment-confirmed',
         sound: 'default'
       },
       'CONFIRMED': {
-        title: '👨‍🍳 ¡Pedido Confirmado!',
-        message: `Tu pedido #${orderId} se está preparando. ${order.estimatedReadyTime ? `Listo a las ${new Date(order.estimatedReadyTime).toLocaleTimeString('es-ES')}` : '¡Te notificaremos cuando esté listo!'}`,
+        title: '👨‍🍳 Order Confirmed!',
+        message: `Your order #${orderId} is being prepared. ${order.estimatedReadyTime ? `Estimated ready time: ${new Date(order.estimatedReadyTime).toLocaleTimeString('en-US')}` : 'We will notify you when it is ready!'}`,
         template: 'order-confirmed',
         sound: 'default'
       },
       'READY': {
         title: order.fulfillmentMethod === 'DELIVERY'
-          ? '🍔 ¡Pedido Listo para Entrega!'
-          : '🍔 ¡Pedido Listo!',
+          ? '🍔 Order Ready for Delivery!'
+          : '🍔 Order Ready!',
         message: order.fulfillmentMethod === 'DELIVERY'
-          ? `¡Tu pedido #${orderId} está listo! Un repartidor lo recogerá pronto.`
-          : `¡Tu pedido #${orderId} está listo para recoger!`,
+          ? `Your order #${orderId} is ready! A driver will pick it up soon.`
+          : `Your order #${orderId} is ready for pickup!`,
         template: 'order-ready',
         sound: 'notification'
       }
@@ -202,8 +202,8 @@ export class NotificationService implements INotificationService {
       await this.sendNotification({
         userId: admin.id,
         type: 'ADMIN_ALERT',
-        title: '🔔 ¡Nuevo Pedido Recibido!',
-        message: `Pedido #${order.id} de ${customerName} por €${order.total.toFixed(2)}`,
+        title: '🔔 New Order Received!',
+        message: `Order #${order.id} from ${customerName} for €${order.total.toFixed(2)}`,
         emailTemplate: 'new-order-admin',
         metadata: {
           orderId: order.id,
@@ -423,16 +423,16 @@ export class NotificationService implements INotificationService {
       ,
       'password-reset': `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #f59e0b;">Restablecer tu contraseña</h2>
-          <p>Hola ${data.userName},</p>
-          <p>Recibimos una solicitud para restablecer tu contraseña. Si fuiste tú, haz clic en el botón:</p>
+          <h2 style="color: #f59e0b;">Reset Your Password</h2>
+          <p>Hi ${data.userName},</p>
+          <p>We received a request to reset your password. If this was you, please click the button below:</p>
           <p style="margin: 24px 0; text-align: center;">
             <a href="${data.resetUrl}" style="background: #f59e0b; color: #000; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              Restablecer contraseña en la app
+              Reset password in the app
             </a>
           </p>
-          ${data.webResetUrl ? `<p style="text-align:center;"><a href="${data.webResetUrl}">Abrir en el navegador</a></p>` : ""}
-          <p style="color: #6b7280; font-size: 12px;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
+          ${data.webResetUrl ? `<p style="text-align:center;"><a href="${data.webResetUrl}">Open in browser</a></p>` : ""}
+          <p style="color: #6b7280; font-size: 12px;">If you didn't request this change, you can safely ignore this email.</p>
         </div>
       `
     };

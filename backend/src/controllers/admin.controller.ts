@@ -103,7 +103,7 @@ export class AdminController {
       res.json(updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -150,7 +150,7 @@ export class AdminController {
       res.json(updatedMenuItem);
     } catch (error) {
       console.error('AdminController: Error updating menu item availability:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -188,7 +188,7 @@ export class AdminController {
       res.json(result);
     } catch (error) {
       console.error('AdminController: Error deleting menu item:', error);
-      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Artículo del menú no encontrado')) {
+      if (error instanceof Error && (error.message === 'Menu item not found' || error.message === 'Menu item not found')) {
         res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
         return;
       }
@@ -285,9 +285,9 @@ export class AdminController {
       console.error('AdminController: Error accepting order:', error);
       if (error instanceof Error && (
         error.message.includes('not found') ||
-        error.message.includes('no encontrado') ||
+        error.message.includes('not found') ||
         error.message.includes('cannot be accepted') ||
-        error.message.includes('no puede ser aceptado')
+        error.message.includes('cannot be accepted')
       )) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
@@ -334,9 +334,9 @@ export class AdminController {
       console.error('AdminController: Error declining order:', error);
       if (error instanceof Error && (
         error.message.includes('not found') ||
-        error.message.includes('no encontrado') ||
+        error.message.includes('not found') ||
         error.message.includes('cannot be declined') ||
-        error.message.includes('no puede ser rechazado')
+        error.message.includes('cannot be declined')
       )) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
@@ -592,7 +592,7 @@ export class AdminController {
       res.json(result);
     } catch (error) {
       console.error('AdminController: Error setting linked customization options:', error);
-      if (error instanceof Error && (error.message.includes('invalid') || error.message.includes('inválidos'))) {
+      if (error instanceof Error && (error.message.includes('invalid') || error.message.includes('invalid'))) {
         res.status(HTTP_STATUS.BAD_REQUEST).json({ error: error.message });
         return;
       }
