@@ -390,7 +390,7 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', 1);
+      expect(response.body.data).toHaveProperty('id', 1);
     });
 
     it('should return 404 when user has no orders', async () => {

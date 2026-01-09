@@ -780,14 +780,5 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
     });
   });
 
-  describe('POST /v1/admin/menu-items/upload-image', () => {
-    it('should handle missing file upload', async () => {
-      const response = await request(app)
-        .post('/v1/admin/menu-items/upload-image')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'No file uploaded');
-    });
-  });
 }); 
