@@ -254,12 +254,14 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(2);
-      expect(response.body[0]).toHaveProperty('id', 1);
-      expect(response.body[0]).toHaveProperty('name', 'Classic Burger');
-      expect(response.body[0]).toHaveProperty('isAvailable', true);
-      expect(response.body[1]).toHaveProperty('isAvailable', false); // Should include unavailable items
+      // Admin endpoint now returns wrapped response
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data[0]).toHaveProperty('id', 1);
+      expect(response.body.data[0]).toHaveProperty('name', 'Classic Burger');
+      expect(response.body.data[0]).toHaveProperty('isAvailable', true);
+      expect(response.body.data[1]).toHaveProperty('isAvailable', false); // Should include unavailable items
     });
 
     it('should deny access for non-admin users', async () => {
@@ -300,10 +302,11 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(validMenuItemData)
         .expect(201);
 
-      expect(response.body).toHaveProperty('id', 3);
-      expect(response.body).toHaveProperty('name', 'New Burger');
-      expect(response.body).toHaveProperty('price', 14.99);
-      expect(response.body).toHaveProperty('category', 'BURGER');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 3);
+      expect(response.body.data).toHaveProperty('name', 'New Burger');
+      expect(response.body.data).toHaveProperty('price', 14.99);
+      expect(response.body.data).toHaveProperty('category', 'BURGER');
     });
 
     it('should deny access for non-admin users', async () => {
@@ -337,9 +340,10 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(updateData)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', 1);
-      expect(response.body).toHaveProperty('name', 'Updated Burger');
-      expect(response.body).toHaveProperty('price', 15.99);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 1);
+      expect(response.body.data).toHaveProperty('name', 'Updated Burger');
+      expect(response.body.data).toHaveProperty('price', 15.99);
     });
 
     it('should return 404 for non-existent menu item', async () => {
@@ -377,8 +381,9 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ isAvailable: false })
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', 1);
-      expect(response.body).toHaveProperty('isAvailable', false);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 1);
+      expect(response.body.data).toHaveProperty('isAvailable', false);
     });
 
     it('should return 404 for non-existent menu item', async () => {
@@ -414,10 +419,11 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Classic Burger');
-      expect(response.body).toHaveProperty('deletedMenuItem');
-      expect(response.body.deletedMenuItem).toHaveProperty('id', 1);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('message');
+      expect(response.body.data.message).toContain('Classic Burger');
+      expect(response.body.data).toHaveProperty('deletedMenuItem');
+      expect(response.body.data.deletedMenuItem).toHaveProperty('id', 1);
     });
 
     it('should return 404 for non-existent menu item', async () => {
@@ -445,14 +451,15 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0]).toHaveProperty('id', 1);
-      expect(response.body[0]).toHaveProperty('status', 'PAYMENT_CONFIRMED');
-      expect(response.body[0]).toHaveProperty('user');
-      expect(response.body[0].user).toHaveProperty('name', 'Customer User');
-      expect(response.body[0]).toHaveProperty('items');
-      expect(response.body[0].items).toHaveLength(2);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0]).toHaveProperty('id', 1);
+      expect(response.body.data[0]).toHaveProperty('status', 'PAYMENT_CONFIRMED');
+      expect(response.body.data[0]).toHaveProperty('user');
+      expect(response.body.data[0].user).toHaveProperty('name', 'Customer User');
+      expect(response.body.data[0]).toHaveProperty('items');
+      expect(response.body.data[0].items).toHaveLength(2);
     });
 
     it('should deny access for non-admin users', async () => {
@@ -532,14 +539,15 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(1);
-      expect(response.body[0]).toHaveProperty('id', 1);
-      expect(response.body[0]).toHaveProperty('name', 'Size');
-      expect(response.body[0]).toHaveProperty('options');
-      expect(response.body[0].options).toHaveLength(2);
-      expect(response.body[0].options[0]).toHaveProperty('name', 'Regular');
-      expect(response.body[0].options[0]).toHaveProperty('price', 0);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(1);
+      expect(response.body.data[0]).toHaveProperty('id', 1);
+      expect(response.body.data[0]).toHaveProperty('name', 'Size');
+      expect(response.body.data[0]).toHaveProperty('options');
+      expect(response.body.data[0].options).toHaveLength(2);
+      expect(response.body.data[0].options[0]).toHaveProperty('name', 'Regular');
+      expect(response.body.data[0].options[0]).toHaveProperty('price', 0);
     });
 
     it('should deny access for non-admin users', async () => {
@@ -581,11 +589,12 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send(validCategoryData)
         .expect(201);
 
-      expect(response.body).toHaveProperty('id', 3);
-      expect(response.body).toHaveProperty('name', 'Sauce');
-      expect(response.body).toHaveProperty('options');
-      expect(response.body.options).toHaveLength(2);
-      expect(response.body.options[0]).toHaveProperty('name', 'Ketchup');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 3);
+      expect(response.body.data).toHaveProperty('name', 'Sauce');
+      expect(response.body.data).toHaveProperty('options');
+      expect(response.body.data.options).toHaveLength(2);
+      expect(response.body.data.options[0]).toHaveProperty('name', 'Ketchup');
     });
 
     it('should deny access for non-admin users', async () => {
@@ -608,12 +617,13 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(2);
-      expect(response.body[0]).toHaveProperty('id', 1);
-      expect(response.body[0]).toHaveProperty('name', 'Regular');
-      expect(response.body[0]).toHaveProperty('category');
-      expect(response.body[0].category).toHaveProperty('name', 'Size');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data[0]).toHaveProperty('id', 1);
+      expect(response.body.data[0]).toHaveProperty('name', 'Regular');
+      expect(response.body.data[0]).toHaveProperty('category');
+      expect(response.body.data[0].category).toHaveProperty('name', 'Size');
     });
   });
 
@@ -630,9 +640,10 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('optionIds');
-      expect(response.body.optionIds).toBeInstanceOf(Array);
-      expect(response.body.optionIds).toEqual([1, 2]);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('optionIds');
+      expect(response.body.data.optionIds).toBeInstanceOf(Array);
+      expect(response.body.data.optionIds).toEqual([1, 2]);
     });
 
     it('should return 400 for invalid menu item ID', async () => {
@@ -663,8 +674,9 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .send({ optionIds: [1, 2] })
         .expect(200);
 
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Customization options updated successfully');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('message');
+      expect(response.body.data.message).toContain('Customization options updated successfully');
     });
 
     it('should handle empty option IDs array', async () => {
@@ -730,9 +742,10 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body.message).toContain('Successfully synced');
-      expect(response.body).toHaveProperty('syncedItems', 2);
+      expect(response.body.data).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('message');
+      expect(response.body.data.message).toContain('Successfully synced');
+      expect(response.body.data).toHaveProperty('syncedItems', 2);
     });
 
     it('should handle sync errors gracefully', async () => {
@@ -750,10 +763,11 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('errors');
-      expect(response.body.errors).toBeInstanceOf(Array);
-      expect(response.body.errors).toHaveLength(1);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('success', false);
+      expect(response.body.data).toHaveProperty('errors');
+      expect(response.body.data.errors).toBeInstanceOf(Array);
+      expect(response.body.data.errors).toHaveLength(1);
     });
 
     it('should deny access for non-admin users', async () => {

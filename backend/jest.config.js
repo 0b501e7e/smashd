@@ -18,7 +18,7 @@ module.exports = {
   coverageDirectory: './coverage',
   verbose: true,
   testTimeout: 10000,
-  setupFilesAfterEnv: ['./setupTests.js'],
+  restoreMocks: true,
   testPathIgnorePatterns: [
     '/node_modules/',
     '/dist/'

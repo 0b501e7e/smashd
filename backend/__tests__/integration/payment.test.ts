@@ -248,8 +248,9 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .send({ orderId: 1 })
         .expect(200);
 
+      expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('message', 'Using existing checkout');
-      expect(response.body).toHaveProperty('checkoutId', 'checkout_123456');
+      expect(response.body.data).toHaveProperty('checkoutId', 'checkout_123456');
     });
 
     it('should return 409 for concurrent checkout requests', async () => {
@@ -279,11 +280,12 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/checkouts/checkout_123456/status')
         .expect(200);
 
-      expect(response.body).toHaveProperty('checkoutId', 'checkout_123456');
-      expect(response.body).toHaveProperty('orderId', 1);
-      expect(response.body).toHaveProperty('status', 'PAID');
-      expect(response.body).toHaveProperty('sumupData');
-      expect(response.body.sumupData).toEqual(mockSumUpStatusResponse);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('checkoutId', 'checkout_123456');
+      expect(response.body.data).toHaveProperty('orderId', 1);
+      expect(response.body.data).toHaveProperty('status', 'PAID');
+      expect(response.body.data).toHaveProperty('sumupData');
+      expect(response.body.data.sumupData).toEqual(mockSumUpStatusResponse);
     });
 
     it('should return 404 for non-existent checkout', async () => {
@@ -304,10 +306,11 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/checkouts/checkout_123456/status')
         .expect(200);
 
-      expect(response.body).toHaveProperty('checkoutId', 'checkout_123456');
-      expect(response.body).toHaveProperty('orderId', 0);
-      expect(response.body).toHaveProperty('status', 'ERROR');
-      expect(response.body).toHaveProperty('error', 'Failed to query SumUp API');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('checkoutId', 'checkout_123456');
+      expect(response.body.data).toHaveProperty('orderId', 0);
+      expect(response.body.data).toHaveProperty('status', 'ERROR');
+      expect(response.body.data).toHaveProperty('error', 'Failed to query SumUp API');
     });
   });
 
@@ -323,9 +326,10 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/checkout-url/checkout_123456')
         .expect(200);
 
-      expect(response.body).toHaveProperty('checkoutId', 'checkout_123456');
-      expect(response.body).toHaveProperty('checkoutUrl', 'https://checkout.sumup.com/pay/checkout_123456');
-      expect(response.body).toHaveProperty('orderId', 1);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('checkoutId', 'checkout_123456');
+      expect(response.body.data).toHaveProperty('checkoutUrl', 'https://checkout.sumup.com/pay/checkout_123456');
+      expect(response.body.data).toHaveProperty('orderId', 1);
     });
 
     it('should return 404 for non-existent checkout', async () => {
@@ -436,16 +440,17 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/test/check-order/1')
         .expect(200);
 
-      expect(response.body).toHaveProperty('order');
-      expect(response.body).toHaveProperty('sumup_status');
-      expect(response.body.order).toMatchObject({
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('order');
+      expect(response.body.data).toHaveProperty('sumup_status');
+      expect(response.body.data.order).toMatchObject({
         id: 1,
         userId: 2,
         total: 17.98,
         status: 'AWAITING_PAYMENT',
         sumupCheckoutId: 'checkout_123456'
       });
-      expect(response.body.sumup_status).toEqual(mockSumUpStatusResponse);
+      expect(response.body.data.sumup_status).toEqual(mockSumUpStatusResponse);
     });
 
     it('should check order without SumUp checkout ID', async () => {
@@ -455,9 +460,10 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/test/check-order/1')
         .expect(200);
 
-      expect(response.body).toHaveProperty('order');
-      expect(response.body).not.toHaveProperty('sumup_status');
-      expect(response.body.order).toMatchObject({
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('order');
+      expect(response.body.data).not.toHaveProperty('sumup_status');
+      expect(response.body.data.order).toMatchObject({
         id: 1,
         userId: 2,
         total: 17.98,
@@ -474,9 +480,10 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
         .get('/v1/payment/test/check-order/1')
         .expect(200);
 
-      expect(response.body).toHaveProperty('order');
-      expect(response.body).toHaveProperty('sumup_error', 'API rate limit exceeded');
-      expect(response.body).not.toHaveProperty('sumup_status');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('order');
+      expect(response.body.data).toHaveProperty('sumup_error', 'API rate limit exceeded');
+      expect(response.body.data).not.toHaveProperty('sumup_status');
     });
 
     it('should return 404 for non-existent order', async () => {

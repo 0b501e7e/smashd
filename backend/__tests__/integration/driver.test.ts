@@ -239,9 +239,9 @@ describe('Driver Delivery Flow E2E Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`);
 
       expect(adminOrdersResponse.status).toBe(200);
-      expect(adminOrdersResponse.body).toHaveLength(1);
-      expect(adminOrdersResponse.body[0].fulfillmentMethod).toBe('DELIVERY');
-      expect(adminOrdersResponse.body[0].deliveryAddress).toBe('123 Test Street, Test City');
+      expect(adminOrdersResponse.body.data).toHaveLength(1);
+      expect(adminOrdersResponse.body.data[0].fulfillmentMethod).toBe('DELIVERY');
+      expect(adminOrdersResponse.body.data[0].deliveryAddress).toBe('123 Test Street, Test City');
 
       // Step 5: Admin accepts the order (should set status to READY for delivery orders)
       const readyOrder = {
@@ -272,8 +272,8 @@ describe('Driver Delivery Flow E2E Tests', () => {
         .send({ estimatedMinutes: 30 });
 
       expect(acceptResponse.status).toBe(200);
-      expect(acceptResponse.body.status).toBe('READY');
-      expect(acceptResponse.body.readyAt).toBeTruthy();
+      expect(acceptResponse.body.data.status).toBe('READY');
+      expect(acceptResponse.body.data.readyAt).toBeTruthy();
 
       // Verify the order was updated with READY status
       expect(mockedPrisma.order.update).toHaveBeenCalledWith(
@@ -547,8 +547,8 @@ describe('Driver Delivery Flow E2E Tests', () => {
         .send({ estimatedMinutes: 30 });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe('READY');
-      expect(response.body.readyAt).toBeTruthy();
+      expect(response.body.data.status).toBe('READY');
+      expect(response.body.data.readyAt).toBeTruthy();
 
       // Verify the update was called with READY status
       expect(mockedPrisma.order.update).toHaveBeenCalledWith(
@@ -612,8 +612,8 @@ describe('Driver Delivery Flow E2E Tests', () => {
         .send({ estimatedMinutes: 30 });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe('CONFIRMED');
-      expect(response.body.readyAt).toBeNull();
+      expect(response.body.data.status).toBe('CONFIRMED');
+      expect(response.body.data.readyAt).toBeNull();
 
       // Verify the update was called with CONFIRMED status
       expect(mockedPrisma.order.update).toHaveBeenCalledWith(

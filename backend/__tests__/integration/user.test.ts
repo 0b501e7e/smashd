@@ -259,12 +259,13 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', 1);
-      expect(response.body).toHaveProperty('email', 'customer@example.com');
-      expect(response.body).toHaveProperty('name', 'John Customer');
-      expect(response.body).toHaveProperty('role', 'CUSTOMER');
-      expect(response.body).toHaveProperty('loyaltyPoints', 150);
-      expect(response.body).not.toHaveProperty('password');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 1);
+      expect(response.body.data).toHaveProperty('email', 'customer@example.com');
+      expect(response.body.data).toHaveProperty('name', 'John Customer');
+      expect(response.body.data).toHaveProperty('role', 'CUSTOMER');
+      expect(response.body.data).toHaveProperty('loyaltyPoints', 150);
+      expect(response.body.data).not.toHaveProperty('password');
     });
 
     it('should return 401 for unauthenticated requests', async () => {
@@ -310,12 +311,13 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(2);
-      expect(response.body[0]).toHaveProperty('id', 1);
-      expect(response.body[0]).toHaveProperty('status', 'DELIVERED');
-      expect(response.body[0]).toHaveProperty('total', 17.98);
-      expect(response.body[0]).toHaveProperty('items');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(2);
+      expect(response.body.data[0]).toHaveProperty('id', 1);
+      expect(response.body.data[0]).toHaveProperty('status', 'DELIVERED');
+      expect(response.body.data[0]).toHaveProperty('total', 17.98);
+      expect(response.body.data[0]).toHaveProperty('items');
     });
 
     it('should allow admin to access any user orders', async () => {
@@ -327,8 +329,9 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(2);
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data).toHaveLength(2);
     });
 
     it('should deny access to other users orders for non-admin users', async () => {
@@ -371,10 +374,11 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('id', 1);
-      expect(response.body).toHaveProperty('status', 'DELIVERED');
-      expect(response.body).toHaveProperty('total', 17.98);
-      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('id', 1);
+      expect(response.body.data).toHaveProperty('status', 'DELIVERED');
+      expect(response.body.data).toHaveProperty('total', 17.98);
+      expect(response.body.data).toHaveProperty('items');
     });
 
     it('should allow admin to access any user last order', async () => {
@@ -437,11 +441,12 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('items');
-      expect(response.body.items).toBeInstanceOf(Array);
-      expect(response.body.items).toHaveLength(2);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body).toHaveProperty('unavailableItems');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('items');
+      expect(response.body.data.items).toBeInstanceOf(Array);
+      expect(response.body.data.items).toHaveLength(2);
+      expect(response.body.data).toHaveProperty('message');
+      expect(response.body.data).toHaveProperty('unavailableItems');
     });
 
     it('should return 404 for non-existent order', async () => {
@@ -485,7 +490,8 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('items');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('items');
     });
 
     it('should handle unavailable menu items gracefully', async () => {
@@ -501,8 +507,9 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('items');
-      expect(response.body.items).toHaveLength(1); // Only available items
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('items');
+      expect(response.body.data.items).toHaveLength(1); // Only available items
     });
 
     it('should return empty order when all items unavailable', async () => {
@@ -518,10 +525,11 @@ describe('User Integration Tests - TypeScript Backend', () => {
         .set('Authorization', `Bearer ${customerToken}`)
         .expect(200);
 
-      expect(response.body).toHaveProperty('items');
-      expect(response.body.items).toHaveLength(0);
-      expect(response.body).toHaveProperty('message');
-      expect(response.body).toHaveProperty('unavailableItems');
+      expect(response.body).toHaveProperty('success', true);
+      expect(response.body.data).toHaveProperty('items');
+      expect(response.body.data.items).toHaveLength(0);
+      expect(response.body.data).toHaveProperty('message');
+      expect(response.body.data).toHaveProperty('unavailableItems');
     });
   });
 }); 

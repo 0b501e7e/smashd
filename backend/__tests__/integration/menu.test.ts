@@ -137,7 +137,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
   beforeEach(async () => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Set up bcrypt mocks
     mockedBcrypt.hash.mockResolvedValue('$2b$10$hashedPassword' as never);
     mockedBcrypt.compare.mockImplementation((password: any, _hash: string): Promise<boolean> => {
@@ -176,7 +176,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
       expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.data).toHaveLength(2);
-      
+
       // Verify the correct database call was made
       expect(mockedPrisma.menuItem.findMany).toHaveBeenCalledWith({
         where: { isAvailable: true },
@@ -219,7 +219,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
       expect(response.body).toHaveProperty('success', true);
       expect(response.body).toHaveProperty('data');
       expect(Array.isArray(response.body.data)).toBe(true);
-      
+
       // Verify the correct database call was made
       expect(mockedPrisma.customizationCategory.findMany).toHaveBeenCalledWith({
         include: {
@@ -309,9 +309,10 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
-        // Admin endpoint returns raw array, not wrapped response
-        expect(Array.isArray(response.body)).toBe(true);
-        expect(response.body).toHaveLength(2);
+        // Admin endpoint now returns wrapped response
+        expect(response.body).toHaveProperty('success', true);
+        expect(Array.isArray(response.body.data)).toBe(true);
+        expect(response.body.data).toHaveLength(2);
       });
 
       it('should return 401 for missing token', async () => {
@@ -339,7 +340,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
 
       it('should create new menu item', async () => {
         const newMenuItem = { id: 3, ...validMenuItemData, isAvailable: true, createdAt: new Date(), updatedAt: new Date() };
-        
+
         // Mock: Create menu item
         mockedPrisma.menuItem.create.mockResolvedValue(newMenuItem);
 
@@ -349,9 +350,10 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .send(validMenuItemData)
           .expect(201);
 
-        // Admin endpoint returns raw data, not wrapped response
-        expect(response.body).toHaveProperty('name', 'New Burger');
-        
+        // Admin endpoint now returns wrapped response
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body.data).toHaveProperty('name', 'New Burger');
+
         // Verify the correct database call was made
         expect(mockedPrisma.menuItem.create).toHaveBeenCalled();
       });
@@ -394,7 +396,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
 
       it('should update menu item', async () => {
         const updatedMenuItem = { id: 1, ...updateData, isAvailable: true, createdAt: new Date(), updatedAt: new Date() };
-        
+
         // Mock: Find existing item and update menu item  
         mockedPrisma.menuItem.findUnique.mockResolvedValue(mockMenuItems[0]);
         mockedPrisma.menuItem.update.mockResolvedValue(updatedMenuItem);
@@ -405,8 +407,9 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .send(updateData)
           .expect(200);
 
-        // Admin endpoint returns raw data, not wrapped response
-        expect(response.body).toHaveProperty('name', 'Updated Burger');
+        // Admin endpoint now returns wrapped response
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body.data).toHaveProperty('name', 'Updated Burger');
       });
 
       it('should return 400 for invalid data', async () => {
@@ -430,7 +433,7 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
     describe('PATCH /v1/admin/menu/:id/availability', () => {
       it('should update menu item availability', async () => {
         const updatedMenuItem = { ...mockMenuItems[0], isAvailable: false };
-        
+
         // Mock: Find existing item and update availability
         mockedPrisma.menuItem.findUnique.mockResolvedValue(mockMenuItems[0]);
         mockedPrisma.menuItem.update.mockResolvedValue(updatedMenuItem);
@@ -441,8 +444,9 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .send({ isAvailable: false })
           .expect(200);
 
-        // Admin endpoint returns raw data, not wrapped response
-        expect(response.body).toHaveProperty('isAvailable', false);
+        // Admin endpoint now returns wrapped response
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body.data).toHaveProperty('isAvailable', false);
       });
 
       it('should return 400 for invalid availability value', async () => {
@@ -452,8 +456,8 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .send({ isAvailable: 'invalid' })
           .expect(200);
 
-        // Note: This route doesn't have validation middleware, so it accepts invalid data
-        expect(response.body).toHaveProperty('isAvailable');
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body.data).toHaveProperty('isAvailable');
       });
     });
 
@@ -479,8 +483,9 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           .set('Authorization', `Bearer ${adminToken}`)
           .expect(200);
 
-        // Admin endpoint returns deletion result
-        expect(response.body).toHaveProperty('deletedMenuItem');
+        // Admin endpoint now returns wrapped response
+        expect(response.body).toHaveProperty('success', true);
+        expect(response.body.data).toHaveProperty('deletedMenuItem');
       });
 
       it('should handle database errors', async () => {
