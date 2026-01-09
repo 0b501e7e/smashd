@@ -34,7 +34,7 @@ interface AddMenuItemFormProps {
 const initialFormData = {
   name: '',
   description: '',
-  price: 0,
+  price: '',
   category: 'BURGER', // Default category
   imageUrl: '',
 };
@@ -48,20 +48,24 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
-    // Reset form and errors when dialog opens/closes
+    // Reset form and errors when dialog opens
     if (isOpen) {
       setFormData(initialFormData);
       setSelectedFile(null);
       setImagePreview(null);
       setError(null);
       setIsLoading(false);
-    } else {
-        // Revoke object URL to prevent memory leaks when component is unmounted or preview changes
-        if (imagePreview && imagePreview.startsWith('blob:')) {
-            URL.revokeObjectURL(imagePreview);
-        }
     }
-  }, [isOpen, imagePreview]); // Added imagePreview to dependency array to ensure cleanup
+  }, [isOpen]);
+
+  // Separate useEffect for image preview cleanup
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -120,7 +124,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' ? parseFloat(value) || 0 : value,
+      [name]: value,
     }));
   };
 
@@ -130,7 +134,9 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     setError(null);
     let finalImageUrl = formData.imageUrl; // Use existing if no new file
 
-    if (!formData.name || !formData.category || formData.price <= 0) {
+    const price = parseFloat(formData.price);
+
+    if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
       setError("Name, Category, and a valid Price are required.");
       setIsLoading(false);
       return;
@@ -146,11 +152,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
         return; // Stop submission if image upload failed
       }
     }
-    
+
     if (!finalImageUrl && !selectedFile) { // Check if image is still missing after potential upload attempt
-        setError("Menu item image is required. Please select an image to upload.");
-        setIsLoading(false);
-        return;
+      setError("Menu item image is required. Please select an image to upload.");
+      setIsLoading(false);
+      return;
     }
 
     const token = localStorage.getItem('token');
@@ -167,7 +173,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...formData, imageUrl: finalImageUrl }),
+        body: JSON.stringify({ ...formData, price, imageUrl: finalImageUrl }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
@@ -191,7 +197,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-yellow-400 hover:bg-yellow-300 text-black">
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"> {/* Increased width slightly */}
@@ -216,17 +222,17 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
           <div>
             <Label htmlFor="category-add" className="text-gray-300">Category</Label>
             {/* Simple select for category, can be replaced with shadcn/ui Select if available */}
-            <select 
-                name="category" 
-                id="category-add" 
-                value={formData.category} 
-                onChange={(e) => setFormData(prev => ({...prev, category: e.target.value}))}
-                className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
+            <select
+              name="category"
+              id="category-add"
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
             >
-                <option value="BURGER">Burger</option>
-                <option value="SIDE">Side</option>
-                <option value="DRINK">Drink</option>
-                <option value="DESSERT">Dessert</option>
+              <option value="BURGER">Burger</option>
+              <option value="SIDE">Side</option>
+              <option value="DRINK">Drink</option>
+              <option value="DESSERT">Dessert</option>
             </select>
           </div>
           <div>
@@ -254,7 +260,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
               required
             />
           </div>
-          
+
           <div>
             <Label htmlFor="image-add" className="text-gray-300">Menu Item Image</Label>
             <Input
@@ -270,11 +276,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
                 <Image src={imagePreview} alt="Image Preview" layout="fill" objectFit="contain" />
               </div>
             )}
-             {/* Display existing image URL if no new preview and imageUrl exists from a previous attempt or default */}
+            {/* Display existing image URL if no new preview and imageUrl exists from a previous attempt or default */}
             {!imagePreview && formData.imageUrl && (
-                <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
-                    <Image src={formData.imageUrl} alt="Current Menu Item Image" layout="fill" objectFit="contain" unoptimized />
-                </div>
+              <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
+                <Image src={formData.imageUrl} alt="Current Menu Item Image" layout="fill" objectFit="contain" unoptimized />
+              </div>
             )}
           </div>
 

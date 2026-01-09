@@ -43,8 +43,8 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
-    setEditedItem(item);
     if (isOpen && item) {
+      setEditedItem(item);
       setError(null);
       setIsLoading(false);
       setSelectedFile(null);
@@ -68,15 +68,17 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       } else {
         setImagePreview(null);
       }
-    } else if (!isOpen) {
-      // Revoke object URL to prevent memory leaks when dialog is closed
+    }
+  }, [item, isOpen]);
+
+  // Separate useEffect for image preview cleanup
+  useEffect(() => {
+    return () => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview);
       }
-      setImagePreview(null); // Clear preview when closing
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item, isOpen]);
+    };
+  }, [imagePreview]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -134,7 +136,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     const { name, value } = e.target;
     let processedValue: string | number | boolean = value;
     if (name === 'price') {
-      processedValue = parseFloat(value) || 0;
+      processedValue = value === '' ? '' : (parseFloat(value) || 0);
     } else if (name === 'isAvailable') {
       processedValue = value === 'true';
     }
@@ -150,9 +152,10 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     if (!editedItem) return;
     setIsLoading(true);
     setError(null);
+    const price = typeof editedItem.price === 'string' ? (parseFloat(editedItem.price) || 0) : editedItem.price;
     let finalImageUrl = editedItem.imageUrl; // Start with existing URL
 
-    if (!editedItem.name || !editedItem.category || editedItem.price < 0) { // Price can be 0
+    if (!editedItem.name || !editedItem.category || price < 0) { // Price can be 0 or more
       setError("Name, Category, and a valid Price are required.");
       setIsLoading(false);
       return;
@@ -185,6 +188,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
 
     const itemDataToUpdate = {
       ...editedItem,
+      price,
       imageUrl: finalImageUrl,
       isAvailable: editedItem.isAvailable === undefined ? true : editedItem.isAvailable // Default to true if not set
     };
