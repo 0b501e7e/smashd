@@ -137,7 +137,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     const price = parseFloat(formData.price);
 
     if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
-      setError("El nombre, la categoría y un precio válido son obligatorios.");
+      setError("Name, Category, and a valid Price are required.");
       setIsLoading(false);
       return;
     }
@@ -154,14 +154,14 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     }
 
     if (!finalImageUrl && !selectedFile) { // Check if image is still missing after potential upload attempt
-      setError("La imagen del plato es obligatoria. Por favor, selecciona una imagen para subir.");
+      setError("Menu item image is required. Please select an image to upload.");
       setIsLoading(false);
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      setError("No se encontró el token de autenticación.");
+      setError("Authentication token not found.");
       setIsLoading(false);
       return;
     }
@@ -177,7 +177,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
-        throw new Error(errorData.error || `Error al añadir el plato: ${response.statusText}`);
+        throw new Error(errorData.error || `Failed to add menu item: ${response.statusText}`);
       }
       setIsLoading(false);
       setIsOpen(false);
@@ -197,19 +197,19 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-yellow-400 hover:bg-yellow-300 text-black">
-          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Nuevo Plato
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"> {/* Increased width slightly */}
         <DialogHeader>
-          <DialogTitle className="text-yellow-400">Añadir Nuevo Plato al Menú</DialogTitle>
+          <DialogTitle className="text-yellow-400">Add New Menu Item</DialogTitle>
           <DialogDescription className="text-gray-300">
-            Rellena los detalles del nuevo plato.
+            Fill in the details for the new menu item.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name-add" className="text-gray-300">Nombre</Label>
+            <Label htmlFor="name-add" className="text-gray-300">Name</Label>
             <Input
               id="name-add"
               name="name"
@@ -220,7 +220,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
             />
           </div>
           <div>
-            <Label htmlFor="category-add" className="text-gray-300">Categoría</Label>
+            <Label htmlFor="category-add" className="text-gray-300">Category</Label>
             {/* Simple select for category, can be replaced with shadcn/ui Select if available */}
             <select
               name="category"
@@ -229,14 +229,14 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
               onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
               className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="BURGER">Hamburguesa</option>
-              <option value="SIDE">Acompañamiento</option>
-              <option value="DRINK">Bebida</option>
-              <option value="DESSERT">Postre</option>
+              <option value="BURGER">Burger</option>
+              <option value="SIDE">Side</option>
+              <option value="DRINK">Drink</option>
+              <option value="DESSERT">Dessert</option>
             </select>
           </div>
           <div>
-            <Label htmlFor="description-add" className="text-gray-300">Descripción</Label>
+            <Label htmlFor="description-add" className="text-gray-300">Description</Label>
             <Textarea
               id="description-add"
               name="description"
@@ -247,7 +247,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
             />
           </div>
           <div>
-            <Label htmlFor="price-add" className="text-gray-300">Precio (€)</Label>
+            <Label htmlFor="price-add" className="text-gray-300">Price (€)</Label>
             <Input
               id="price-add"
               name="price"
@@ -262,7 +262,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
           </div>
 
           <div>
-            <Label htmlFor="image-add" className="text-gray-300">Imagen del Plato</Label>
+            <Label htmlFor="image-add" className="text-gray-300">Menu Item Image</Label>
             <Input
               id="image-add"
               name="menuItemImage" // Name for the backend to identify the file part
@@ -286,17 +286,17 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
 
           {error && (
             <Alert variant="destructive">
-              <AlertTitle>Error al añadir el plato</AlertTitle>
+              <AlertTitle>Error Adding Item</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" disabled={isLoading || (!selectedFile && !formData.imageUrl)}> {/* Disable if no file and no existing URL */}
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Añadiendo...' : 'Añadir Plato'}
+              {isLoading ? 'Adding...' : 'Add Item'}
             </Button>
           </DialogFooter>
         </form>

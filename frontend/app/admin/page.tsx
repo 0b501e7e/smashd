@@ -15,8 +15,8 @@ export default function AdminDashboardPage() {
   return (
     <AdminAuthWrapper>
       <div className="container mx-auto py-10 px-4">
-        <h1 className="text-3xl font-bold mb-6 text-yellow-400">Panel de Administración</h1>
-        <p className="text-white mb-6">Bienvenido al área de administración. Gestiona los detalles del restaurante a continuación.</p>
+        <h1 className="text-3xl font-bold mb-6 text-yellow-400">Admin Dashboard</h1>
+        <p className="text-white mb-6">Welcome to the admin area. Manage your restaurant details below.</p>
 
         {/* Tab Navigation */}
         <div className="mb-6 border-b border-gray-700">
@@ -26,42 +26,42 @@ export default function AdminDashboardPage() {
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'menu' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Gestión de Menú
+              Menu Management
             </button>
             <button
               onClick={() => setActiveTab('orders')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'orders' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Gestión de Pedidos
+              Order Management
             </button>
             <button
               onClick={() => setActiveTab('stock')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'stock' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Gestión de Stock
+              Stock Management
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'analytics' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Analíticas
+              Analytics
             </button>
             <button
               onClick={() => setActiveTab('customizations')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'customizations' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Personalizaciones
+              Customizations
             </button>
             <button
               onClick={() => setActiveTab('settings')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
                           ${activeTab === 'settings' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
-              Configuración
+              Settings
             </button>
           </nav>
         </div>
