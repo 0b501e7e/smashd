@@ -1,0 +1,67 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "db",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.dev.yml up",
+            "isBackground": true,
+            "presentation": {
+                "group": "smashd",
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "backend",
+            "type": "shell",
+            "command": "cd backend && PORT=5001 NODE_ENV=development npm run dev",
+            "isBackground": true,
+            "presentation": {
+                "group": "smashd",
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "frontend",
+            "type": "shell",
+            "command": "cd frontend && PORT=3000 NODE_ENV=development npm run dev",
+            "isBackground": true,
+            "presentation": {
+                "group": "smashd",
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "mobile",
+            "type": "shell",
+            "command": "cd app && PORT=8081 NODE_ENV=development npm start",
+            "isBackground": true,
+            "presentation": {
+                "group": "smashd",
+                "reveal": "always",
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "🚀 Start All Services",
+            "dependsOrder": "parallel",
+            "dependsOn": [
+                "db",
+                "backend",
+                "frontend",
+                "mobile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            }
+        }
+    ]
+}

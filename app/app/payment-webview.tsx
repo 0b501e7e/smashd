@@ -27,7 +27,8 @@ export default function PaymentWebviewScreen() {
           const status = await sumupService.getSumupCheckoutStatus(checkoutId);
           console.log('SumUp payment status poll:', status);
 
-          if (status?.status === 'PAID' || status?.status === 'SUCCESSFUL') {
+          const paymentStatus = (status?.status || '').toUpperCase();
+          if (paymentStatus === 'PAID' || paymentStatus === 'SUCCESSFUL') {
             clearInterval(statusCheckInterval!);
 
             // Also update our order status in the backend

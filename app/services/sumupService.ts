@@ -117,7 +117,7 @@ export const sumupService = {
   getSumupCheckoutStatus: async (checkoutId: string) => {
     try {
       console.log('Fetching SumUp checkout status for ID:', checkoutId);
-      const response = await api.get(`/v1/checkouts/${checkoutId}/status`);
+      const response = await api.get(`/v1/payment/checkouts/${checkoutId}/status`);
       console.log('SumUp checkout status response:', response.data);
       return response.data?.data || response.data;
     } catch (error) {

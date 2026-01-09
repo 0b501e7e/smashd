@@ -32,119 +32,72 @@ Ensure you have the following installed before starting:
 - **npm**: >= 9.0.0
 - **Git**: Latest version
 - **Docker**: For running the local PostgreSQL database
+- **Process Manager**: `npm install -g foreman` (recommended) or `overmind`
 - **Expo CLI**: `npm install -g expo-cli` (For mobile development)
 
-### Quick Start (Manual Setup)
+### Quick Start (Unified Workflow)
 
-Since this is a monorepo structure without a root package manager, you will need to set up each service independently.
+Since this is a monorepo, you can run the entire stack (Database, Backend, Frontend, Mobile) with a single command.
 
-#### 1. Database Setup
-Start the local PostgreSQL instance using Docker.
-
-```bash
-# From the project root
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-#### 2. Backend Setup
-Configure and start the API server.
+#### 1. Install Dependencies
+Run this in the root directory to install dependencies for all subsystems:
 
 ```bash
-cd backend
+# Backend
+cd backend && npm install && cp .env.example .env && cd ..
 
-# Install dependencies
-npm install
+# Frontend
+cd frontend && npm install && cp .env.example .env.local && cd ..
 
-# Configure Environment
-cp .env.example .env
-# Edit .env and ensure DATABASE_URL matches your docker configuration:
-# DATABASE_URL="postgresql://senan:postgres@localhost:5432/smashd?schema=public"
-
-# Database Migration
-npm run start # Runs migrations and starts server
-# OR for development with auto-restart:
-npm run dev
+# Mobile App
+cd app && npm install && cp .env.example .env && cd ..
 ```
 
-#### 3. Frontend Setup
-Launch the web customer interface.
+> [!NOTE]
+> Ensure you update the `.env` files with your specific configuration if defaults don't match your system.
+
+#### 2. Start All Services
+
+**Option A: VS Code (Recommended - Scrollable Tabs)**
+If you are using VS Code, I have set up integrated tasks:
+1.  Press **`Cmd + Shift + P`** (Mac).
+2.  Type **"Run Task"** and select it.
+3.  Choose **"🚀 Start All Services"**.
+
+This will open **four separate, scrollable terminal tabs** inside VS Code (one for each service).
+
+**Option B: Terminal (CLI)**
+Use `foreman` (or `overmind`) to start all processes defined in the `Procfile`:
 
 ```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Configure Environment
-cp .env.example .env.local
-# Verify NEXT_PUBLIC_API_URL points to your backend (default: http://localhost:5001/v1)
-
-# Start Development Server
-npm run dev
-# Accessible at http://localhost:3000
+foreman start
 ```
 
-#### 4. Mobile App Setup
-Launch the Expo development server.
+This will concurrently launch:
+- **db**: PostgreSQL via Docker (Port 5432)
+- **backend**: Express API (Port 5001)
+- **frontend**: Next.js Admin Panel (Port 3000)
+- **mobile**: Expo Go Server (Port 8081)
 
-```bash
-cd app
-
-# Install dependencies
-npm install
-
-# Configure Environment
-# Create a .env file based on your project requirements (see env.d.ts)
-# EXPO_PUBLIC_API_URL=http://localhost:5001/v1
-
-# Start Expo Go
-npx expo start
-# Scan the QR code with your phone or press 'i' for iOS Simulator / 'a' for Android Emulator
-```
+> [!TIP]
+> Ports are explicitly set in the `Procfile` to prevent process managers like **Overmind** from auto-assigning them to different values.
 
 ---
 
-## 📁 Project Structure
+## 🏃‍♂️ Running Independently & Mobile Config
 
-### Backend (`/backend`)
-```
-├── prisma/             # Database schema and seeds
-├── src/
-│   ├── config/         # Environment and app configuration
-│   ├── controllers/    # Request handlers
-│   ├── middleware/     # Auth and validation middleware
-│   ├── routes/         # API route definitions
-│   ├── services/       # Business logic layer
-│   └── app.ts          # Express app entry point
-└── __tests__/          # Unit and integration tests
-```
-
-### Frontend (`/frontend`)
-```
-├── app/                # Next.js App Router pages
-├── components/         # Reusable UI components (shadcn/ui)
-├── lib/                # Utilities and API clients
-└── public/             # Static assets
-```
-
-### Mobile App (`/app`)
-```
-├── app/                # Expo Router file-based navigation
-├── components/         # React Native components
-├── contexts/           # React Context (Auth, Cart, etc.)
-└── services/           # API interaction layer
-```
-
----
-
-## 🏃‍♂️ Detailed "Run Locally" Guide
-
-### Running Services Independently
-For full-stack development, you typically need **three terminal windows** open:
-
-1.  **Terminal 1 (DB & Backend)**: `docker-compose up -d && cd backend && npm run dev`
+### Individual Services
+If you prefer running services manually:
+1.  **Terminal 1 (DB & Backend)**: `docker compose up -d && cd backend && npm run dev`
 2.  **Terminal 2 (Web)**: `cd frontend && npm run dev`
 3.  **Terminal 3 (Mobile)**: `cd app && npx expo start`
+
+### Testing with Physical Devices
+To test the mobile app on a real phone (not simulator), `localhost` won't work.
+1.  Find your computer's local IP address (e.g., `192.168.1.50`).
+2.  Update `backend/.env` `ALLOWED_ORIGINS` to include this IP.
+3.  Update `app/.env` `EXPO_PUBLIC_API_URL` to `http://192.168.1.50:5001/v1`.
+4.  Restart `foreman` or the specific servers.
 
 ### Testing with Mobile Devices
 If testing the mobile app on a physical device, `localhost` will not work.

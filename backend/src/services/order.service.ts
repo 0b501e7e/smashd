@@ -410,9 +410,10 @@ export class OrderService implements IOrderService {
             const sumupStatus = await getSumUpCheckoutStatus(order.sumupCheckoutId);
             console.log('OrderService: SumUp checkout status:', sumupStatus);
 
-            if (sumupStatus.status === 'PAID') {
+            const status = (sumupStatus.status || '').toUpperCase();
+            if (status === 'PAID' || status === 'SUCCESSFUL') {
               newStatus = 'PAYMENT_CONFIRMED';
-            } else if (sumupStatus.status === 'FAILED') {
+            } else if (status === 'FAILED') {
               newStatus = 'PAYMENT_FAILED';
             }
           } catch (sumupError) {
