@@ -231,12 +231,9 @@ export class AdminService implements IAdminService {
 
       const estimatedReadyTime = new Date(Date.now() + (acceptData.estimatedMinutes * 60000));
 
-      // For delivery orders, automatically set to READY status when accepted
-      // (since they need to be ready for driver pickup)
-      // For pickup orders, keep as CONFIRMED (customer will pick up)
-      const newStatus = order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress
-        ? 'READY'
-        : 'CONFIRMED';
+      // Both delivery and pickup orders should start in CONFIRMED status
+      // This allows the kitchen to prepare the order before marking it READY
+      const newStatus = 'CONFIRMED';
 
       console.log(`AdminService: Setting order ${acceptData.orderId} to status: ${newStatus} (fulfillmentMethod: ${order.fulfillmentMethod}, hasDeliveryAddress: ${!!order.deliveryAddress})`);
 
@@ -245,7 +242,7 @@ export class AdminService implements IAdminService {
         data: {
           estimatedReadyTime,
           status: newStatus,
-          readyAt: newStatus === 'READY' ? new Date() : null
+          readyAt: null // Order is just accepted, not ready yet
         }
       });
 
