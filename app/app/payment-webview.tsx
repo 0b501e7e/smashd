@@ -15,29 +15,28 @@ export default function PaymentWebviewScreen() {
   const params = useLocalSearchParams();
   const orderId = params.orderId ? Number(params.orderId) : null;
   const insets = useSafeAreaInsets();
-  
+
   // Poll for payment status
   useEffect(() => {
     let statusCheckInterval: ReturnType<typeof setInterval> | null = null;
-    
+
     if (checkoutId && !isLoading) {
       statusCheckInterval = setInterval(async () => {
         try {
           // Check SumUp checkout status directly
-          const response = await api.get(`/v1/payment/checkouts/${checkoutId}/status`);
-          const status = response.data;
+          const status = await sumupService.getSumupCheckoutStatus(checkoutId);
           console.log('SumUp payment status poll:', status);
-          
+
           if (status?.status === 'PAID' || status?.status === 'SUCCESSFUL') {
             clearInterval(statusCheckInterval!);
-            
+
             // Also update our order status in the backend
             if (orderId) {
               try {
                 // Call the verify-payment endpoint. It doesn't require a body.
-                await api.post(`/v1/orders/${orderId}/verify-payment`); 
+                await api.post(`/v1/orders/${orderId}/verify-payment`);
                 console.log(`payment-webview: Successfully called /verify-payment for order ${orderId}`);
-                
+
                 // Now, instead of going to order-confirmation, go to waiting-for-confirmation
                 router.replace({ // Using replace so user can't go back to the webview easily
                   pathname: '/waiting-for-confirmation',
@@ -56,24 +55,24 @@ export default function PaymentWebviewScreen() {
         }
       }, 3000); // Check every 3 seconds
     }
-    
+
     return () => {
       if (statusCheckInterval) {
         clearInterval(statusCheckInterval);
       }
     };
   }, [checkoutId, isLoading, orderId]);
-  
+
   // Handle back button
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       router.back();
       return true;
     });
-    
+
     return () => backHandler.remove();
   }, []);
-  
+
   // Initialize checkout
   useEffect(() => {
     const initializeCheckout = async () => {
@@ -82,47 +81,47 @@ export default function PaymentWebviewScreen() {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         setIsLoading(true);
         setError(''); // Clear previous errors
-        
+
         console.log('🚀 Initializing checkout for order:', orderId);
         const checkout = await sumupService.createCheckout(orderId);
-        
+
         console.log('📦 Received checkout response:', checkout);
-        
+
         // Validate the response structure
         if (!checkout) {
           console.error('❌ No checkout response received');
           throw new Error('No se recibió respuesta del servicio de pago');
         }
-        
+
         if (!checkout.checkoutId) {
           console.error('❌ Missing checkoutId in response:', checkout);
           throw new Error('Falta el ID de pago en la respuesta');
         }
-        
+
         if (!checkout.checkoutUrl) {
           console.error('❌ Missing checkoutUrl in response:', checkout);
           throw new Error('Falta la URL de pago en la respuesta');
         }
-        
+
         console.log('✅ Checkout validation passed:', {
           checkoutId: checkout.checkoutId,
           checkoutUrl: checkout.checkoutUrl
         });
-        
+
         setCheckoutId(checkout.checkoutId);
         setPaymentUrl(checkout.checkoutUrl);
         setIsLoading(false);
-        
+
       } catch (error) {
         console.error('❌ Checkout initialization failed:', error);
-        
+
         const errorMessage = error instanceof Error ? error.message : 'Error al inicializar el pago';
         console.error('❌ Error message:', errorMessage);
-        
+
         setError(errorMessage);
         setIsLoading(false);
       }
@@ -130,7 +129,7 @@ export default function PaymentWebviewScreen() {
 
     initializeCheckout();
   }, [orderId]);
-  
+
   // Handle WebView navigation state changes
   const handleNavigationStateChange = (navState: any) => {
     console.log('WebView Navigating to:', navState.url);
@@ -149,7 +148,7 @@ export default function PaymentWebviewScreen() {
     // We don't need to do an immediate router.push here as it might be premature.
 
     // FIXME: This should ideally come from a shared config or environment variable
-    const REDIRECT_URL_BASE = 'https://example.com/order-confirmation'; 
+    const REDIRECT_URL_BASE = 'https://example.com/order-confirmation';
 
     const isRedirectUrl = navState.url.startsWith(REDIRECT_URL_BASE);
 
@@ -159,7 +158,7 @@ export default function PaymentWebviewScreen() {
       // but the primary confirmation comes from polling.
       // For instance, you could hide the WebView and show a "Verifying payment..." message.
     }
-    
+
     // The original logic that caused premature navigation is removed:
     /*
     if (navState.url.includes('success') || 
@@ -187,13 +186,13 @@ export default function PaymentWebviewScreen() {
 
   if (isLoading) {
     return (
-      <View 
+      <View
         className="flex-1 justify-center items-center bg-black px-5"
-        style={{ 
-          paddingTop: insets.top, 
-          paddingBottom: insets.bottom, 
-          paddingLeft: insets.left, 
-          paddingRight: insets.right 
+        style={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right
         }}
       >
         <ActivityIndicator size="large" color="#FAB10A" />
@@ -203,22 +202,22 @@ export default function PaymentWebviewScreen() {
       </View>
     );
   }
-  
+
   if (error) {
     return (
-      <View 
+      <View
         className="flex-1 justify-center items-center bg-black px-5"
-        style={{ 
-          paddingTop: insets.top, 
-          paddingBottom: insets.bottom, 
-          paddingLeft: insets.left, 
-          paddingRight: insets.right 
+        style={{
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+          paddingLeft: insets.left,
+          paddingRight: insets.right
         }}
       >
         <Text className="text-red-500 text-base mb-5 text-center">
           {error}
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           className="bg-yellow-500 px-6 py-3 rounded-xl"
           onPress={() => router.back()}
         >
@@ -229,15 +228,15 @@ export default function PaymentWebviewScreen() {
       </View>
     );
   }
-  
+
   return (
-    <View 
+    <View
       className="flex-1 bg-black"
-      style={{ 
-        paddingTop: insets.top, 
-        paddingBottom: insets.bottom, 
-        paddingLeft: insets.left, 
-        paddingRight: insets.right 
+      style={{
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right
       }}
     >
       {paymentUrl && (

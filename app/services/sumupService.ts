@@ -16,30 +16,32 @@ export const sumupService = {
         console.log('🔄 Initiating checkout for order ID:', orderId);
         console.log('🌐 API base URL:', api.defaults.baseURL);
       }
-      
+
       // Use the correct payment API endpoint
       const response = await api.post('/v1/payment/initiate-checkout', { orderId });
-      
+
       if (__DEV__) {
         console.log('✅ Checkout response received:', response.data);
       }
-      
+
       // Validate the response has the required fields
-      const { checkoutId, checkoutUrl, orderId: responseOrderId } = response.data;
-      
+      // Backend returns { success: true, data: { ... } }
+      const responseData = response.data?.data || response.data;
+      const { checkoutId, checkoutUrl, orderId: responseOrderId } = responseData;
+
       if (!checkoutId || !checkoutUrl) {
         console.error('❌ Invalid checkout response - missing required fields');
         console.error('Expected: checkoutId and checkoutUrl');
         console.error('Received:', response.data);
         throw new Error('Invalid checkout response from server');
       }
-      
+
       return {
         checkoutId,
         checkoutUrl,
         orderId: responseOrderId || orderId
       };
-      
+
     } catch (error: any) {
       if (__DEV__) {
         console.error('❌ Checkout creation failed:', error);
@@ -49,7 +51,7 @@ export const sumupService = {
         console.error('Request method:', error.config?.method);
         console.error('Request headers:', error.config?.headers);
       }
-      
+
       // Handle specific error cases
       if (error.response?.status === 409) {
         throw new Error('Checkout already in progress. Please wait and try again.');
@@ -71,7 +73,7 @@ export const sumupService = {
       }
     }
   },
-  
+
   /**
    * Gets the current order status
    * 
@@ -81,13 +83,13 @@ export const sumupService = {
   getOrderStatus: async (orderId: number) => {
     try {
       const response = await api.get(`/v1/orders/${orderId}`);
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
       console.error('Error getting order status:', error);
       throw new Error('Failed to get order status. Please try again.');
     }
   },
-  
+
   /**
    * Gets the current payment status of an order
    * 
@@ -99,13 +101,13 @@ export const sumupService = {
       console.log('Fetching order status for order ID:', orderId);
       const response = await api.get(`/v1/orders/${orderId}/status`);
       console.log('Order status response data:', response.data);
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
       console.error('Error checking payment status:', error);
       throw new Error('Failed to check payment status. Please try again.');
     }
   },
-  
+
   /**
    * Gets the current status of a SumUp checkout directly from the SumUp API via our backend
    * 
@@ -117,7 +119,7 @@ export const sumupService = {
       console.log('Fetching SumUp checkout status for ID:', checkoutId);
       const response = await api.get(`/v1/checkouts/${checkoutId}/status`);
       console.log('SumUp checkout status response:', response.data);
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
       console.error('Error checking SumUp checkout status:', error);
       throw new Error('Failed to check payment status. Please try again.');
