@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../lib/apiConstants'; // Import API_BASE_URL
+import { api } from '../../lib/api';
 
 // Define interface for MenuItem
 interface MenuItem {
@@ -21,20 +22,9 @@ export default function StockManagement() {
     const fetchMenuItems = async () => {
       setIsLoading(true);
       setError(null);
-      const token = localStorage.getItem('token'); // Get token
-      if (!token) {
-        setError("Authentication token not found. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/menu/all`, { // Use new admin endpoint
-          headers: { // Add headers
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json' // Optional, but good practice
-          }
-        });
+        const response = await api.get('/admin/menu/all');
         const result = await response.json();
         if (!response.ok) {
           throw new Error(result.error || result.message || `Failed to fetch menu items: ${response.statusText}`);
@@ -59,28 +49,9 @@ export default function StockManagement() {
       )
     );
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found. Please log in again.");
-      // Revert optimistic update
-      setMenuItems(prevItems =>
-        prevItems.map(item =>
-          item.id === itemId ? { ...item, isAvailable: currentIsAvailable } : item
-        )
-      );
-      return;
-    }
-
     try {
       // API endpoint for updating stock status is now more specific
-      const response = await fetch(`${API_BASE_URL}/admin/menu/${itemId}/availability`, { // Updated endpoint
-        method: 'PATCH', // Changed method to PATCH
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ isAvailable: !currentIsAvailable }), // Ensure this matches backend expectation
-      });
+      const response = await api.patch(`/admin/menu/${itemId}/availability`, { isAvailable: !currentIsAvailable });
 
       const result = await response.json();
       if (!response.ok) {

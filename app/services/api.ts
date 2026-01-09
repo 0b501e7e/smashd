@@ -113,6 +113,13 @@ api.interceptors.request.use(
   }
 );
 
+// Callback to handle 401 redirects (to be set by AuthContext/Layout)
+let onUnauthorized: (() => void) | null = null;
+
+export const setUnauthorizedCallback = (callback: () => void) => {
+  onUnauthorized = callback;
+};
+
 // Add a response interceptor to handle token expiration
 api.interceptors.response.use(
   (response) => {
@@ -153,9 +160,14 @@ api.interceptors.response.use(
       }
     } else if (error.response?.status === 401) {
       // Token expired or invalid (only when not in guest mode)
+      console.log('⚠️ Token expired or invalid - triggering unauthorized flow');
       await AsyncStorage.removeItem('token');
       isGuestMode = false; // Reset guest mode if token was invalid
-      // You might want to redirect to login here
+
+      // Trigger the callback to handle redirect in the UI layer
+      if (onUnauthorized) {
+        onUnauthorized();
+      }
     }
     return Promise.reject(error);
   }

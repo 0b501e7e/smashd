@@ -9,6 +9,7 @@ import Confetti from 'react-confetti';
 import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion } from 'framer-motion';
+import { api } from '@/lib/api';
 
 // Define a type for the order details we expect
 interface OrderDetails {
@@ -82,17 +83,9 @@ export default function OrderConfirmation() {
     const verifyAndFetchOrder = async () => {
       setIsLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
-
       try {
         // Call the backend to verify payment and get updated order status
-        const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}/verify-payment`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const verifyResponse = await api.post(`/orders/${orderId}/verify-payment`, {});
 
         if (!verifyResponse.ok) {
           const errorData = await verifyResponse.json().catch(() => ({})); // Attempt to parse error

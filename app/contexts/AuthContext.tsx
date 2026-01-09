@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authAPI, userAPI } from '@/services/api';
+import { authAPI, userAPI, setUnauthorizedCallback } from '@/services/api';
 import { notificationService } from '@/services/notificationService';
 
 type User = {
@@ -16,12 +16,12 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (
-    email: string, 
-    password: string, 
-    name: string, 
-    dateOfBirth: string, 
-    address: string, 
-    phoneNumber: string, 
+    email: string,
+    password: string,
+    name: string,
+    dateOfBirth: string,
+    address: string,
+    phoneNumber: string,
     acceptedTerms: boolean
   ) => Promise<void>;
   loading: boolean;
@@ -34,6 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Register the unauthorized callback
+    setUnauthorizedCallback(() => {
+      console.log('🔄 AuthContext: Received unauthorized signal, logging out...');
+      // Force logout without calling API (since token is already invalid)
+      AsyncStorage.removeItem('token').then(() => {
+        setUser(null);
+      });
+    });
+
     initializeApp();
   }, []);
 
@@ -41,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Initialize notification service first
       await notificationService.initialize();
-      
+
       // Then check authentication
       await checkAuth();
     } catch (error) {
@@ -58,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const userData = await userAPI.getProfile();
           setUser(userData);
-          
+
           // Register push token for existing user
           if (userData?.id) {
             try {
@@ -90,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Extract user from nested response structure
       const userData = response?.data?.user || response.user;
       setUser(userData);
-      
+
       // Register push token with backend after successful login
       if (userData?.id) {
         try {
@@ -129,12 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (
-    email: string, 
-    password: string, 
-    name: string, 
-    dateOfBirth: string, 
-    address: string, 
-    phoneNumber: string, 
+    email: string,
+    password: string,
+    name: string,
+    dateOfBirth: string,
+    address: string,
+    phoneNumber: string,
     acceptedTerms: boolean
   ) => {
     try {

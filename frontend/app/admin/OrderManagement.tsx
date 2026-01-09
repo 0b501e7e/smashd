@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../../lib/apiConstants'; // Import API_BASE_URL
+import { api } from '../../lib/api';
 
 const PREP_TIMES = [15, 30, 45, 60]; // Available prep times in minutes
 
@@ -67,19 +68,7 @@ export default function OrderManagement() {
     setIsLoading(true);
     // setError(null); // Keep previous error for a moment if it's a refresh
     try {
-      const token = localStorage.getItem('token'); // Corrected key from adminToken to token
-      if (!token) {
-        setError('Admin token not found. Please log in again.');
-        setIsLoading(false);
-        // Optionally, redirect to login or show a more prominent login message
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/admin/orders`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await api.get('/admin/orders');
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || result.message || `HTTP error ${response.status}`);
@@ -122,20 +111,7 @@ export default function OrderManagement() {
     }
     setIsLoading(true); // Indicate loading for this specific action
     try {
-      const token = localStorage.getItem('token'); // Corrected key from adminToken to token
-      if (!token) {
-        setError('Admin token not found. Please log in again.');
-        setIsLoading(false);
-        return;
-      }
-      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ estimatedMinutes: prepTimeMinutes }),
-      });
+      const response = await api.post(`/admin/orders/${orderId}/accept`, { estimatedMinutes: prepTimeMinutes });
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || result.message || `Failed to accept order: ${response.statusText}`);
@@ -157,19 +133,7 @@ export default function OrderManagement() {
   const handleDeclineOrder = async (orderId: number) => {
     setIsLoading(true); // Indicate loading for this specific action
     try {
-      const token = localStorage.getItem('token'); // Corrected key from adminToken to token
-      if (!token) {
-        setError('Admin token not found. Please log in again.');
-        setIsLoading(false);
-        return;
-      }
-      const response = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/decline`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await api.post(`/admin/orders/${orderId}/decline`, {});
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || result.message || `Failed to decline order: ${response.statusText}`);

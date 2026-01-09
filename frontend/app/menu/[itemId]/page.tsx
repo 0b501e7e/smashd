@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useBasket, MenuItem, CustomizationSelection } from '@/app/components/BasketContext';
 import { Minus, Plus } from 'lucide-react';
+import { api } from '@/lib/api';
 
 // Define customization options (similar to React Native app)
 // In a real app, these might come from an API or config
@@ -67,10 +68,7 @@ export default function MenuItemDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        if (!apiUrl) throw new Error("API URL not configured.");
-
-        const response = await fetch(`${apiUrl}/menu/${itemId}`);
+        const response = await api.get(`/menu/${itemId}`);
         if (!response.ok) {
           throw new Error(`Failed to fetch item: ${response.statusText}`);
         }
@@ -82,9 +80,9 @@ export default function MenuItemDetailPage() {
         // Set default selections based on item type if needed
         // Example: Pre-select standard toppings for a burger
         if (data.category === 'BURGER') {
-            // Example: Default sauces/toppings could be set here
-            // setSelectedSauces(['ketchup', 'mayo']);
-            // setSelectedToppings(['lettuce', 'tomato', 'onion']);
+          // Example: Default sauces/toppings could be set here
+          // setSelectedSauces(['ketchup', 'mayo']);
+          // setSelectedToppings(['lettuce', 'tomato', 'onion']);
         }
 
       } catch (err) {
@@ -106,10 +104,10 @@ export default function MenuItemDetailPage() {
     let unitPrice = item.price;
 
     const calculateCategoryPrice = (selectedIds: string[], options?: Option[]) => {
-        return selectedIds.reduce((sum, id) => {
-            const option = options?.find(opt => opt.id === id);
-            return sum + (option?.price || 0);
-        }, 0);
+      return selectedIds.reduce((sum, id) => {
+        const option = options?.find(opt => opt.id === id);
+        return sum + (option?.price || 0);
+      }, 0);
     };
 
     unitPrice += calculateCategoryPrice(selectedExtras, categoryConfig.EXTRAS);
@@ -122,21 +120,21 @@ export default function MenuItemDetailPage() {
   // Toggle customization selection
   const handleSelectionChange = (id: string, category: 'EXTRAS' | 'SAUCES' | 'TOPPINGS') => {
     const setters = {
-        EXTRAS: setSelectedExtras,
-        SAUCES: setSelectedSauces,
-        TOPPINGS: setSelectedToppings,
+      EXTRAS: setSelectedExtras,
+      SAUCES: setSelectedSauces,
+      TOPPINGS: setSelectedToppings,
     };
     const currentSelection = { // Correctly reference state variables
-        EXTRAS: selectedExtras,
-        SAUCES: selectedSauces,
-        TOPPINGS: selectedToppings,
+      EXTRAS: selectedExtras,
+      SAUCES: selectedSauces,
+      TOPPINGS: selectedToppings,
     }[category];
 
     const setter = setters[category];
     if (currentSelection.includes(id)) {
-        setter(currentSelection.filter(selId => selId !== id));
+      setter(currentSelection.filter(selId => selId !== id));
     } else {
-        setter([...currentSelection, id]);
+      setter([...currentSelection, id]);
     }
   };
 
@@ -148,9 +146,9 @@ export default function MenuItemDetailPage() {
     const customizations: CustomizationSelection = {};
 
     const mapSelections = (selectedIds: string[], options?: Option[]) => {
-        return selectedIds
-            .map(id => options?.find(opt => opt.id === id)?.name)
-            .filter((name): name is string => !!name);
+      return selectedIds
+        .map(id => options?.find(opt => opt.id === id)?.name)
+        .filter((name): name is string => !!name);
     }
 
     if (selectedExtras.length > 0) customizations.extras = mapSelections(selectedExtras, categoryConfig.EXTRAS);
@@ -206,9 +204,9 @@ export default function MenuItemDetailPage() {
   // Get API base URL, remove trailing /v1 or /api suffix
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
   // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-  const imageSrc = item.imageUrl && apiUrl 
-                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
-                    : '/burger.png'; // Keep using frontend fallback
+  const imageSrc = item.imageUrl && apiUrl
+    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+    : '/burger.png'; // Keep using frontend fallback
   const fallbackSrc = '/burger.png'; // Define fallback for error handling
   console.log(`Detail Page: Using image path: ${imageSrc}`);
 
@@ -245,48 +243,48 @@ export default function MenuItemDetailPage() {
             <Separator className="my-4 bg-yellow-400/30" />
 
             <CardContent className="p-0 flex-grow overflow-y-auto">
-                {/* Customizations */}
-                {renderOptions('Extras', categoryConfig.EXTRAS, selectedExtras, 'EXTRAS')}
-                {renderOptions('Sauces', categoryConfig.SAUCES, selectedSauces, 'SAUCES')}
-                {renderOptions('Toppings', categoryConfig.TOPPINGS, selectedToppings, 'TOPPINGS')}
+              {/* Customizations */}
+              {renderOptions('Extras', categoryConfig.EXTRAS, selectedExtras, 'EXTRAS')}
+              {renderOptions('Sauces', categoryConfig.SAUCES, selectedSauces, 'SAUCES')}
+              {renderOptions('Toppings', categoryConfig.TOPPINGS, selectedToppings, 'TOPPINGS')}
 
-                {/* Spacer if no customizations */} \n                {Object.keys(categoryConfig).length === 0 && <div className="h-16"></div>}
+              {/* Spacer if no customizations */} \n                {Object.keys(categoryConfig).length === 0 && <div className="h-16"></div>}
             </CardContent>
 
             <Separator className="my-4 bg-yellow-400/30" />
 
             {/* Quantity & Add to Cart */}
             <div className="mt-auto">
-                <div className="flex items-center justify-between mb-4">
-                    <Label className="text-lg font-semibold text-yellow-300">Quantity</Label>
-                    <div className="flex items-center border border-yellow-400/50 rounded-md">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                            disabled={quantity <= 1}
-                            className="text-yellow-400 hover:bg-yellow-800/50 disabled:text-gray-500"
-                        >
-                            <Minus className="h-5 w-5" />
-                        </Button>
-                        <span className="w-12 text-center text-lg font-medium text-white">{quantity}</span>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setQuantity(q => q + 1)}
-                            className="text-yellow-400 hover:bg-yellow-800/50"
-                        >
-                            <Plus className="h-5 w-5" />
-                        </Button>
-                    </div>
+              <div className="flex items-center justify-between mb-4">
+                <Label className="text-lg font-semibold text-yellow-300">Quantity</Label>
+                <div className="flex items-center border border-yellow-400/50 rounded-md">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    className="text-yellow-400 hover:bg-yellow-800/50 disabled:text-gray-500"
+                  >
+                    <Minus className="h-5 w-5" />
+                  </Button>
+                  <span className="w-12 text-center text-lg font-medium text-white">{quantity}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setQuantity(q => q + 1)}
+                    className="text-yellow-400 hover:bg-yellow-800/50"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
                 </div>
-                <Button
-                    size="lg"
-                    className="w-full bg-yellow-400 text-black hover:bg-yellow-500 text-lg font-bold py-3"
-                    onClick={handleAddToCart}
-                >
-                    Add {quantity} to Cart - €{calculateTotalPrice().toFixed(2)}
-                </Button>
+              </div>
+              <Button
+                size="lg"
+                className="w-full bg-yellow-400 text-black hover:bg-yellow-500 text-lg font-bold py-3"
+                onClick={handleAddToCart}
+              >
+                Add {quantity} to Cart - €{calculateTotalPrice().toFixed(2)}
+              </Button>
             </div>
           </div>
         </div>
