@@ -1,3 +1,16 @@
+export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_CONFIRMED' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
+
+export type UserRole = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
+
+export type MenuCategory = 'BURGER' | 'SIDE' | 'DRINK' | 'DESSERT';
+
+export interface ApiResponse<T = any> {
+  data?: T;
+  error?: string;
+  message?: string;
+  success: boolean;
+}
+
 export interface CustomizationOption {
   id: string | number;
   name: string;
@@ -27,14 +40,13 @@ export interface CartItem {
   price: number;
   quantity: number;
   customizations?: CustomizationOptions;
-  // Add any other properties that may be in cart items
 }
 
 export interface Order {
   id: number;
   items: CartItem[];
   total: number;
-  status: string;
+  status: OrderStatus;
   userId?: number;
   sumupCheckoutId?: string;
 }
@@ -51,4 +63,4 @@ export interface CartContextType {
   clearCart: () => void;
   createOrder: () => Promise<Order | null>;
   setOrder: (order: any) => void;
-} 
+}

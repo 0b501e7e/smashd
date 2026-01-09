@@ -15,19 +15,19 @@ const getLocalHost = () => {
 const getApiUrl = () => {
   // Get from expo config extra (from app.config.js variants)
   const apiUrl = Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL;
-  
+
   if (!apiUrl) {
     console.error('EXPO_PUBLIC_API_URL is not defined in app config! This will cause app to crash.');
     // Fallback to your production URL
     return 'https://backend-production-e9ac.up.railway.app';
   }
-  
+
   console.log('🌐 Found API URL from app config:', apiUrl);
   console.log('🎯 App Variant:', Constants.expoConfig?.extra?.EXPO_PUBLIC_APP_ENV || 'production');
   console.log('🔧 Full Expo Config Extra:', Constants.expoConfig?.extra);
-  
-  return Platform.OS === 'web' 
-    ? apiUrl 
+
+  return Platform.OS === 'web'
+    ? apiUrl
     : apiUrl.replace('localhost', getLocalHost());
 };
 
@@ -53,7 +53,7 @@ const initializeGuestMode = async () => {
   try {
     const guestMode = await AsyncStorage.getItem('guestMode');
     isGuestMode = guestMode === 'true';
-    
+
     // If we have a valid JWT token, clear guest mode
     const token = await AsyncStorage.getItem('token');
     if (token && isGuestMode) {
@@ -96,7 +96,7 @@ api.interceptors.request.use(
   async (config) => {
     // Ensure guest mode is properly initialized for this request
     await checkGuestMode();
-    
+
     // Skip token for guest mode on non-public endpoints
     if (!isGuestMode) {
       const token = await AsyncStorage.getItem('token');
@@ -144,10 +144,10 @@ api.interceptors.response.use(
     // In guest mode, we don't care about 401 errors for user-specific endpoints
     if (isGuestMode && error.response?.status === 401) {
       const url = error.config?.url || '';
-             // For guest mode, silently handle 401s for user-specific endpoints
-       if (url.includes('/v1/menu') || 
-           url.includes('/v1/users/profile') || 
-           (url.includes('/v1/users/') && url.includes('/last-order'))) {
+      // For guest mode, silently handle 401s for user-specific endpoints
+      if (url.includes('/v1/menu') ||
+        url.includes('/v1/users/profile') ||
+        (url.includes('/v1/users/') && url.includes('/last-order'))) {
         console.log('Silently handling 401 in guest mode for:', url);
         return { data: null }; // Return null data instead of error
       }
@@ -167,7 +167,7 @@ export const authAPI = {
     console.log('🌐 Full login URL:', `${API_URL}/v1/auth/login`);
     const response = await api.post('/v1/auth/login', { email, password });
     console.log('✅ Login successful:', response.data);
-    
+
     // Extract token from the nested data structure
     const token = response.data?.data?.token;
     if (token) {
@@ -176,28 +176,28 @@ export const authAPI = {
     } else {
       console.error('❌ No token found in response:', response.data);
     }
-    
+
     setGuestMode(false); // Disable guest mode on login
     return response.data;
   },
 
   register: async (
-    email: string, 
-    password: string, 
-    name: string, 
-    dateOfBirth: string, 
-    address: string, 
-    phoneNumber: string, 
+    email: string,
+    password: string,
+    name: string,
+    dateOfBirth: string,
+    address: string,
+    phoneNumber: string,
     acceptedTerms: boolean
   ) => {
-    const response = await api.post('/v1/auth/register', { 
-      email, 
-      password, 
-      name, 
-      dateOfBirth, 
-      address, 
-      phoneNumber, 
-      acceptedTerms 
+    const response = await api.post('/v1/auth/register', {
+      email,
+      password,
+      name,
+      dateOfBirth,
+      address,
+      phoneNumber,
+      acceptedTerms
     });
     setGuestMode(false); // Disable guest mode on registration
     return response.data;
@@ -207,7 +207,7 @@ export const authAPI = {
     await AsyncStorage.removeItem('token');
     setGuestMode(false); // Reset guest mode on logout
   },
-  
+
   // Forgot / Reset password
   forgotPassword: async (email: string) => {
     const res = await api.post('/v1/auth/forgot-password', { email });
@@ -234,33 +234,21 @@ type AllCustomizations = {
 };
 
 export const menuAPI = {
-  getMenu: async () => {
+  getMenuItems: async () => {
     try {
-      console.log('Getting menu from', `${API_URL}/v1/menu`);
       const response = await api.get('/v1/menu');
-      console.log('Menu response data:', response.data);
-      // Extract the actual menu items array from the nested response
-      return response.data?.data || response.data;
+      const menuItems = response.data?.data;
+      console.log(`Sending ${menuItems?.length} menu items`);
+      return menuItems;
     } catch (error: any) {
       console.error('Menu fetch error:', error);
-      // If axios error, log more details
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
-        console.error('Error response headers:', error.response.headers);
-      } else if (error.request) {
-        // The request was made but no response was received
-        console.error('Error request:', error.request);
-      }
       throw error;
     }
   },
-  
+
   getMenuItemById: async (id: number) => {
     const response = await api.get(`/v1/menu/${id}`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   // New function to fetch customizations for a menu item
@@ -270,41 +258,28 @@ export const menuAPI = {
       const response = await api.get(`/v1/menu/items/${id}/customizations`);
       console.log('✅ Customizations response status:', response.status);
       console.log('📦 Customizations response data:', JSON.stringify(response.data, null, 2));
-      
-      // Handle new backend response format: { success: true, data: {...}, message: "..." }
-      const customizationsData = response.data?.data || response.data;
-      
-      // Validate the data structure
+
+      const customizationsData = response.data?.data;
+
       if (!customizationsData) {
         console.warn('⚠️ No customizations data received');
         return { extras: [], sauces: [], toppings: [] };
       }
-      
-      // Return in expected format
-      const result = {
-        extras: customizationsData.Extras || [],
-        sauces: customizationsData.Sauces || [],
-        toppings: customizationsData.Toppings || []
+
+      // Support both legacy fixed categories and dynamic grouping
+      const result: AllCustomizations = {
+        extras: customizationsData.Extras || customizationsData.extras || [],
+        sauces: customizationsData.Sauces || customizationsData.sauces || [],
+        toppings: customizationsData.Toppings || customizationsData.toppings || []
       };
-      
+
+      // If we have other categories, we could potentially handle them here
+      // but the mobile app UI expects extras, sauces, toppings specifically.
+
       console.log('🎯 Transformed customizations:', JSON.stringify(result, null, 2));
       return result;
     } catch (error: any) {
       console.error(`❌ Error fetching customizations for item ${id}:`, error);
-      
-      // Enhanced error logging for production debugging
-      if (error.response) {
-        console.error('📊 Response status:', error.response.status);
-        console.error('📊 Response headers:', error.response.headers);
-        console.error('📊 Response data:', error.response.data);
-      } else if (error.request) {
-        console.error('🔗 Request failed - no response received');
-        console.error('🔗 Request config:', error.config);
-      } else {
-        console.error('⚙️ Request setup error:', error.message);
-      }
-      
-      // Return empty customizations on error
       return { extras: [], sauces: [], toppings: [] };
     }
   },
@@ -313,14 +288,14 @@ export const menuAPI = {
   getGeneralCustomizations: async (): Promise<AllCustomizations> => {
     const response = await api.get('/v1/menu/customizations');
     const categories = response.data?.data || response.data || [];
-    
+
     // Transform backend categories into expected format
     const customizations: AllCustomizations = {
       extras: [],
       sauces: [],
       toppings: []
     };
-    
+
     categories.forEach((category: any) => {
       const categoryName = category.name.toLowerCase();
       if (categoryName === 'extras') {
@@ -343,7 +318,7 @@ export const menuAPI = {
         }));
       }
     });
-    
+
     return customizations;
   },
 };
@@ -356,89 +331,82 @@ export const orderAPI = {
     deliveryAddress?: string;
   }) => {
     const response = await api.post('/v1/orders', orderData);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
-  confirmPayment: async (orderId: number, paymentData: any) => {
-    const response = await api.post(`/v1/orders/${orderId}/payment-confirm`, {
+  verifyPayment: async (orderId: number, paymentData: any) => {
+    const response = await api.post(`/v1/orders/${orderId}/verify-payment`, {
       ...paymentData
     });
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   getUserOrders: async (userId: number) => {
-    console.log(`[api.ts] Fetching orders for userId: ${userId} via /users/:userId/orders`);
     const response = await api.get(`/v1/users/${userId}/orders`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
-  
+
   getOrderStatus: async (orderId: number) => {
-    try {
-      console.log(`Fetching order status for order ID: ${orderId}`);
-      const response = await api.get(`/v1/orders/${orderId}/status`);
-      
-      // Log and validate the response data
-      console.log(`Order status response data:`, response.data);
-      
-      // Extract order data from nested response structure
-      const orderData = response.data?.data || response.data;
-      
-      // Check if order data has the expected structure
-      if (!orderData || !orderData.id) {
-        console.warn(`Invalid order status response for order ${orderId}:`, response.data);
-        throw new Error('Invalid order data received');
-      }
-      
-      return orderData;
-    } catch (error) {
-      console.error(`Error getting order status for order ${orderId}:`, error);
-      throw error;
-    }
+    const response = await api.get(`/v1/orders/${orderId}/status`);
+    return response.data?.data;
   },
   repeatOrder: async (orderId: number) => {
-    // Updated endpoint: GET /v1/users/orders/:orderId/repeat
     const response = await api.get(`/v1/users/orders/${orderId}/repeat`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
+};
+
+export const analyticsAPI = {
+  trackEvent: async (eventType: string, sessionId?: string, metadata?: any) => {
+    try {
+      const response = await api.post('/v1/analytics/track', {
+        eventType,
+        sessionId,
+        metadata
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error tracking analytics event:', error);
+      return null;
+    }
+  }
 };
 
 export const userAPI = {
   getProfile: async () => {
     const response = await api.get('/v1/users/profile');
-    // Extract user data from nested response structure
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
   getLastOrder: async (userId: number) => {
-    // Ensure the endpoint matches your backend route for fetching a user's last order
     const response = await api.get(`/v1/users/${userId}/last-order`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 };
 
 export const driverAPI = {
   getOrders: async () => {
     const response = await api.get('/v1/driver/orders');
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   getActiveOrders: async () => {
     const response = await api.get('/v1/driver/orders/active');
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   getOrderDetails: async (orderId: number) => {
     const response = await api.get(`/v1/driver/orders/${orderId}`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   acceptOrder: async (orderId: number) => {
     const response = await api.post(`/v1/driver/orders/${orderId}/accept`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 
   markDelivered: async (orderId: number) => {
     const response = await api.post(`/v1/driver/orders/${orderId}/delivered`);
-    return response.data?.data || response.data;
+    return response.data?.data;
   },
 };
 
@@ -460,51 +428,20 @@ export const paymentAPI = {
       return response.data;
     } catch (error: any) {
       console.error('Error initiating checkout:', error);
-      
+
       // Check if we have an API error response
       if (error.response && error.response.data && error.response.data.error) {
         throw new Error(error.response.data.error);
       }
-      
+
       // Otherwise, throw a generic error
       throw new Error('Failed to initialize payment. Please try again.');
     }
   },
 
-  /**
-   * Gets the current order status
-   * 
-   * @param orderId - Order ID to check
-   * @returns Order status and details
-   */
   getOrderStatus: async (orderId: number) => {
-    try {
-      console.log(`Fetching order status for order ID: ${orderId}`);
-      const response = await api.get(`/v1/orders/${orderId}/status`);
-      
-      // Log and validate the response data
-      console.log(`Order status response data:`, response.data);
-      
-      // Extract order data from nested response structure
-      const orderData = response.data?.data || response.data;
-      
-      // Check if order data has the expected structure
-      if (!orderData || !orderData.id) {
-        console.warn(`Invalid order status response for order ${orderId}:`, response.data);
-        throw new Error('Invalid order data received');
-      }
-      
-      return orderData;
-    } catch (error) {
-      console.error(`Error getting order status for order ${orderId}:`, error);
-      throw error;
-    }
-  },
-  repeatOrder: async (orderId: number) => {
-    // Updated endpoint: GET /v1/users/orders/:orderId/repeat
-    const response = await api.get(`/v1/users/orders/${orderId}/repeat`);
-    return response.data?.data || response.data;
-  },
+    return orderAPI.getOrderStatus(orderId);
+  }
 };
 
 export default api;
