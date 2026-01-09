@@ -22,7 +22,7 @@ export function Checkout() {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      setError("You must be logged in to place an order.");
+      setError("Debes iniciar sesión para realizar un pedido.");
       setIsProcessing(false);
       return;
     }
@@ -55,10 +55,10 @@ export function Checkout() {
 
       const orderData = await orderResponse.json();
       console.log('Order creation response:', orderData);
-      
+
       // Handle new API response structure
       const createdOrderId = orderData.data?.order?.id || orderData.order?.id || orderData.id;
-      
+
       if (!createdOrderId) {
         console.error('Failed to extract order ID from response:', orderData);
         throw new Error('Order creation failed - no order ID returned');
@@ -84,12 +84,12 @@ export function Checkout() {
       }
 
       const checkoutData = await initiateCheckoutResponse.json();
-      
+
       // Handle both old and new response formats
       const sumupCheckoutUrl = checkoutData.checkoutUrl || checkoutData.data?.checkoutUrl;
 
       if (!sumupCheckoutUrl) {
-          throw new Error('SumUp checkout URL not received from backend.');
+        throw new Error('SumUp checkout URL not received from backend.');
       }
 
       // Step 3: Redirect directly to SumUp's hosted payment page
@@ -128,11 +128,11 @@ export function Checkout() {
   return (
     <Card className="w-full max-w-md bg-gray-950 border border-yellow-400/30 text-white">
       <CardHeader className="border-b border-border pb-4">
-        <CardTitle className="text-yellow-400">Your Order</CardTitle>
+        <CardTitle className="text-yellow-400">Tu Pedido</CardTitle>
       </CardHeader>
       <CardContent className="p-6">
         {basket.length === 0 ? (
-          <p className="text-center text-gray-400 py-8">Your basket is empty.</p>
+          <p className="text-center text-gray-400 py-8">Tu carrito está vacío.</p>
         ) : (
           <ul className="mb-4 space-y-3">
             {basket.map((item) => (
@@ -155,10 +155,10 @@ export function Checkout() {
           </div>
         )}
         {error && (
-            <Alert variant="destructive" className="mt-4">
-                <AlertTitle>Order Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-            </Alert>
+          <Alert variant="destructive" className="mt-4">
+            <AlertTitle>Order Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
       </CardContent>
       <CardFooter className="p-6 pt-0">
@@ -168,7 +168,7 @@ export function Checkout() {
           className="w-full disabled:opacity-50 text-lg py-3"
         >
           {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-          {isProcessing ? 'Processing...' : 'Proceed to Payment'}
+          {isProcessing ? 'Procesando...' : 'Ir al Pago'}
         </Button>
       </CardFooter>
     </Card>

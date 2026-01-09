@@ -30,16 +30,16 @@ export default function Login() {
         console.log('Login successful');
         console.log('Token:', data.data.token);
         console.log('User data:', data.data.user);
-        
+
         // Store token and user data from the nested structure
         localStorage.setItem('token', data.data.token);
         localStorage.setItem('user', JSON.stringify(data.data.user));
-        
+
         console.log('Stored in localStorage - token:', !!localStorage.getItem('token'));
         console.log('Stored in localStorage - user:', localStorage.getItem('user'));
-        
+
         window.dispatchEvent(new Event('storage'));
-        
+
         // Redirect based on user role
         if (data.data.user.role === 'ADMIN') {
           router.push('/admin');
@@ -47,11 +47,11 @@ export default function Login() {
           router.push('/');
         }
       } else {
-        setError(data.error || data.message || 'Login failed. Please try again.');
+        setError(data.error || data.message || 'Error al iniciar sesión. Por favor, inténtelo de nuevo.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An unexpected error occurred. Please try again later.');
+      setError('Ocurrió un error inesperado. Por favor, inténtelo de nuevo más tarde.');
     }
   };
 
@@ -59,7 +59,7 @@ export default function Login() {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-yellow-400">Login</CardTitle>
+          <CardTitle className="text-yellow-400">Acceder</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
@@ -67,7 +67,7 @@ export default function Login() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="email"
-                  placeholder="Email"
+                  placeholder="Correo electrónico"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -77,7 +77,7 @@ export default function Login() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="password"
-                  placeholder="Password"
+                  placeholder="Contraseña"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -88,7 +88,7 @@ export default function Login() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full bg-yellow-400 text-black hover:bg-yellow-500">Login</Button>
+            <Button type="submit" className="w-full bg-yellow-400 text-black hover:bg-yellow-500">Acceder</Button>
           </CardFooter>
         </form>
       </Card>

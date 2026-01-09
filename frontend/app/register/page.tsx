@@ -30,11 +30,11 @@ export default function Register() {
         console.log('Registration successful:', data.message);
         router.push('/login');
       } else {
-        setError(data.error || 'Registration failed. Please try again.');
+        setError(data.error || 'Error en el registro. Por favor, inténtelo de nuevo.');
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setError('An unexpected error occurred. Please try again later.');
+      setError('Ocurrió un error inesperado. Por favor, inténtelo de nuevo más tarde.');
     }
   };
 
@@ -42,7 +42,7 @@ export default function Register() {
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-gray-900 border-gray-700">
         <CardHeader>
-          <CardTitle className="text-yellow-400">Register</CardTitle>
+          <CardTitle className="text-yellow-400">Registrarse</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent>
@@ -50,7 +50,7 @@ export default function Register() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="username"
-                  placeholder="Username"
+                  placeholder="Nombre de usuario"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
@@ -59,7 +59,7 @@ export default function Register() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="email"
-                  placeholder="Email"
+                  placeholder="Correo electrónico"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -69,7 +69,7 @@ export default function Register() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="password"
-                  placeholder="Password"
+                  placeholder="Contraseña"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -80,7 +80,7 @@ export default function Register() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full bg-yellow-400 text-black hover:bg-yellow-500">Register</Button>
+            <Button type="submit" className="w-full bg-yellow-400 text-black hover:bg-yellow-500">Registrarse</Button>
           </CardFooter>
         </form>
       </Card>

@@ -94,7 +94,7 @@ const MenuList = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      setError("Authentication token not found.");
+      setError("No se encontró el token de autenticación.");
       setIsLoading(false);
       setIsApiLoading(false);
       return;
@@ -160,7 +160,7 @@ const MenuList = () => {
     setApiError(null);
     const token = localStorage.getItem('token');
     if (!token) {
-      setApiError("Authentication token not found.");
+      setApiError("No se encontró el token de autenticación.");
       setIsApiLoading(false);
       return;
     }
@@ -199,7 +199,7 @@ const MenuList = () => {
   // Use Alert for fetch error
   if (error) return (
     <Alert variant="destructive" className="mt-6">
-      <AlertTitle>Error Loading Menu</AlertTitle>
+      <AlertTitle>Error al cargar el Menú</AlertTitle>
       <AlertDescription>{error}</AlertDescription>
     </Alert>
   );
@@ -207,7 +207,7 @@ const MenuList = () => {
   return (
     <div className="mt-10"> { /* Increased top margin */}
       <div className="flex justify-between items-center mb-6"> { /* Increased bottom margin */}
-        <h2 className="text-2xl font-semibold text-yellow-300">Menu Items</h2>
+        <h2 className="text-2xl font-semibold text-yellow-300">Platos del Menú</h2>
         {/* Assume AddMenuItemForm uses a Button internally */}
         <AddMenuItemForm onItemAdded={() => fetchMenuItems(false)} />
       </div>
@@ -215,7 +215,7 @@ const MenuList = () => {
       {/* Use Alert for API errors (add/edit/delete failures) */}
       {apiError && (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Operation Failed</AlertTitle>
+          <AlertTitle>Operación fallida</AlertTitle>
           <AlertDescription>{apiError}</AlertDescription>
         </Alert>
       )}
@@ -226,11 +226,11 @@ const MenuList = () => {
           {/* Update header row styles */}
           <TableRow className="hover:bg-gray-800/50 border-b border-yellow-400/30">
             {/* Update header cell text color */}
-            <TableHead className="text-yellow-300">Name</TableHead>
-            <TableHead className="text-yellow-300">Category</TableHead>
-            <TableHead className="text-yellow-300">Description</TableHead>
-            <TableHead className="text-yellow-300 text-right">Price</TableHead>
-            <TableHead className="text-yellow-300 text-center">Actions</TableHead>
+            <TableHead className="text-yellow-300">Nombre</TableHead>
+            <TableHead className="text-yellow-300">Categoría</TableHead>
+            <TableHead className="text-yellow-300">Descripción</TableHead>
+            <TableHead className="text-yellow-300 text-right">Precio</TableHead>
+            <TableHead className="text-yellow-300 text-center">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -244,15 +244,15 @@ const MenuList = () => {
                 <TableCell className="text-white text-right">€{item.price.toFixed(2)}</TableCell>
                 <TableCell className="text-center space-x-1"> { /* Add space */}
                   {/* Edit button styling is okay */}
-                  <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)} className="text-yellow-400 hover:text-yellow-300" title="Edit Item">
+                  <Button variant="ghost" size="icon" onClick={() => handleEditItem(item)} className="text-yellow-400 hover:text-yellow-300" title="Editar Plato">
                     <Edit className="h-4 w-4" />
                   </Button>
                   {/* Customizations button */}
-                  <Button variant="ghost" size="icon" onClick={() => handleOpenCustomizationModal(item)} className="text-blue-400 hover:text-blue-300" title="Manage Customizations">
+                  <Button variant="ghost" size="icon" onClick={() => handleOpenCustomizationModal(item)} className="text-blue-400 hover:text-blue-300" title="Gestionar Personalizaciones">
                     <Settings2 className="h-4 w-4" />
                   </Button>
                   {/* Delete button uses ghost variant + orange text */}
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)} className="text-orange-400 hover:text-orange-300" title="Delete Item">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteItem(item)} className="text-orange-400 hover:text-orange-300" title="Borrar Plato">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
@@ -260,7 +260,7 @@ const MenuList = () => {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-gray-400 py-6">No menu items found.</TableCell> { /* Add padding */}
+              <TableCell colSpan={5} className="text-center text-gray-400 py-6">No se encontraron platos.</TableCell> { /* Add padding */}
             </TableRow>
           )}
         </TableBody>
@@ -279,9 +279,9 @@ const MenuList = () => {
         <AlertDialogContent className="bg-gray-950 border-yellow-400/30 text-white">
           <AlertDialogHeader>
             {/* Update title style */}
-            <AlertDialogTitle className="text-yellow-300">Confirm Deletion</AlertDialogTitle>
+            <AlertDialogTitle className="text-yellow-300">Confirmar borrado</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-300 pt-2"> {/* Add padding */}
-              This action cannot be undone. This will permanently delete the menu item:
+              Esta acción no se puede deshacer. Esto borrará permanentemente el plato:
               <br /><strong className="text-white">{itemToDelete?.name}</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -289,15 +289,15 @@ const MenuList = () => {
           {isApiLoading && <div className="flex justify-center items-center py-4"><Loader2 className="h-6 w-6 animate-spin text-yellow-400" /></div>}
           {apiError && (
             <Alert variant="destructive" className="my-2">
-              <AlertTitle>Deletion Failed</AlertTitle>
+              <AlertTitle>Borrado fallido</AlertTitle>
               <AlertDescription>{apiError}</AlertDescription>
             </Alert>
           )}
           <AlertDialogFooter className="pt-4"> { /* Add padding */}
-            <AlertDialogCancel onClick={cancelDeleteItem} disabled={isApiLoading}>Cancel</AlertDialogCancel> {/* Default styling is ok */}
+            <AlertDialogCancel onClick={cancelDeleteItem} disabled={isApiLoading}>Cancelar</AlertDialogCancel> {/* Default styling is ok */}
             {/* Remove variant="destructive" from AlertDialogAction */}
             <AlertDialogAction onClick={confirmDeleteItem} disabled={isApiLoading}>
-              {isApiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : 'Delete'}
+              {isApiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Borrando...</> : 'Borrar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

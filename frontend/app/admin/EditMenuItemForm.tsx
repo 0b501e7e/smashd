@@ -156,7 +156,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     let finalImageUrl = editedItem.imageUrl; // Start with existing URL
 
     if (!editedItem.name || !editedItem.category || price < 0) { // Price can be 0 or more
-      setError("Name, Category, and a valid Price are required.");
+      setError("El nombre, la categoría y un precio válido son obligatorios.");
       setIsLoading(false);
       return;
     }
@@ -174,14 +174,14 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     // If after attempting upload (if a file was selected) or if no file was ever selected,
     // and there's STILL no finalImageUrl, then it's an error (e.g. initial item had no image and none was provided)
     if (!finalImageUrl) {
-      setError("Menu item image is required. Please upload an image or ensure one was previously set.");
+      setError("La imagen del plato es obligatoria. Por favor, sube una imagen o asegúrate de que se haya establecido una previamente.");
       setIsLoading(false);
       return;
     }
 
     const token = localStorage.getItem('token');
     if (!token) {
-      setError("Authentication token not found.");
+      setError("No se encontró el token de autenticación.");
       setIsLoading(false);
       return;
     }
@@ -204,7 +204,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: `HTTP error ${response.status}` }));
-        throw new Error(errorData.error || `Failed to update menu item: ${response.statusText}`);
+        throw new Error(errorData.error || `Error al actualizar el plato: ${response.statusText}`);
       }
       setIsLoading(false);
       onItemUpdated();
@@ -238,16 +238,16 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-yellow-400">Edit Menu Item</DialogTitle>
+          <DialogTitle className="text-yellow-400">Editar Plato</DialogTitle>
           <DialogDescription className="text-gray-300">
-            Update the details for &quot;{item.name}&quot;.
+            Actualiza los detalles de &quot;{item.name}&quot;.
           </DialogDescription>
         </DialogHeader>
         {/* Render form only if editedItem is not null */}
         {editedItem && (
           <form onSubmit={handleSubmit} className="space-y-4 py-2">
             <div>
-              <Label htmlFor={`name-edit-${item.id}`} className="text-gray-300">Name</Label>
+              <Label htmlFor={`name-edit-${item.id}`} className="text-gray-300">Nombre</Label>
               <Input
                 id={`name-edit-${item.id}`}
                 name="name"
@@ -258,7 +258,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               />
             </div>
             <div>
-              <Label htmlFor={`category-edit-${item.id}`} className="text-gray-300">Category</Label>
+              <Label htmlFor={`category-edit-${item.id}`} className="text-gray-300">Categoría</Label>
               <select
                 name="category"
                 id={`category-edit-${item.id}`}
@@ -266,14 +266,14 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
                 onChange={handleChange}
                 className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="BURGER">Burger</option>
-                <option value="SIDE">Side</option>
-                <option value="DRINK">Drink</option>
-                <option value="DESSERT">Dessert</option>
+                <option value="BURGER">Hamburguesa</option>
+                <option value="SIDE">Acompañamiento</option>
+                <option value="DRINK">Bebida</option>
+                <option value="DESSERT">Postre</option>
               </select>
             </div>
             <div>
-              <Label htmlFor={`description-edit-${item.id}`} className="text-gray-300">Description</Label>
+              <Label htmlFor={`description-edit-${item.id}`} className="text-gray-300">Descripción</Label>
               <Textarea
                 id={`description-edit-${item.id}`}
                 name="description"
@@ -283,7 +283,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               />
             </div>
             <div>
-              <Label htmlFor={`price-edit-${item.id}`} className="text-gray-300">Price (€)</Label>
+              <Label htmlFor={`price-edit-${item.id}`} className="text-gray-300">Precio (€)</Label>
               <Input
                 id={`price-edit-${item.id}`}
                 name="price"
@@ -297,7 +297,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               />
             </div>
             <div>
-              <Label htmlFor={`isAvailable-edit-${item.id}`} className="text-gray-300">Available</Label>
+              <Label htmlFor={`isAvailable-edit-${item.id}`} className="text-gray-300">Disponible</Label>
               <select
                 name="isAvailable"
                 id={`isAvailable-edit-${item.id}`}
@@ -305,12 +305,12 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
                 onChange={handleChange}
                 className="mt-1 block w-full bg-input border border-border text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-ring rounded-md shadow-sm py-2 px-3 focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <option value="true">Yes</option>
+                <option value="true">Sí</option>
                 <option value="false">No</option>
               </select>
             </div>
             <div>
-              <Label htmlFor={`imageUrl-edit-${item.id}`} className="text-gray-300">Menu Item Image</Label>
+              <Label htmlFor={`imageUrl-edit-${item.id}`} className="text-gray-300">Imagen del Plato</Label>
               <Input
                 id={`imageUrl-edit-${item.id}`}
                 name="menuItemImage"
@@ -329,15 +329,15 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
             </div>
             {error && (
               <Alert variant="destructive" className="my-2">
-                <AlertTitle>Error Updating Item</AlertTitle>
+                <AlertTitle>Error al actualizar el plato</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>Cancelar</Button>
               <Button type="submit" disabled={isLoading || (!editedItem.imageUrl && !selectedFile)}> {/* Disable if no image and no new file selected */}
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                {isLoading ? 'Guardando...' : 'Guardar Cambios'}
               </Button>
             </DialogFooter>
           </form>

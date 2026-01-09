@@ -29,14 +29,14 @@ export default function BetaSignup() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.errors?.[0]?.msg || 'Something went wrong');
+                throw new Error(data.errors?.[0]?.msg || 'Algo salió mal');
             }
 
             setStatus('success');
         } catch (err) {
             console.error(err);
             setStatus('error');
-            setErrorMessage(err instanceof Error ? err.message : 'Failed to sign up');
+            setErrorMessage(err instanceof Error ? err.message : 'Error al registrarse');
         }
     };
 
@@ -53,23 +53,23 @@ export default function BetaSignup() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h1 className="text-4xl font-bold tracking-tight">You&apos;re on the list!</h1>
+                    <h1 className="text-4xl font-bold tracking-tight">¡Ya estás en la lista!</h1>
                     <p className="text-gray-400 text-lg">
-                        Thanks for helping us test Smashd. We&apos;ve received your details.
+                        Gracias por ayudarnos a probar Smashd. Hemos recibido tus datos.
                     </p>
                     <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-8">
-                        <h3 className="font-semibold text-white mb-2">Next Steps:</h3>
+                        <h3 className="font-semibold text-white mb-2">Próximos pasos:</h3>
                         <ol className="text-left text-gray-400 space-y-3 list-decimal list-inside">
-                            <li>Wait for an invitation email from Google Play.</li>
-                            <li>Accept the invite to become a tester.</li>
-                            <li>Download the app and order some burgers! 🍔</li>
+                            <li>Espera a recibir un correo de invitación de Google Play.</li>
+                            <li>Acepta la invitación para convertirte en tester.</li>
+                            <li>¡Descarga la aplicación y pide algunas hamburguesas! 🍔</li>
                         </ol>
                     </div>
                     <button
                         onClick={() => window.location.href = '/'}
                         className="mt-8 text-yellow-500 hover:text-yellow-400 font-medium"
                     >
-                        ← Back to Home
+                        ← Volver al inicio
                     </button>
                 </motion.div>
             </div>
@@ -94,7 +94,7 @@ export default function BetaSignup() {
                         TEST<span className="text-yellow-500">SMASHD</span>
                     </h1>
                     <p className="text-gray-400 text-lg">
-                        Join our exclusive beta program. Help us perfect the burger experience in Motril.
+                        Únete a nuestro programa beta exclusivo. Ayúdanos a perfeccionar la experiencia de las hamburguesas en Motril.
                     </p>
                 </div>
 
@@ -102,20 +102,20 @@ export default function BetaSignup() {
                     <form onSubmit={handleSubmit} className="space-y-6">
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Full Name</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Nombre completo</label>
                             <input
                                 type="text"
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full bg-black/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
-                                placeholder="John Doe"
+                                placeholder="Juan Pérez"
                             />
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Gmail Address <span className="text-yellow-500 text-xs">(Required for Play Console)</span>
+                                Correo de Gmail <span className="text-yellow-500 text-xs">(Requerido para Play Console)</span>
                             </label>
                             <input
                                 type="email"
@@ -123,7 +123,7 @@ export default function BetaSignup() {
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full bg-black/50 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 transition-all"
-                                placeholder="you@gmail.com"
+                                placeholder="tu@gmail.com"
                             />
                         </div>
 
@@ -138,13 +138,13 @@ export default function BetaSignup() {
                             disabled={status === 'loading'}
                             className="w-full bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg py-4 rounded-xl transition-all shadow-[0_0_20px_-5px_#EAB308] hover:shadow-[0_0_30px_-5px_#EAB308] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {status === 'loading' ? 'Joining...' : 'Join Beta Program'}
+                            {status === 'loading' ? 'Uniéndote...' : 'Unirse al programa beta'}
                         </button>
                     </form>
                 </div>
 
                 <p className="text-center text-zinc-600 text-xs mt-8">
-                    By joining, you agree to receive email updates about the beta program.
+                    Al unirte, aceptas recibir actualizaciones por correo electrónico sobre el programa beta.
                 </p>
             </motion.div>
         </div>

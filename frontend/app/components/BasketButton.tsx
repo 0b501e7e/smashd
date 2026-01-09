@@ -60,16 +60,16 @@ export function BasketButton() {
       </SheetTrigger>
       <SheetContent className="flex flex-col bg-white dark:bg-gray-900 text-black dark:text-white w-[90vw] sm:w-[400px] sm:max-w-lg">
         <SheetHeader className="px-6 pt-6 pb-4">
-          <SheetTitle className="text-lg font-semibold text-yellow-500 dark:text-yellow-400">Your Cart</SheetTitle>
+          <SheetTitle className="text-lg font-semibold text-yellow-500 dark:text-yellow-400">Tu Carrito</SheetTitle>
         </SheetHeader>
         <Separator className="bg-gray-200 dark:bg-gray-700" />
 
         {basket.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-6">
             <ShoppingBag className="h-16 w-16 text-gray-400 dark:text-gray-500 mb-4" />
-            <p className="text-center text-gray-500 dark:text-gray-400">Your cart is empty.</p>
+            <p className="text-center text-gray-500 dark:text-gray-400">Tu carrito está vacío.</p>
             <SheetClose asChild>
-               <Button variant="link" className="mt-4 text-yellow-600 dark:text-yellow-400">Continue Shopping</Button>
+              <Button variant="link" className="mt-4 text-yellow-600 dark:text-yellow-400">Continuar Comprando</Button>
             </SheetClose>
           </div>
         ) : (
@@ -80,9 +80,9 @@ export function BasketButton() {
                   // Get API base URL, remove trailing /v1 or /api suffix
                   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
                   // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-                  const imageSrc = item.imageUrl && apiUrl 
-                                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
-                                    : '/burger.png'; // Keep using frontend fallback
+                  const imageSrc = item.imageUrl && apiUrl
+                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                    : '/burger.png'; // Keep using frontend fallback
                   const fallbackSrc = '/burger.png';
                   console.log(`Basket Item: Using image path: ${imageSrc}`);
 
@@ -106,50 +106,50 @@ export function BasketButton() {
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
                           <div>
-                             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
-                             {renderCustomizations(item)}
+                            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
+                            {renderCustomizations(item)}
                           </div>
                           <span className="ml-4 text-sm font-medium text-gray-900 dark:text-gray-100">
-                             {formatCurrency(item.unitPrice * item.quantity)}
+                            {formatCurrency(item.unitPrice * item.quantity)}
                           </span>
                         </div>
 
-                         <div className="flex items-center justify-between mt-2">
-                             {/* Quantity Controls */}
-                             <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded">
-                                 <Button
-                                     variant="ghost"
-                                     size="icon"
-                                     className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                     onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                                     disabled={item.quantity <= 1}
-                                  >
-                                     <Minus className="h-4 w-4" />
-                                 </Button>
-                                 <span className="w-8 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                                     {item.quantity}
-                                 </span>
-                                 <Button
-                                     variant="ghost"
-                                     size="icon"
-                                     className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                     onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                                 >
-                                     <Plus className="h-4 w-4" />
-                                 </Button>
-                             </div>
+                        <div className="flex items-center justify-between mt-2">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
+                              disabled={item.quantity <= 1}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {item.quantity}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                              onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
 
-                             {/* Remove Button */}
-                             <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
-                                onClick={() => removeFromBasket(item.cartItemId)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only">Remove item</span>
-                             </Button>
-                         </div>
+                          {/* Remove Button */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50"
+                            onClick={() => removeFromBasket(item.cartItemId)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Remove item</span>
+                          </Button>
+                        </div>
                       </div>
                     </li>
                   );
@@ -167,20 +167,20 @@ export function BasketButton() {
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Shipping and taxes calculated at checkout.</p>
                 <SheetClose asChild>
-                   <Button
-                      size="lg"
-                      className="w-full bg-yellow-400 text-black hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
-                      onClick={handleCheckout}
-                      disabled={basket.length === 0}
-                   >
-                     Checkout
-                   </Button>
+                  <Button
+                    size="lg"
+                    className="w-full bg-yellow-400 text-black hover:bg-yellow-500 dark:bg-yellow-500 dark:hover:bg-yellow-600"
+                    onClick={handleCheckout}
+                    disabled={basket.length === 0}
+                  >
+                    Pagar
+                  </Button>
                 </SheetClose>
-                 <SheetClose asChild>
-                    <Button variant="link" className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-300">
-                       or Continue Shopping <span aria-hidden="true"> &rarr;</span>
-                    </Button>
-                 </SheetClose>
+                <SheetClose asChild>
+                  <Button variant="link" className="w-full text-center text-sm text-gray-600 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-300">
+                    o Continuar Comprando <span aria-hidden="true"> &rarr;</span>
+                  </Button>
+                </SheetClose>
               </div>
             </SheetFooter>
           </>

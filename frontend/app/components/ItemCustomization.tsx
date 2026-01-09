@@ -68,7 +68,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                 setCustomizationCategories(data);
             } catch (err) {
                 console.error("Fetch Customization Error:", err);
-                setCustomizationError(err instanceof Error ? err.message : 'Could not load options');
+                setCustomizationError(err instanceof Error ? err.message : 'No se pudieron cargar las opciones');
             } finally {
                 setIsLoadingCustomizations(false);
             }
@@ -212,7 +212,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                                     className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
                                 />
                                 <Label htmlFor={`option-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer break-words">
-                                    {option.name}
+                                    {option.name === 'Extras' ? 'Extras' : option.name === 'Sauces' ? 'Salsas' : option.name === 'Toppings' ? 'Ingredientes' : option.name}
                                 </Label>
                             </div>
                             {option.price > 0 && (
@@ -266,7 +266,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                 </div>
 
                 {/* Item Info */}
-                <p className="text-gray-400 mb-4 text-sm">Base price: {formatCurrency(item.price)}</p>
+                <p className="text-gray-400 mb-4 text-sm">Precio base: {formatCurrency(item.price)}</p>
                 <p className="text-gray-300 mb-5 break-words">{item.description}</p>
 
                 {/* Customization Section - Allow this part to grow */}
@@ -294,7 +294,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                         )
                     ) : (
                         <div className="mb-4 p-3 bg-gray-800/50 rounded-md border border-gray-700/50">
-                            <p className="text-sm text-gray-400">Customizations available for burgers only.</p>
+                            <p className="text-sm text-gray-400">Personalizaciones disponibles solo para hamburguesas.</p>
                         </div>
                     )}
                 </div>
@@ -347,7 +347,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
     return (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
             <DrawerContent className="bg-gray-900 border-gray-700 text-white max-h-[90vh] flex flex-col">
-                <DrawerHeader className="text-left text-lg font-semibold flex-shrink-0">Customize {item.name}</DrawerHeader>
+                <DrawerHeader className="text-left text-lg font-semibold flex-shrink-0">Personalizar {item.name}</DrawerHeader>
                 {/* Scrollable Content Area */}
                 <div className="flex-1 overflow-y-auto px-4 min-h-0 custom-scrollbar">
                     {content}
@@ -366,7 +366,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                         )}
                     </Button>
                     <DrawerClose asChild>
-                        <Button variant="outline" className="w-full border-gray-600 hover:bg-gray-800 text-gray-300">Cancel</Button>
+                        <Button variant="outline" className="w-full border-gray-600 hover:bg-gray-800 text-gray-300">Cancelar</Button>
                     </DrawerClose>
                 </DrawerFooter>
             </DrawerContent>

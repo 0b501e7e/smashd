@@ -20,13 +20,13 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       {/* Padding on body pushes content below fixed Navbar */}
       <body className="overflow-x-hidden pt-[var(--navbar-height,4rem)]">
         <BasketProvider>
-          <Navbar /> {/* Navbar is rendered first and separate */}          
+          <Navbar /> {/* Navbar is rendered first and separate */}
           {/* Main content area, contains animated children */}
-          <main className="relative"> {/* Removed min-height, keep relative for potential stacking context needs */}          
+          <main className="relative"> {/* Removed min-height, keep relative for potential stacking context needs */}
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={pathname}

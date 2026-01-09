@@ -94,11 +94,11 @@ export function Navbar() {
     return { DesktopLink, MobileLink };
   };
 
-  const MenuLink = NavLink({ href: '/#menu', children: 'Menu', icon: UtensilsCrossed });
-  const ProfileLink = NavLink({ href: '/profile', children: 'Profile', icon: User });
-  const LoginLink = NavLink({ href: '/login', children: 'Login', icon: LogIn });
-  const RegisterLink = NavLink({ href: '/register', children: 'Register', icon: UserPlus });
-  const AdminLink = NavLink({ href: '/admin', children: 'Admin', icon: LayoutDashboard });
+  const MenuLink = NavLink({ href: '/#menu', children: 'Menú', icon: UtensilsCrossed });
+  const ProfileLink = NavLink({ href: '/profile', children: 'Perfil', icon: User });
+  const LoginLink = NavLink({ href: '/login', children: 'Acceder', icon: LogIn });
+  const RegisterLink = NavLink({ href: '/register', children: 'Registrarse', icon: UserPlus });
+  const AdminLink = NavLink({ href: '/admin', children: 'Panel Admin', icon: LayoutDashboard });
 
   const bind = useDrag(({ down, movement: [mx], velocity: [vx], direction: [dx], distance, cancel, last }) => {
     const triggerDistance = 50;
@@ -133,7 +133,7 @@ export function Navbar() {
                     sizes="40px"
                   />
                 </div>
-                <span className="sr-only">Open menu</span>
+                <span className="sr-only">Abrir menú</span>
               </Button>
             </SheetTrigger>
 
@@ -158,7 +158,7 @@ export function Navbar() {
                 {isAdmin && <AdminLink.DesktopLink />}
                 <ProfileLink.DesktopLink />
                 <Button variant="ghost" onClick={handleLogout} className="text-white hover:bg-yellow-800/50 hover:text-yellow-300">
-                  <LogOut className="mr-2 h-4 w-4" /> Logout
+                  <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                 </Button>
               </>
             ) : (
@@ -182,7 +182,7 @@ export function Navbar() {
           style={{ touchAction: 'pan-y' }}
         >
           <SheetHeader className="mb-4 border-b pb-4">
-            <SheetTitle className="text-lg font-semibold text-yellow-500 dark:text-yellow-400">Navigation</SheetTitle>
+            <SheetTitle className="text-lg font-semibold text-yellow-500 dark:text-yellow-400">Navegación</SheetTitle>
           </SheetHeader>
           <nav className="flex flex-col space-y-2">
             <MenuLink.MobileLink />
@@ -197,7 +197,7 @@ export function Navbar() {
                     onClick={handleLogout}
                     className="w-full justify-start text-base text-gray-700 dark:text-gray-200 hover:bg-yellow-100 dark:hover:bg-yellow-800/50"
                   >
-                    <LogOut className="mr-2 h-5 w-5" /> Logout
+                    <LogOut className="mr-2 h-5 w-5" /> Cerrar Sesión
                   </Button>
                 </SheetClose>
               </>
