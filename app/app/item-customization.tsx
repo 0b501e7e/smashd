@@ -22,7 +22,7 @@ export default function ItemCustomization() {
   const [loading, setLoading] = useState(true);
   const [allCustomizations, setAllCustomizations] = useState<AllCustomizations | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedCustomizations, setSelectedCustomizations] = useState<{[key: number]: boolean}>({});
+  const [selectedCustomizations, setSelectedCustomizations] = useState<{ [key: number]: boolean }>({});
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
 
@@ -36,14 +36,14 @@ export default function ItemCustomization() {
         .filter(option => selectedCustomizations[Number(option.id)])
         .forEach(option => total += (option.price || 0) * quantity);
     }
-    
+
     return total;
   };
 
   // Fetch item data
   useEffect(() => {
     if (!itemId) return;
-    
+
     const fetchData = async () => {
       try {
         const [itemData, customizationsData] = await Promise.all([
@@ -77,73 +77,73 @@ export default function ItemCustomization() {
   // Add to cart handler
   const handleAddToCart = () => {
     if (!item || !allCustomizations) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Get selected customization names by category
     const getSelectedNames = (options: CustomizationOption[]) =>
       options.filter(option => selectedCustomizations[Number(option.id)]).map(option => option.name);
 
-      const customizations = {
+    const customizations = {
       extras: getSelectedNames(allCustomizations.extras),
       sauces: getSelectedNames(allCustomizations.sauces),
       toppings: getSelectedNames(allCustomizations.toppings),
-      };
+    };
 
-      addItem({
-        id: item.id,
-        name: item.name,
+    addItem({
+      id: item.id,
+      name: item.name,
       price: getTotalPrice() / quantity, // Price per item with customizations
-        quantity,
-        customizations,
-      });
+      quantity,
+      customizations,
+    });
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.back();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    router.back();
   };
 
   // Render customization category
   const CustomizationCategory = ({ title, options }: { title: string; options: CustomizationOption[] }) => {
     if (options.length === 0) return null;
-    
+
     return (
-    <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
-      <CardHeader>
-        <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
-          {title}
-        </Text>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <View className="flex-wrap flex-row gap-2">
-          {options.map((option) => {
+      <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+        <CardHeader>
+          <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+            {title}
+          </Text>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <View className="flex-wrap flex-row gap-2">
+            {options.map((option) => {
               const optionId = Number(option.id);
               const isSelected = selectedCustomizations[optionId];
-              
-            return (
-              <TouchableOpacity
-                key={option.id}
-                className={`h-10 px-4 py-2 flex items-center justify-center rounded-md ${isSelected ? '' : 'border'}`}
-                style={{
-                  backgroundColor: isSelected ? '#FAB10A' : 'transparent',
-                  borderColor: isSelected ? '#FAB10A' : '#333333',
-                }}
+
+              return (
+                <TouchableOpacity
+                  key={option.id}
+                  className={`h-10 px-4 py-2 flex items-center justify-center rounded-md ${isSelected ? '' : 'border'}`}
+                  style={{
+                    backgroundColor: isSelected ? '#FAB10A' : 'transparent',
+                    borderColor: isSelected ? '#FAB10A' : '#333333',
+                  }}
                   onPress={() => toggleCustomization(optionId)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  className="font-medium text-sm"
-                  style={{ color: isSelected ? '#000000' : '#FFFFFF' }}
+                  activeOpacity={0.7}
                 >
+                  <Text
+                    className="font-medium text-sm"
+                    style={{ color: isSelected ? '#000000' : '#FFFFFF' }}
+                  >
                     {option.name}
                     {option.price > 0 && ` (+€${option.price.toFixed(2)})`}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </CardContent>
-    </Card>
-  );
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </CardContent>
+      </Card>
+    );
   };
 
   // Loading state
@@ -160,8 +160,11 @@ export default function ItemCustomization() {
     );
   }
 
-  const imageUri = item?.imageUrl && API_URL ? 
-    `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}` : null;
+  const imageUri = item?.imageUrl
+    ? (item.imageUrl.startsWith('http')
+      ? item.imageUrl
+      : (API_URL ? `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}` : null))
+    : null;
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: '#000000' }}>
@@ -173,7 +176,7 @@ export default function ItemCustomization() {
           headerTitleStyle: { color: '#FFFFFF' },
         }}
       />
-      
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 20 }}
@@ -194,8 +197,8 @@ export default function ItemCustomization() {
             </Text>
             {item.description && (
               <Text className="text-sm leading-5" style={{ color: '#CCCCCC' }} numberOfLines={2}>
-              {item.description}
-            </Text>
+                {item.description}
+              </Text>
             )}
           </View>
         </View>
@@ -209,7 +212,7 @@ export default function ItemCustomization() {
               </Text>
             </CardContent>
           </Card>
-          
+
           {/* Customizations */}
           <CustomizationCategory title="Extras" options={allCustomizations.extras} />
           <CustomizationCategory title="Salsas" options={allCustomizations.sauces} />
@@ -218,11 +221,11 @@ export default function ItemCustomization() {
       </ScrollView>
 
       {/* Footer */}
-      <View 
-        className="px-6 pt-4" 
-        style={{ 
-          backgroundColor: '#000000', 
-          borderTopWidth: 1, 
+      <View
+        className="px-6 pt-4"
+        style={{
+          backgroundColor: '#000000',
+          borderTopWidth: 1,
           borderTopColor: '#333333',
           paddingBottom: Math.max(insets.bottom + 8, 16)
         }}
@@ -230,7 +233,7 @@ export default function ItemCustomization() {
         {/* Quantity Controls */}
         <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
           <CardContent className="p-4">
-            <View className="flex-row items-center justify-between"> 
+            <View className="flex-row items-center justify-between">
               <Text className="text-lg font-semibold" style={{ color: '#FFFFFF' }}>
                 Cantidad
               </Text>
@@ -248,13 +251,13 @@ export default function ItemCustomization() {
                 >
                   <Minus size={16} color="#FAB10A" />
                 </Button>
-                
+
                 <Badge style={{ backgroundColor: '#FAB10A', minWidth: 40 }}>
                   <Text className="text-lg font-bold" style={{ color: '#000000' }}>
                     {quantity}
                   </Text>
                 </Badge>
-                
+
                 <Button
                   className="w-10 h-10 rounded-full border"
                   style={{ backgroundColor: 'transparent', borderColor: '#FAB10A' }}
@@ -276,12 +279,12 @@ export default function ItemCustomization() {
           style={{ backgroundColor: '#FAB10A' }}
           onPress={handleAddToCart}
         >
-            <View className="flex-row items-center gap-2">
-              <ShoppingCart size={20} color="#000000" />
-              <Text className="text-lg font-bold" style={{ color: '#000000' }}>
+          <View className="flex-row items-center gap-2">
+            <ShoppingCart size={20} color="#000000" />
+            <Text className="text-lg font-bold" style={{ color: '#000000' }}>
               Añadir {quantity} al Carrito - €{getTotalPrice().toFixed(2)}
-              </Text>
-            </View>
+            </Text>
+          </View>
         </Button>
       </View>
     </SafeAreaView>

@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { userAPI, orderAPI } from '@/services/api';
+import { userAPI, orderAPI, API_URL } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -78,15 +78,15 @@ export default function PromotionsScreen() {
   const [promotionsLoading, setPromotionsLoading] = useState(true);
   const [activePromotions, setActivePromotions] = useState<ActivePromotionsResponse>({ discountedItems: [], mealDeals: [] });
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // AlertDialog states
-  const [errorDialog, setErrorDialog] = useState<{open: boolean, title: string, message: string}>({
+  const [errorDialog, setErrorDialog] = useState<{ open: boolean, title: string, message: string }>({
     open: false, title: '', message: ''
   });
-  const [successDialog, setSuccessDialog] = useState<{open: boolean, title: string, message: string}>({
+  const [successDialog, setSuccessDialog] = useState<{ open: boolean, title: string, message: string }>({
     open: false, title: '', message: ''
   });
-  const [mealDealDialog, setMealDealDialog] = useState<{open: boolean, dealTitle: string}>({
+  const [mealDealDialog, setMealDealDialog] = useState<{ open: boolean, dealTitle: string }>({
     open: false, dealTitle: ''
   });
 
@@ -141,7 +141,7 @@ export default function PromotionsScreen() {
           return;
         }
       }
-      
+
       // For other errors, log but don't show error dialog to avoid annoying users
       // Only log unexpected errors for debugging
       console.warn('[PromotionsScreen] Error fetching last order (non-critical):', error.response?.data?.error || error.message);
@@ -155,12 +155,12 @@ export default function PromotionsScreen() {
     setLoading(true);
     try {
       const data = await orderAPI.repeatOrder(lastOrder.id);
-      
+
       // Check if we got valid data
       if (!data || !data.items || !Array.isArray(data.items)) {
         throw new Error('Invalid response from server');
       }
-      
+
       clearCart();
       data.items.forEach((item: any) => {
         addItem({
@@ -171,24 +171,24 @@ export default function PromotionsScreen() {
           customizations: item.customizations || {},
         });
       });
-      
+
       if (data.unavailableItems && data.unavailableItems.length > 0) {
         setSuccessDialog({
           open: true,
-          title: 'Pedido Agregado con Cambios', 
+          title: 'Pedido Agregado con Cambios',
           message: data.message || 'Algunos productos no estaban disponibles y han sido eliminados.'
         });
       } else {
         setSuccessDialog({
           open: true,
-          title: 'Pedido Agregado', 
+          title: 'Pedido Agregado',
           message: data.message || 'Tu último pedido ha sido agregado a tu carrito.'
         });
       }
     } catch (error: any) {
       console.error('Error repeating order:', error);
       let errorMessage = 'No se pudo repetir el pedido. Por favor, intenta de nuevo.';
-      
+
       if (error.response?.status === 404) {
         errorMessage = 'El pedido no se encuentra disponible. Por favor, crea un nuevo pedido.';
       } else if (error.response?.status === 400) {
@@ -198,7 +198,7 @@ export default function PromotionsScreen() {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
+
       setErrorDialog({
         open: true,
         title: 'Error al Repetir Pedido',
@@ -234,8 +234,12 @@ export default function PromotionsScreen() {
     >
       <Card className="bg-zinc-900 border-zinc-700 flex-1">
         {item.imageUrl && (
-          <Image 
-            source={{ uri: item.imageUrl }} 
+          <Image
+            source={{
+              uri: item.imageUrl.startsWith('http')
+                ? item.imageUrl
+                : `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}`
+            }}
             style={{ width: '100%', height: 120, borderTopLeftRadius: 7, borderTopRightRadius: 7, marginBottom: 0 }}
           />
         )}
@@ -271,8 +275,12 @@ export default function PromotionsScreen() {
     >
       <Card className="bg-zinc-900 border-zinc-700 flex-1">
         {deal.imageUrl && (
-          <Image 
-            source={{ uri: deal.imageUrl }} 
+          <Image
+            source={{
+              uri: deal.imageUrl.startsWith('http')
+                ? deal.imageUrl
+                : `${API_URL.replace(/\/(v1|api)$/, "")}${deal.imageUrl}`
+            }}
             style={{ width: '100%', height: 120, borderTopLeftRadius: 7, borderTopRightRadius: 7, marginBottom: 0 }}
           />
         )}
@@ -314,12 +322,12 @@ export default function PromotionsScreen() {
             <Gift size={28} color="#e5e7eb" />
             <Text className="ml-3 text-base text-gray-200">Gana puntos con cada pedido</Text>
           </View>
-          
+
           <View className="flex-row items-center bg-zinc-800 p-4 rounded-xl mb-3">
             <Utensils size={28} color="#e5e7eb" />
             <Text className="ml-3 text-base text-gray-200">Canjea puntos por comida gratis</Text>
           </View>
-          
+
           <View className="flex-row items-center bg-zinc-800 p-4 rounded-xl mb-3">
             <Star size={28} color="#e5e7eb" />
             <Text className="ml-3 text-base text-gray-200">Recibe descuentos exclusivos</Text>
@@ -330,7 +338,7 @@ export default function PromotionsScreen() {
         {user && lastOrder && (
           <View className="mx-5 mt-5 mb-3 p-4 bg-black rounded-xl border border-yellow-500">
             <Text className="text-xl font-bold mb-3 text-gray-200 text-center">Repetir Pedido</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               className="flex-row items-center justify-center bg-yellow-500 py-5 px-6 rounded-xl"
               onPress={handleRepeatOrder}
               disabled={loading}
@@ -339,7 +347,7 @@ export default function PromotionsScreen() {
               <Text className="text-black text-lg font-bold ml-3 flex-1">
                 Repetir Último Pedido ({new Date(lastOrder.createdAt).toLocaleDateString('es-ES')})
               </Text>
-              {loading && <ActivityIndicator color="#000" style={{ marginLeft: 15}} />}
+              {loading && <ActivityIndicator color="#000" style={{ marginLeft: 15 }} />}
             </TouchableOpacity>
           </View>
         )}
@@ -347,14 +355,14 @@ export default function PromotionsScreen() {
         {/* Action Buttons */}
         {!user && (
           <View className="px-5 py-5 gap-3">
-            <Button 
+            <Button
               className="bg-green-500 rounded-xl p-5"
               onPress={() => router.push('/(auth)/register')}
             >
               <Text className="text-lg font-bold text-white">Registrarse</Text>
             </Button>
-            
-            <Button 
+
+            <Button
               variant="outline"
               className="bg-zinc-800 rounded-xl p-5 border-2 border-yellow-500"
               onPress={() => router.push('/(auth)/login')}
@@ -369,7 +377,7 @@ export default function PromotionsScreen() {
           <Text className="text-xl font-bold mb-4 text-gray-200 px-5">Ofertas de Hoy</Text>
 
           {promotionsLoading ? (
-            <ActivityIndicator size="large" color="#eab308" style={{ marginVertical: 20 }}/>
+            <ActivityIndicator size="large" color="#eab308" style={{ marginVertical: 20 }} />
           ) : (
             <>
               {(activePromotions.discountedItems.length > 0 || activePromotions.mealDeals.length > 0) ? (
@@ -395,7 +403,7 @@ export default function PromotionsScreen() {
       </ScrollView>
 
       {/* Error AlertDialog */}
-      <AlertDialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog(prev => ({...prev, open}))}>
+      <AlertDialog open={errorDialog.open} onOpenChange={(open) => setErrorDialog(prev => ({ ...prev, open }))}>
         <AlertDialogContent style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
           <AlertDialogHeader>
             <View className="flex-row items-center gap-3 mb-2">
@@ -419,7 +427,7 @@ export default function PromotionsScreen() {
       </AlertDialog>
 
       {/* Success AlertDialog */}
-      <AlertDialog open={successDialog.open} onOpenChange={(open) => setSuccessDialog(prev => ({...prev, open}))}>
+      <AlertDialog open={successDialog.open} onOpenChange={(open) => setSuccessDialog(prev => ({ ...prev, open }))}>
         <AlertDialogContent style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
           <AlertDialogHeader>
             <View className="flex-row items-center gap-3 mb-2">
@@ -443,7 +451,7 @@ export default function PromotionsScreen() {
       </AlertDialog>
 
       {/* Meal Deal AlertDialog */}
-      <AlertDialog open={mealDealDialog.open} onOpenChange={(open) => setMealDealDialog(prev => ({...prev, open}))}>
+      <AlertDialog open={mealDealDialog.open} onOpenChange={(open) => setMealDealDialog(prev => ({ ...prev, open }))}>
         <AlertDialogContent style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
           <AlertDialogHeader>
             <View className="flex-row items-center gap-3 mb-2">

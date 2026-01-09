@@ -38,7 +38,7 @@ const CATEGORY_CONFIG = {
     color: '#FAB10A',
   },
   SIDE: {
-    title: 'ACOMPAÑAMIENTOS', 
+    title: 'ACOMPAÑAMIENTOS',
     icon: Utensils,
     color: '#FAB10A',
   },
@@ -64,7 +64,7 @@ export default function MenuScreen() {
 
   const loadMenu = async () => {
     try {
-      const data = await menuAPI.getMenu();
+      const data = await menuAPI.getMenuItems();
       setMenuItems(data);
     } catch (err) {
       console.error('Error loading menu:', err);
@@ -114,7 +114,7 @@ export default function MenuScreen() {
             <Text className="text-center text-lg font-medium mb-4" style={{ color: '#FFFFFF' }}>
               Error al cargar la carta
             </Text>
-            <Button 
+            <Button
               onPress={loadMenu}
               className="w-full"
               style={{ backgroundColor: '#FAB10A' }}
@@ -149,9 +149,9 @@ export default function MenuScreen() {
           </View>
         </View>
       }>
-      <View 
-        style={{ 
-          backgroundColor: '#000000', 
+      <View
+        style={{
+          backgroundColor: '#000000',
           paddingBottom: insets.bottom + 20,
           paddingLeft: insets.left,
           paddingRight: insets.right
@@ -160,7 +160,7 @@ export default function MenuScreen() {
         {categories.map((category) => {
           const config = CATEGORY_CONFIG[category];
           const categoryItems = menuItems.filter((item) => item.category === category);
-          
+
           if (categoryItems.length === 0) return null;
 
           return (
@@ -205,58 +205,62 @@ export default function MenuScreen() {
                     }}
                   >
                     <Card className="mb-4 h-full" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
-                                              <Pressable onPress={() => handleItemPress(item)} className="h-full flex-1">
-                          <View className="flex-1 justify-between">
-                            <CardHeader className="pb-3">
-                              <View className="flex-row justify-between items-start">
-                                <View className="flex-1 mr-3">
-                                  <CardTitle className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>
-                                    {item.name}
-                                  </CardTitle>
-                                  <View className="flex-row items-center">
-                                    <Text className="text-2xl font-bold" style={{ color: '#FAB10A' }}>
-                                      €{item.price.toFixed(2)}
-                                    </Text>
-                                  </View>
-                                  <CardDescription 
-                                    className="text-sm mt-2" 
-                                    style={{ color: '#CCCCCC' }}
-                                    numberOfLines={2}
-                                    ellipsizeMode="tail"
-                                  >
-                                    {item.description}
-                                  </CardDescription>
+                      <Pressable onPress={() => handleItemPress(item)} className="h-full flex-1">
+                        <View className="flex-1 justify-between">
+                          <CardHeader className="pb-3">
+                            <View className="flex-row justify-between items-start">
+                              <View className="flex-1 mr-3">
+                                <CardTitle className="text-lg font-bold mb-1" style={{ color: '#FFFFFF' }}>
+                                  {item.name}
+                                </CardTitle>
+                                <View className="flex-row items-center">
+                                  <Text className="text-2xl font-bold" style={{ color: '#FAB10A' }}>
+                                    €{item.price.toFixed(2)}
+                                  </Text>
                                 </View>
-                                {/* Item Image - Right Side */}
-                                {item.imageUrl && (
-                                  <View className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: '#222222' }}>
-                                    <Image
-                                      source={{ uri: `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}` }}
-                                      className="w-full h-full"
-                                      resizeMode="cover"
-                                    />
-                                  </View>
-                                )}
+                                <CardDescription
+                                  className="text-sm mt-2"
+                                  style={{ color: '#CCCCCC' }}
+                                  numberOfLines={2}
+                                  ellipsizeMode="tail"
+                                >
+                                  {item.description}
+                                </CardDescription>
                               </View>
-                            </CardHeader>
-                            <CardFooter className="pt-0 flex-row justify-between items-center">
-                          <View className="flex-1 mr-3">
-                            <Badge className="self-start" style={{ backgroundColor: '#FAB10A' }}>
-                              <Text className="text-xs font-medium" style={{ color: '#000000' }}>
-                                {CATEGORY_CONFIG[item.category].title}
-                              </Text>
-                            </Badge>
-                          </View>
-                          <TouchableOpacity
-                            onPress={() => handleAddToCart(item)}
-                            className="w-10 h-10 rounded-full items-center justify-center"
-                            style={{ backgroundColor: '#FAB10A' }}
-                          >
-                            <Plus size={20} color="#000000" />
-                          </TouchableOpacity>
-                        </CardFooter>
-                      </View>
-                    </Pressable>
+                              {/* Item Image - Right Side */}
+                              {item.imageUrl && (
+                                <View className="w-20 h-20 rounded-lg overflow-hidden" style={{ backgroundColor: '#222222' }}>
+                                  <Image
+                                    source={{
+                                      uri: item.imageUrl.startsWith('http')
+                                        ? item.imageUrl
+                                        : `${API_URL.replace(/\/(v1|api)$/, "")}${item.imageUrl}`
+                                    }}
+                                    className="w-full h-full"
+                                    resizeMode="cover"
+                                  />
+                                </View>
+                              )}
+                            </View>
+                          </CardHeader>
+                          <CardFooter className="pt-0 flex-row justify-between items-center">
+                            <View className="flex-1 mr-3">
+                              <Badge className="self-start" style={{ backgroundColor: '#FAB10A' }}>
+                                <Text className="text-xs font-medium" style={{ color: '#000000' }}>
+                                  {CATEGORY_CONFIG[item.category].title}
+                                </Text>
+                              </Badge>
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => handleAddToCart(item)}
+                              className="w-10 h-10 rounded-full items-center justify-center"
+                              style={{ backgroundColor: '#FAB10A' }}
+                            >
+                              <Plus size={20} color="#000000" />
+                            </TouchableOpacity>
+                          </CardFooter>
+                        </View>
+                      </Pressable>
                     </Card>
                   </View>
                 ))}
