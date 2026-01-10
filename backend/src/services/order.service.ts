@@ -634,6 +634,14 @@ export class OrderService implements IOrderService {
               name: true,
               email: true,
             }
+          },
+          driver: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneNumber: true,
+            }
           }
         },
         orderBy: { createdAt: 'desc' }
@@ -715,6 +723,74 @@ export class OrderService implements IOrderService {
     } catch (error) {
       console.error(`OrderService: Error declining order ${orderId}:`, error);
       throw new Error('Failed to decline order');
+    }
+  }
+
+  async markOrderReady(orderId: number): Promise<Order> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId }
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const updatedOrder = await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'READY',
+          readyAt: new Date()
+        }
+      });
+
+      console.log(`OrderService: Order ${orderId} marked as READY`);
+      return updatedOrder;
+    } catch (error) {
+      console.error(`OrderService: Error marking order ready ${orderId}:`, error);
+      throw new Error(error instanceof Error ? error.message : 'Failed to mark order ready');
+    }
+  }
+
+  async assignDriver(orderId: number, driverId: number): Promise<Order> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId }
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      const driver = await this.prisma.user.findFirst({
+        where: { id: driverId, role: 'DRIVER' }
+      });
+
+      if (!driver) {
+        throw new Error('Driver not found or not a driver');
+      }
+
+      const updatedOrder = await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          driverId,
+          status: 'OUT_FOR_DELIVERY'
+        },
+        include: {
+          driver: {
+            select: { name: true, email: true, phoneNumber: true }
+          },
+          user: {
+            select: { name: true, email: true }
+          }
+        }
+      });
+
+      console.log(`OrderService: Order ${orderId} assigned to driver ${driverId}`);
+      return updatedOrder as any;
+    } catch (error) {
+      console.error(`OrderService: Error assigning driver to order ${orderId}:`, error);
+      throw new Error(error instanceof Error ? error.message : 'Failed to assign driver');
     }
   }
 

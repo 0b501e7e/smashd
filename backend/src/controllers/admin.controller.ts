@@ -293,6 +293,56 @@ export class AdminController {
     }
   }
 
+  /**
+   * Mark order as ready for pickup or delivery
+   * POST /v1/admin/orders/:id/ready
+   */
+  async markOrderReady(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const orderId = parseInt(id);
+      const updatedOrder = await this.adminService.markOrderReady(orderId);
+
+      console.log(`AdminController: Order ${orderId} marked as ready`);
+      sendSuccess(res, updatedOrder);
+    } catch (error) {
+      console.error('AdminController: Error marking order ready:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Assign a driver to an order
+   * POST /v1/admin/orders/:id/assign-driver
+   */
+  async assignDriver(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { driverId } = req.body;
+
+      if (!id || !driverId) {
+        sendError(res, 'Order ID and Driver ID are required', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const orderIdNum = parseInt(id);
+      const driverIdNum = parseInt(driverId);
+
+      const updatedOrder = await this.adminService.assignDriver(orderIdNum, driverIdNum);
+
+      console.log(`AdminController: Order ${orderIdNum} assigned to driver ${driverIdNum}`);
+      sendSuccess(res, updatedOrder);
+    } catch (error) {
+      console.error('AdminController: Error assigning driver:', error);
+      next(error);
+    }
+  }
+
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================
@@ -552,6 +602,20 @@ export class AdminController {
       sendSuccess(res, syncResult);
     } catch (error) {
       console.error('AdminController: Error syncing menu to SumUp:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Get all online drivers
+   * GET /v1/admin/drivers/available
+   */
+  async getAvailableDrivers(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const drivers = await this.adminService.getAvailableDrivers();
+      sendSuccess(res, drivers);
+    } catch (error) {
+      console.error('AdminController: Error fetching available drivers:', error);
       next(error);
     }
   }

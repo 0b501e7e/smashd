@@ -10,7 +10,6 @@ const PREP_TIMES = [15, 30, 45, 60]; // Available prep times in minutes
 interface MenuItem {
   id: number;
   name: string;
-  // Add other menuItem fields if available and needed
 }
 
 interface OrderItem {
@@ -18,7 +17,7 @@ interface OrderItem {
   menuItemId: number;
   quantity: number;
   price: number;
-  customizations?: string | null; // Assuming customizations are stringified JSON
+  customizations?: string | null;
   menuItem: MenuItem;
 }
 
@@ -28,24 +27,35 @@ interface UserInfo {
   email?: string | null;
 }
 
+interface Driver {
+  id: number;
+  name: string;
+  email: string;
+  phoneNumber?: string;
+}
+
 interface Order {
   id: number;
   items: OrderItem[];
   total: number;
-  status: string; // e.g., PENDING, PAID, CONFIRMED, CANCELLED, READY
+  status: string;
   userId?: number | null;
-  user?: UserInfo | null; // User details
-  createdAt: string; // ISO date string
-  estimatedReadyTime?: string | null; // ISO date string, from backend
+  user?: UserInfo | null;
+  driverId?: number | null;
+  driver?: Driver | null;
+  createdAt: string;
+  updatedAt: string;
+  estimatedReadyTime?: string | null;
+  readyAt?: string | null;
   fulfillmentMethod?: 'PICKUP' | 'DELIVERY' | null;
   deliveryAddress?: string | null;
   orderCode?: string | null;
-  // Frontend-specific state for managing prep time selection
   selectedPrepTime?: number | null;
 }
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [availableDrivers, setAvailableDrivers] = useState<Driver[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -97,12 +107,27 @@ export default function OrderManagement() {
     }
   }, [orders.length]); // orders.length used in the newOrdersDetected check logic
 
+  const fetchDrivers = React.useCallback(async () => {
+    try {
+      const response = await api.get('/admin/drivers/available');
+      const result = await response.json();
+      if (response.ok) {
+        setAvailableDrivers(result.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching drivers:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchOrders();
-    // Optional: Set up polling for new orders
-    const intervalId = setInterval(fetchOrders, 30000); // Poll every 30 seconds
+    fetchDrivers();
+    const intervalId = setInterval(() => {
+      fetchOrders();
+      fetchDrivers();
+    }, 15000); // Poll every 15 seconds for more responsiveness
     return () => clearInterval(intervalId);
-  }, [fetchOrders]);
+  }, [fetchOrders, fetchDrivers]);
 
   const handleAcceptOrder = async (orderId: number, prepTimeMinutes: number | null) => {
     if (prepTimeMinutes === null) {
@@ -151,6 +176,32 @@ export default function OrderManagement() {
     }
   };
 
+  const handleMarkReady = async (orderId: number) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(`/admin/orders/${orderId}/ready`, {});
+      if (!response.ok) throw new Error('Failed to mark order as ready');
+      await fetchOrders();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAssignDriver = async (orderId: number, driverId: number) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(`/admin/orders/${orderId}/assign-driver`, { driverId });
+      if (!response.ok) throw new Error('Failed to assign driver');
+      await fetchOrders();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSetSelectedPrepTime = (orderId: number, time: number | null) => {
     setOrders(prevOrders =>
       prevOrders.map(order =>
@@ -159,103 +210,249 @@ export default function OrderManagement() {
     );
   };
 
-  if (isLoading && orders.length === 0) return <p className="text-white text-center py-10">Loading orders...</p>;
-  // Do not show main error if orders are already displayed and it's a background refresh error
-  // if (error && orders.length === 0) return <p className="text-red-500 bg-red-900 p-3 rounded text-center">Error: {error}</p>;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAYMENT_CONFIRMED': return 'border-yellow-500';
+      case 'CONFIRMED':
+      case 'PREPARING': return 'border-blue-500';
+      case 'READY': return 'border-green-500';
+      case 'OUT_FOR_DELIVERY': return 'border-purple-500';
+      default: return 'border-gray-500';
+    }
+  };
 
+  const renderOrderCard = (order: Order) => {
+    const isLate = order.estimatedReadyTime && new Date() > new Date(order.estimatedReadyTime);
+
+    return (
+      <div key={order.id} className={`bg-gray-700 p-4 rounded-lg shadow-md border-l-4 ${getStatusColor(order.status)} mb-4 transition-all hover:scale-[1.02]`}>
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">#{order.id}</span>
+            <h4 className="text-lg font-bold text-white leading-tight">{order.user?.name || 'Guest'}</h4>
+            <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-bold text-yellow-400">€{order.total.toFixed(2)}</p>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${order.fulfillmentMethod === 'DELIVERY' ? 'bg-purple-900 text-purple-200' : 'bg-blue-900 text-blue-200'}`}>
+              {order.fulfillmentMethod || 'PICKUP'}
+            </span>
+          </div>
+        </div>
+
+        <div className="space-y-1 mb-3">
+          {order.items.map(item => (
+            <div key={item.id} className="flex justify-between text-sm text-gray-300">
+              <span>{item.quantity}x {item.menuItem.name}</span>
+            </div>
+          ))}
+        </div>
+
+        {order.deliveryAddress && (
+          <div className="mb-3 p-2 bg-gray-800 rounded text-xs text-gray-300">
+            📍 {order.deliveryAddress}
+          </div>
+        )}
+
+        <div className="mt-4">
+          {order.status === 'PAYMENT_CONFIRMED' && (
+            <div className="space-y-2">
+              <select
+                value={order.selectedPrepTime || ''}
+                onChange={(e) => handleSetSelectedPrepTime(order.id, parseInt(e.target.value))}
+                className="w-full bg-gray-600 text-white p-2 rounded text-sm outline-none"
+              >
+                <option value="" disabled>Select Prep Time</option>
+                {PREP_TIMES.map(t => <option key={t} value={t}>{t} mins</option>)}
+              </select>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleAcceptOrder(order.id, order.selectedPrepTime || null)}
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-sm transition"
+                  disabled={!order.selectedPrepTime}
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleDeclineOrder(order.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-3 rounded text-sm transition"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
+          {(order.status === 'CONFIRMED' || order.status === 'PREPARING') && (
+            <div>
+              <div className={`text-xs mb-2 font-bold ${isLate ? 'text-red-400' : 'text-gray-400'}`}>
+                {isLate ? '⚠️ LATE' : `Est. Ready: ${new Date(order.estimatedReadyTime!).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+              </div>
+              <button
+                onClick={() => handleMarkReady(order.id)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded text-sm transition"
+              >
+                Mark Ready
+              </button>
+            </div>
+          )}
+
+          {order.status === 'READY' && (
+            <div className="space-y-2">
+              {order.fulfillmentMethod === 'DELIVERY' ? (
+                <>
+                  <select
+                    onChange={(e) => handleAssignDriver(order.id, parseInt(e.target.value))}
+                    className="w-full bg-gray-600 text-white p-2 rounded text-sm outline-none border border-purple-500"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>Assign Driver...</option>
+                    {availableDrivers.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                  <p className="text-[10px] text-center text-gray-500">Wait for Driver to collect</p>
+                </>
+              ) : (
+                <button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-sm transition"
+                >
+                  Complete Pickup
+                </button>
+              )}
+            </div>
+          )}
+
+          {order.status === 'OUT_FOR_DELIVERY' && (
+            <div className="text-center p-2 bg-purple-900/30 rounded border border-purple-500/30">
+              <p className="text-xs font-bold text-purple-300">🚚 OUT WITH {order.driver?.name?.toUpperCase() || 'DRIVER'}</p>
+              <p className="text-[10px] text-purple-400 mt-1">Started: {new Date(order.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (isLoading && orders.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mb-4"></div>
+      <p className="text-gray-400">Booting Command Center...</p>
+    </div>
+  );
+
+  const filterOrders = (statuses: string[]) => orders.filter(o => statuses.includes(o.status));
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg mt-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold text-yellow-400">Order Management</h2>
-        <button
-          onClick={fetchOrders} // Manual refresh button
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded transition duration-150 text-sm"
-          disabled={isLoading}
-        >
-          {isLoading ? 'Refreshing...' : 'Refresh Orders'}
-        </button>
+    <div className="min-h-screen bg-gray-900 p-4 md:p-8">
+      {/* Dashboard Header */}
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-white tracking-tight">COMMAND <span className="text-yellow-400">CENTER</span></h1>
+          <p className="text-gray-400 text-sm">{availableDrivers.length} Drivers Online • {orders.length} Active Orders</p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="text-right hidden md:block">
+            <p className="text-xs text-gray-500 uppercase font-black">Daily Revenue</p>
+            <p className="text-xl font-black text-green-400">€{orders.reduce((acc, o) => acc + o.total, 0).toFixed(2)}</p>
+          </div>
+          <button
+            onClick={fetchOrders}
+            className="group relative flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-xl transition-all border border-gray-700"
+            disabled={isLoading}
+          >
+            <span className={`${isLoading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`}>🔄</span>
+          </button>
+        </div>
       </div>
-      {error && <p className="text-red-500 bg-red-800 p-3 rounded mb-4">Error refreshing orders: {error}. Displaying last known data.</p>}
 
-      {orders.length === 0 && !isLoading ? (
-        <p className="text-white text-center">No pending orders.</p>
-      ) : (
-        <ul className="space-y-4">
-          {orders.map(order => (
-            <li key={order.id} className={`bg-gray-700 p-4 rounded-md shadow-sm border-l-4 ${order.status === 'PAYMENT_CONFIRMED' ? 'border-yellow-500' : order.status === 'CONFIRMED' ? 'border-green-500' : 'border-red-500'}`}>
-              <div className="flex flex-col md:flex-row justify-between md:items-center">
-                <div className="mb-4 md:mb-0">
-                  <h3 className="text-lg font-medium text-white">Order ID: {order.id} (User: {order.user?.name || order.user?.email || order.userId || 'Guest'})</h3>
-                  <p className="text-sm text-gray-300">Received: {new Date(order.createdAt).toLocaleString()}</p>
-                  <p className="text-sm text-gray-300">Total: €{order.total.toFixed(2)}</p>
-                  <p className="text-sm text-gray-300">Status: <span className={`font-semibold ${order.status === 'PAYMENT_CONFIRMED' ? 'text-yellow-400' : order.status === 'CONFIRMED' ? 'text-green-400' : order.status === 'READY' ? 'text-blue-400' : 'text-red-400'}`}>{order.status}</span></p>
-                  {order.fulfillmentMethod && (
-                    <p className="text-sm text-gray-300">
-                      Type: <span className="font-semibold">{order.fulfillmentMethod === 'DELIVERY' ? '🚚 Delivery' : '🏪 Pickup'}</span>
-                      {order.fulfillmentMethod === 'DELIVERY' && order.deliveryAddress && (
-                        <span className="block text-xs text-gray-400 mt-1">📍 {order.deliveryAddress}</span>
-                      )}
-                      {order.fulfillmentMethod === 'DELIVERY' && order.orderCode && (
-                        <span className="block text-xs text-gray-400 mt-1">Code: {order.orderCode}</span>
-                      )}
-                    </p>
-                  )}
-                  {order.items.map(item => (
-                    <p key={item.id} className="text-xs text-gray-400 pl-2">- {item.quantity}x {item.menuItem.name}</p>
-                  ))}
-                  {(order.status === 'CONFIRMED' || order.status === 'Accepted') && order.estimatedReadyTime && (
-                    <p className="text-sm text-gray-300">Est. Ready: {new Date(order.estimatedReadyTime).toLocaleTimeString()}</p>
-                  )}
-                </div>
-                <div className="flex flex-col space-y-2 md:space-y-0 md:space-x-2 md:items-center">
-                  {(order.status === 'PAYMENT_CONFIRMED') && (
-                    <div className="flex items-center space-x-2 mb-2 md:mb-0">
-                      <span className="text-sm text-gray-300">Prep Time (min):</span>
-                      <select
-                        value={order.selectedPrepTime || ''}
-                        onChange={(e) => handleSetSelectedPrepTime(order.id, e.target.value ? parseInt(e.target.value) : null)}
-                        className="bg-gray-600 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                      >
-                        <option value="" disabled>Select</option>
-                        {PREP_TIMES.map(time => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div className="flex space-x-2 mt-2 md:mt-0">
-                    {(order.status === 'PAYMENT_CONFIRMED') && (
-                      <>
-                        <button
-                          onClick={() => handleAcceptOrder(order.id, order.selectedPrepTime || null)}
-                          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition duration-150 w-full md:w-auto"
-                          disabled={order.selectedPrepTime === null || isLoading}
-                        >
-                          {isLoading ? '...' : 'Accept'}
-                        </button>
-                        <button
-                          onClick={() => handleDeclineOrder(order.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-150 w-full md:w-auto"
-                          disabled={isLoading}
-                        >
-                          {isLoading ? '...' : 'Decline'}
-                        </button>
-                      </>
-                    )}
-                    {order.status === 'CONFIRMED' && (
-                      <p className='text-green-400 font-semibold'>Order Confirmed</p>
-                    )}
-                    {order.status === 'CANCELLED' && (
-                      <p className='text-red-400 font-semibold'>Order Cancelled</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-4 rounded-xl mb-6 flex items-center shadow-lg">
+          <span className="mr-3">⚠️</span>
+          <p className="text-sm font-bold">{error}</p>
+        </div>
       )}
+
+      {/* Kanban Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* NEW ORDERS */}
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="text-sm font-black text-yellow-500 uppercase tracking-widest">Incoming</h3>
+            <span className="bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-black">
+              {filterOrders(['PAYMENT_CONFIRMED']).length}
+            </span>
+          </div>
+          <div className="bg-gray-800/50 p-3 rounded-2xl flex-1 border border-gray-700/50 min-h-[400px]">
+            {filterOrders(['PAYMENT_CONFIRMED']).length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
+                <span className="text-4xl mb-2">📥</span>
+                <p className="text-xs font-bold uppercase">Quiet night...</p>
+              </div>
+            ) : (
+              filterOrders(['PAYMENT_CONFIRMED']).map(renderOrderCard)
+            )}
+          </div>
+        </div>
+
+        {/* KITCHEN / PREPARING */}
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="text-sm font-black text-blue-500 uppercase tracking-widest">Kitchen</h3>
+            <span className="bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded text-[10px] font-black">
+              {filterOrders(['CONFIRMED', 'PREPARING']).length}
+            </span>
+          </div>
+          <div className="bg-gray-800/50 p-3 rounded-2xl flex-1 border border-gray-700/50">
+            {filterOrders(['CONFIRMED', 'PREPARING']).length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
+                <span className="text-4xl mb-2">👨‍🍳</span>
+                <p className="text-xs font-bold uppercase">Kitchen Clear</p>
+              </div>
+            ) : (
+              filterOrders(['CONFIRMED', 'PREPARING']).map(renderOrderCard)
+            )}
+          </div>
+        </div>
+
+        {/* READY / DISPATCH */}
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="text-sm font-black text-green-500 uppercase tracking-widest">Ready</h3>
+            <span className="bg-green-500/20 text-green-500 px-2 py-0.5 rounded text-[10px] font-black">
+              {filterOrders(['READY']).length}
+            </span>
+          </div>
+          <div className="bg-gray-800/50 p-3 rounded-2xl flex-1 border border-gray-700/50">
+            {filterOrders(['READY']).length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
+                <span className="text-4xl mb-2">🥡</span>
+                <p className="text-xs font-bold uppercase">Nothing Ready</p>
+              </div>
+            ) : (
+              filterOrders(['READY']).map(renderOrderCard)
+            )}
+          </div>
+        </div>
+
+        {/* OUT FOR DELIVERY */}
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="text-sm font-black text-purple-500 uppercase tracking-widest">On Road</h3>
+            <span className="bg-purple-500/20 text-purple-500 px-2 py-0.5 rounded text-[10px] font-black">
+              {filterOrders(['OUT_FOR_DELIVERY']).length}
+            </span>
+          </div>
+          <div className="bg-gray-800/50 p-3 rounded-2xl flex-1 border border-gray-700/50">
+            {filterOrders(['OUT_FOR_DELIVERY']).length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50">
+                <span className="text-4xl mb-2">🚚</span>
+                <p className="text-xs font-bold uppercase">No Deliveries</p>
+              </div>
+            ) : (
+              filterOrders(['OUT_FOR_DELIVERY']).map(renderOrderCard)
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

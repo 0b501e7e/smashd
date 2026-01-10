@@ -4,14 +4,14 @@ import { Order, OrderItem, MenuItem } from '@prisma/client';
 // ORDER STATUS TYPES
 // =====================
 
-export type OrderStatus = 
-  | 'AWAITING_PAYMENT' 
-  | 'PAYMENT_CONFIRMED' 
-  | 'CONFIRMED' 
-  | 'PREPARING' 
-  | 'READY' 
+export type OrderStatus =
+  | 'AWAITING_PAYMENT'
+  | 'PAYMENT_CONFIRMED'
+  | 'CONFIRMED'
+  | 'PREPARING'
+  | 'READY'
   | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED' 
+  | 'DELIVERED'
   | 'CANCELLED'
   | 'PAYMENT_FAILED';
 
@@ -163,6 +163,17 @@ export interface AdminOrderWithDetails extends Order {
     name: string;
     email: string;
   } | null;
+  driver?: {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber?: string;
+  } | null;
+}
+
+export interface AssignDriverData {
+  orderId: number;
+  driverId: number;
 }
 
 export interface AcceptOrderData {

@@ -23,8 +23,10 @@ model User {
   phoneNumber   String
   acceptedTerms Boolean        @default(false)
   role          Role           @default(CUSTOMER)
+  isOnline      Boolean        @default(false)
   pushToken     String?        // Expo push notification token
   orders        Order[]
+  driverOrders  Order[]        @relation("DriverOrders")
   loyaltyPoints LoyaltyPoints?
   pointsTransactions PointsTransaction[]
   notifications Notification[]
@@ -58,6 +60,8 @@ model Order {
   id                Int         @id @default(autoincrement())
   userId            Int?
   user              User?       @relation(fields: [userId], references: [id])
+  driverId          Int?
+  driver            User?       @relation("DriverOrders", fields: [driverId], references: [id])
   total             Float
   status            OrderStatus
   fulfillmentMethod FulfillmentMethod @default(PICKUP)

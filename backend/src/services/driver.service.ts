@@ -120,7 +120,8 @@ export class DriverService implements IDriverService {
         where: {
           status: 'OUT_FOR_DELIVERY',
           fulfillmentMethod: 'DELIVERY',
-          deliveryAddress: { not: null }
+          deliveryAddress: { not: null },
+          driverId: driverId
         },
         include: {
           user: {
@@ -209,7 +210,8 @@ export class DriverService implements IDriverService {
       const updatedOrder = await this.prisma.order.update({
         where: { id: orderId },
         data: {
-          status: 'OUT_FOR_DELIVERY'
+          status: 'OUT_FOR_DELIVERY',
+          driverId: driverId
         }
       });
 

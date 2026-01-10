@@ -30,6 +30,11 @@ router.delete('/menu/:id', adminController.deleteMenuItem.bind(adminController))
 router.get('/orders', adminController.getAdminOrders.bind(adminController));
 router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.bind(adminController));
 router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));
+router.post('/orders/:id/ready', validateOrderId, adminController.markOrderReady.bind(adminController));
+router.post('/orders/:id/assign-driver', validateOrderId, adminController.assignDriver.bind(adminController));
+
+// Driver management
+router.get('/drivers/available', adminController.getAvailableDrivers.bind(adminController));
 
 // Customization management
 router.get('/customization-categories', (req: Request, res: Response, next: NextFunction) => adminController.getCustomizationCategories(req, res, next));

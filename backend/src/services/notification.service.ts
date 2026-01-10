@@ -164,6 +164,18 @@ export class NotificationService implements INotificationService {
           : `Your order #${orderId} is ready for pickup!`,
         template: 'order-ready',
         sound: 'notification'
+      },
+      'OUT_FOR_DELIVERY': {
+        title: '🚚 Order on the Way!',
+        message: `Your order #${orderId} is out for delivery and will arrive soon!`,
+        template: 'out-for-delivery',
+        sound: 'notification'
+      },
+      'DELIVERED': {
+        title: '🍔 Order Delivered!',
+        message: `Your order #${orderId} has been delivered. Enjoy your meal!`,
+        template: 'order-delivered',
+        sound: 'notification'
       }
     };
 
@@ -433,6 +445,40 @@ export class NotificationService implements INotificationService {
           </p>
           ${data.webResetUrl ? `<p style="text-align:center;"><a href="${data.webResetUrl}">Open in browser</a></p>` : ""}
           <p style="color: #6b7280; font-size: 12px;">If you didn't request this change, you can safely ignore this email.</p>
+        </div>
+      `,
+      'out-for-delivery': `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #f59e0b;">Order on the Way! 🚚</h2>
+          <p>Hi ${data.userName},</p>
+          <p>Great news! Your order #${data.orderId} is out for delivery.</p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <strong>Order Details:</strong><br>
+            Order #: ${data.orderId}<br>
+            Total: €${data.total}<br>
+          </div>
+          <p>The driver will be with you shortly. Enjoy your meal!</p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #666; font-size: 12px;">
+            Smashd Restaurant
+          </p>
+        </div>
+      `,
+      'order-delivered': `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #16a34a;">Order Delivered! 🍔</h2>
+          <p>Hi ${data.userName},</p>
+          <p>Your order #${data.orderId} has been successfully delivered.</p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <strong>Order Details:</strong><br>
+            Order #: ${data.orderId}<br>
+            Total: €${data.total}<br>
+          </div>
+          <p>We hope you enjoy your meal! Thanks for choosing Smashd.</p>
+          <hr style="margin: 30px 0;">
+          <p style="color: #666; font-size: 12px;">
+            Smashd Restaurant
+          </p>
         </div>
       `
     };

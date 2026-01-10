@@ -26,7 +26,7 @@ export interface IOrderService {
   // =====================
   // ORDER CREATION
   // =====================
-  
+
   /**
    * Create a new order with items
    * @param orderData - Order creation data including items and total
@@ -37,7 +37,7 @@ export interface IOrderService {
   // =====================
   // ORDER RETRIEVAL
   // =====================
-  
+
   /**
    * Get order by ID with full details
    * @param orderId - Order ID to retrieve
@@ -69,7 +69,7 @@ export interface IOrderService {
   // =====================
   // ORDER STATUS MANAGEMENT
   // =====================
-  
+
   /**
    * Update order estimated preparation time
    * @param orderId - Order ID to update
@@ -89,7 +89,7 @@ export interface IOrderService {
   // =====================
   // PAYMENT VERIFICATION
   // =====================
-  
+
   /**
    * Verify payment status with SumUp and update order
    * @param verificationData - Payment verification request data
@@ -100,7 +100,7 @@ export interface IOrderService {
   // =====================
   // REPEAT ORDER FUNCTIONALITY
   // =====================
-  
+
   /**
    * Prepare repeat order data for user's cart
    * @param repeatData - Repeat order request data
@@ -111,7 +111,7 @@ export interface IOrderService {
   // =====================
   // ADMIN ORDER MANAGEMENT
   // =====================
-  
+
   /**
    * Get orders for admin panel
    * @param query - Admin order query parameters
@@ -133,10 +133,25 @@ export interface IOrderService {
    */
   declineOrder(orderId: number): Promise<Order>;
 
+  /**
+   * Mark order as ready for pickup or delivery (admin)
+   * @param orderId - Order ID to mark ready
+   * @returns Updated order
+   */
+  markOrderReady(orderId: number): Promise<Order>;
+
+  /**
+   * Assign a driver to an order (admin)
+   * @param orderId - Order ID to assign
+   * @param driverId - Driver ID to assign
+   * @returns Updated order
+   */
+  assignDriver(orderId: number, driverId: number): Promise<Order>;
+
   // =====================
   // ORDER VALIDATION
   // =====================
-  
+
   /**
    * Validate order ownership for user operations
    * @param orderId - Order ID to validate
@@ -156,7 +171,7 @@ export interface IOrderService {
   // =====================
   // LOYALTY POINTS INTEGRATION
   // =====================
-  
+
   /**
    * Award loyalty points for completed order
    * @param orderId - Order ID to award points for

@@ -191,7 +191,7 @@ export class AdminService implements IAdminService {
     try {
       const orders = await this.prisma.order.findMany({
         where: {
-          status: { in: ['PAYMENT_CONFIRMED', 'CONFIRMED', 'PREPARING', 'READY'] }
+          status: { in: ['PAYMENT_CONFIRMED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'] }
         },
         include: {
           items: {
@@ -209,6 +209,14 @@ export class AdminService implements IAdminService {
               id: true,
               name: true,
               email: true
+            }
+          },
+          driver: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneNumber: true
             }
           }
         },
@@ -307,6 +315,39 @@ export class AdminService implements IAdminService {
       console.error(`AdminService: Error declining order ${declineData.orderId}:`, error);
       throw new Error(error instanceof Error ? error.message : 'Failed to decline order');
     }
+  }
+
+  async markOrderReady(orderId: number): Promise<Order> {
+    return this.orderService.markOrderReady(orderId);
+  }
+
+  async assignDriver(orderId: number, driverId: number): Promise<Order> {
+    const updatedOrder = await this.orderService.assignDriver(orderId, driverId);
+
+    // Trigger notification via notificationService if available
+    if (this.notificationService) {
+      // 1. Notify Customer
+      this.notificationService.sendOrderStatusUpdate(orderId, 'OUT_FOR_DELIVERY')
+        .catch(err => console.error('AdminService: Failed to notify customer about delivery:', err));
+
+      // 2. Notify Driver
+      // (Assuming notificationService has a method to notify a specific user about an assignment)
+      // I'll check NotificationService later, but for now I'll just use sendNotification if it exists
+      this.notificationService.sendNotification({
+        userId: driverId,
+        type: 'ORDER_UPDATE',
+        title: '🚚 New Delivery Assigned!',
+        message: `You have been assigned order #${orderId}. Tap to view details and start delivery.`,
+        metadata: { orderId, status: 'OUT_FOR_DELIVERY' },
+        pushData: {
+          sound: 'default',
+          badge: 1,
+          data: { orderId, type: 'assignment' }
+        }
+      }).catch(err => console.error('AdminService: Failed to notify driver about assignment:', err));
+    }
+
+    return updatedOrder;
   }
 
   // =====================
@@ -632,6 +673,27 @@ export class AdminService implements IAdminService {
     } catch (error) {
       console.error('AdminService: Error syncing menu to SumUp:', error);
       throw new Error(error instanceof Error ? error.message : 'Failed to sync menu with SumUp');
+    }
+  }
+
+  async getAvailableDrivers(): Promise<any[]> {
+    try {
+      const drivers = await this.prisma.user.findMany({
+        where: {
+          role: 'DRIVER',
+          isOnline: true
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true
+        }
+      });
+      return drivers;
+    } catch (error) {
+      console.error('AdminService: Error fetching available drivers:', error);
+      throw new Error('Failed to retrieve available drivers');
     }
   }
 } 

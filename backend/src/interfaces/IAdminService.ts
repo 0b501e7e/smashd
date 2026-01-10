@@ -89,6 +89,21 @@ export interface IAdminService {
    */
   declineOrder(declineData: OrderDeclineData): Promise<Order>;
 
+  /**
+   * Mark order as ready for pickup or delivery
+   * @param orderId - Order ID to mark ready
+   * @returns Updated order
+   */
+  markOrderReady(orderId: number): Promise<Order>;
+
+  /**
+   * Assign a driver to an order
+   * @param orderId - Order ID to assign
+   * @param driverId - Driver ID to assign
+   * @returns Updated order
+   */
+  assignDriver(orderId: number, driverId: number): Promise<Order>;
+
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================
@@ -172,4 +187,10 @@ export interface IAdminService {
    * @returns Sync operation results
    */
   syncMenuToSumUp(): Promise<SumUpSyncResponse>;
+
+  /**
+   * Get all online drivers
+   * @returns List of online drivers
+   */
+  getAvailableDrivers(): Promise<any[]>;
 } 

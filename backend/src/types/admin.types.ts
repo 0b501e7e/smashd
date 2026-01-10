@@ -51,6 +51,12 @@ export interface AdminOrderWithDetails extends Order {
     name: string;
     email: string;
   } | null;
+  driver?: {
+    id: number;
+    name: string;
+    email: string;
+    phoneNumber?: string;
+  } | null;
 }
 
 // =====================
