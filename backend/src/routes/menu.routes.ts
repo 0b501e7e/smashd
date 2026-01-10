@@ -8,6 +8,7 @@ const router = Router();
 const menuController = new MenuController(services.menuService);
 
 // Public menu routes
+router.get('/promotions', menuController.getPromotions);
 router.get('/', menuController.getMenu);
 router.get('/customizations', menuController.getCustomizations);
 router.get('/:id', menuController.getMenuItem);

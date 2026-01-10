@@ -25,7 +25,8 @@ export class MenuService implements IMenuService {
   private mapToMenuItem(item: any): MenuItem {
     return {
       ...item,
-      category: item.category as MenuCategory
+      category: item.category as MenuCategory,
+      vatRate: item.vatRate ?? 0.10 // Default to 10% if undefined
     };
   }
 
@@ -70,6 +71,9 @@ export class MenuService implements IMenuService {
         name: true,
         description: true,
         price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
         category: true,
         imageUrl: true,
         isAvailable: true,
@@ -77,11 +81,39 @@ export class MenuService implements IMenuService {
       }
     });
 
-    // Type cast category from string to MenuCategory
-    return items.map(item => ({
-      ...item,
-      category: item.category as MenuCategory
-    })) as MenuItem[];
+    return items.map(item => this.mapToMenuItem(item));
+  }
+
+  /**
+   * Get active promotions (items with originalPrice set)
+   */
+  async getActivePromotions(): Promise<MenuItem[]> {
+    const items = await this.prisma.menuItem.findMany({
+      where: {
+        isAvailable: true,
+        OR: [
+          { originalPrice: { not: null } },
+          // We can add more logic here if needed, e.g. checking promotion dates if we had them
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
+        category: true,
+        imageUrl: true,
+        isAvailable: true,
+        sumupProductId: true
+      }
+    });
+
+
+
+    return items.map(item => this.mapToMenuItem(item));
   }
 
   /**
@@ -101,6 +133,9 @@ export class MenuService implements IMenuService {
         name: true,
         description: true,
         price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
         category: true,
         imageUrl: true,
         isAvailable: true,
@@ -127,6 +162,9 @@ export class MenuService implements IMenuService {
         name: true,
         description: true,
         price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
         category: true,
         imageUrl: true,
         isAvailable: true,
@@ -164,6 +202,9 @@ export class MenuService implements IMenuService {
         name: true,
         description: true,
         price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
         category: true,
         imageUrl: true,
         isAvailable: true,
@@ -216,6 +257,9 @@ export class MenuService implements IMenuService {
         name: true,
         description: true,
         price: true,
+        originalPrice: true,
+        promotionTitle: true,
+        vatRate: true,
         category: true,
         imageUrl: true,
         isAvailable: true,

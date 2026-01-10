@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "MenuItem" ADD COLUMN     "originalPrice" DOUBLE PRECISION,
+ADD COLUMN     "promotionTitle" TEXT,
+ADD COLUMN     "vatRate" DOUBLE PRECISION NOT NULL DEFAULT 0.10;

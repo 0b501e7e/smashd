@@ -37,6 +37,22 @@ export class MenuController {
   };
 
   /**
+   * Get active promotions
+   * GET /v1/menu/promotions
+   */
+  getPromotions = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      console.log('Received request for active promotions');
+      const promotions = await this.menuService.getActivePromotions();
+      console.log(`Sending ${promotions.length} active promotions`);
+      sendSuccess(res, promotions, 'Active promotions retrieved successfully');
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+      next(error);
+    }
+  };
+
+  /**
    * Get all customization options
    * GET /v1/menu/customizations
    */

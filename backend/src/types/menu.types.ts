@@ -6,6 +6,9 @@ export interface MenuItem {
   name: string;
   description: string | null;
   price: number;
+  originalPrice?: number | null;
+  promotionTitle?: string | null;
+  vatRate: number;
   category: MenuCategory;
   imageUrl: string | null;
   isAvailable: boolean;
@@ -16,6 +19,9 @@ export interface MenuItemCreateData {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  promotionTitle?: string;
+  vatRate?: number;
   category: MenuCategory;
   imageUrl: string;
   isAvailable?: boolean;
@@ -25,6 +31,9 @@ export interface MenuItemUpdateData {
   name?: string;
   description?: string;
   price?: number;
+  originalPrice?: number | null;
+  promotionTitle?: string | null;
+  vatRate?: number;
   category?: MenuCategory;
   imageUrl?: string;
   isAvailable?: boolean;

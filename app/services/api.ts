@@ -258,6 +258,18 @@ export const menuAPI = {
     }
   },
 
+  getPromotions: async () => {
+    try {
+      const response = await api.get('/v1/menu/promotions');
+      const promotions = response.data?.data;
+      console.log(`Sending ${promotions?.length} active promotions`);
+      return promotions || [];
+    } catch (error: any) {
+      console.error('Promotions fetch error:', error);
+      return [];
+    }
+  },
+
   getMenuItemById: async (id: number) => {
     const response = await api.get(`/v1/menu/${id}`);
     return response.data?.data;

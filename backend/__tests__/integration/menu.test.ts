@@ -189,7 +189,10 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
           category: true,
           imageUrl: true,
           isAvailable: true,
-          sumupProductId: true
+          sumupProductId: true,
+          originalPrice: true,
+          promotionTitle: true,
+          vatRate: true
         }
       });
     });

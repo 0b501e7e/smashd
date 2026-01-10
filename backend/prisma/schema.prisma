@@ -39,6 +39,9 @@ model MenuItem {
   name               String
   description        String?
   price              Float
+  originalPrice      Float?   // If set, implies the item is on promotion. 'price' is the current selling price.
+  promotionTitle     String?  // e.g., "20% Off!"
+  vatRate            Float    @default(0.10) // 10% VAT for restaurants in Spain
   category           String   // BURGER, SIDE, DRINK, DESSERT
   imageUrl           String?
   isAvailable        Boolean  @default(true)

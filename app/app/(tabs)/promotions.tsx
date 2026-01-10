@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { userAPI, orderAPI, API_URL } from '@/services/api';
+import { userAPI, orderAPI, menuAPI, API_URL } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -93,18 +93,24 @@ export default function PromotionsScreen() {
   const fetchActivePromotions = async () => {
     setPromotionsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const mockData: ActivePromotionsResponse = {
-        discountedItems: [
-          { id: 1, name: "Classic Smash Burger", originalPrice: 10.99, promotionalPrice: 8.99, promotionTitle: "20% Off!", imageUrl: "https://via.placeholder.com/150/FFC107/000000?Text=Burger", description: "Our best-selling classic burger." },
-          { id: 2, name: "Spicy Chicken Sandwich", originalPrice: 11.50, promotionalPrice: 9.50, promotionTitle: "Save $2!", imageUrl: "https://via.placeholder.com/150/FF5722/FFFFFF?Text=Chicken+Sandwich", description: "Crispy chicken with a kick." },
-        ],
-        mealDeals: [
-          { id: "deal1", title: "Family Feast", description: "2 Smash Burgers, 2 Kids Burgers, 4 Fries, 4 Drinks", price: 39.99, imageUrl: "https://via.placeholder.com/300/4CAF50/FFFFFF?Text=Family+Feast" },
-          { id: "deal2", title: "Lunch Combo", description: "Any Burger + Side + Drink", price: 12.99, imageUrl: "https://via.placeholder.com/300/2196F3/FFFFFF?Text=Lunch+Combo" },
-        ],
-      };
-      setActivePromotions(mockData);
+      // Fetch active promotions from backend
+      const promotions = await menuAPI.getPromotions();
+
+      const discountedItems = promotions.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        originalPrice: item.originalPrice || item.price, // Fallback if originalPrice missing
+        promotionalPrice: item.price,
+        promotionTitle: item.promotionTitle || 'Oferta Especial',
+        description: item.description
+      }));
+
+      // We currently don't have a Meal Deal backend implementation, so we leave it empty or mocked if needed
+      // For now, we'll keep it empty to rely on real data
+      const mealDeals: MealDeal[] = [];
+
+      setActivePromotions({ discountedItems, mealDeals });
     } catch (error) {
       console.error('Error fetching active promotions:', error);
       setErrorDialog({
