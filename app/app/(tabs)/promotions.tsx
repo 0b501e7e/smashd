@@ -170,7 +170,7 @@ export default function PromotionsScreen() {
       clearCart();
       data.items.forEach((item: any) => {
         addItem({
-          id: item.id,
+          id: item.menuItemId, // Fix: Use menuItemId as the ID, not item.id (which is undefined in repeat response)
           name: item.name,
           price: item.price,
           quantity: item.quantity,
