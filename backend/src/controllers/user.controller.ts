@@ -65,7 +65,7 @@ export class UserController {
 
     try {
       const query: UserOrdersQuery = {
-        userId: parseInt(userId),
+        userId: parseInt(userId as string),
         requestingUserId: req.user.userId,
         requestingUserRole: req.user.role,
         includeItems: true
@@ -104,7 +104,7 @@ export class UserController {
 
     try {
       const query: LastOrderQuery = {
-        userId: parseInt(userId),
+        userId: parseInt(userId as string),
         requestingUserId: req.user.userId,
         requestingUserRole: req.user.role,
         includeItems: true
@@ -148,7 +148,7 @@ export class UserController {
     }
 
     try {
-      const orderIdInt = parseInt(orderId);
+      const orderIdInt = parseInt(orderId as string);
       if (isNaN(orderIdInt)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;

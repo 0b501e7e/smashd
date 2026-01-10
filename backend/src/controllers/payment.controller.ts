@@ -82,7 +82,7 @@ export class PaymentController {
     try {
       console.log(`Checking status for SumUp checkout: ${checkoutId}`);
 
-      const result = await this.paymentService.getCheckoutStatus(checkoutId);
+      const result = await this.paymentService.getCheckoutStatus(checkoutId as string);
       sendSuccess(res, result);
     } catch (error) {
       console.error(`Error checking status for checkout ${checkoutId}:`, error);
@@ -110,7 +110,7 @@ export class PaymentController {
     }
 
     try {
-      const result = await this.paymentService.getCheckoutUrl(checkoutId);
+      const result = await this.paymentService.getCheckoutUrl(checkoutId as string);
       console.log('Checkout URL:', result.checkoutUrl);
       sendSuccess(res, result);
     } catch (error) {
@@ -172,7 +172,7 @@ export class PaymentController {
         return;
       }
 
-      const result = await this.paymentService.checkOrderWithSumUp(parseInt(orderId));
+      const result = await this.paymentService.checkOrderWithSumUp(parseInt(orderId as string));
       sendSuccess(res, result);
     } catch (error) {
       console.error('Error checking order:', error);

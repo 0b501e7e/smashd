@@ -69,7 +69,7 @@ export class OrderController {
     }
 
     try {
-      const orderId = parseInt(id);
+      const orderId = parseInt(id as string);
       if (isNaN(orderId)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
@@ -107,7 +107,7 @@ export class OrderController {
     }
 
     try {
-      const orderId = parseInt(id);
+      const orderId = parseInt(id as string);
       if (isNaN(orderId)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;
@@ -143,7 +143,7 @@ export class OrderController {
     }
 
     try {
-      const orderIdInt = parseInt(orderId);
+      const orderIdInt = parseInt(orderId as string);
       if (isNaN(orderIdInt)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
         return;

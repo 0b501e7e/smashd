@@ -200,7 +200,7 @@ export const isOwnerOrAdmin = (
       return;
     }
 
-    const resourceUserId = parseInt(userIdParam, 10);
+    const resourceUserId = parseInt(userIdParam as string, 10);
 
     if (isNaN(resourceUserId)) {
       sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);

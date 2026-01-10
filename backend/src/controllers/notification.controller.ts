@@ -12,7 +12,7 @@ export class NotificationController {
       const userIdStr = req.params['userId'];
       const limitStr = req.query['limit'] as string | undefined;
 
-      const userId = userIdStr ? parseInt(userIdStr) : NaN;
+      const userId = userIdStr ? parseInt(userIdStr as string) : NaN;
       const limit = limitStr ? parseInt(limitStr) : 20;
 
       if (isNaN(userId)) {
@@ -34,7 +34,7 @@ export class NotificationController {
   static async markAsRead(req: Request, res: Response): Promise<void> {
     try {
       const notificationIdStr = req.params['notificationId'];
-      const notificationId = notificationIdStr ? parseInt(notificationIdStr) : NaN;
+      const notificationId = notificationIdStr ? parseInt(notificationIdStr as string) : NaN;
 
       if (isNaN(notificationId)) {
         sendError(res, 'Invalid notification ID', HTTP_STATUS.BAD_REQUEST);
@@ -55,7 +55,7 @@ export class NotificationController {
   static async markAllAsRead(req: Request, res: Response): Promise<void> {
     try {
       const userIdStr = req.params['userId'];
-      const userId = userIdStr ? parseInt(userIdStr) : NaN;
+      const userId = userIdStr ? parseInt(userIdStr as string) : NaN;
 
       if (isNaN(userId)) {
         sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);
@@ -76,7 +76,7 @@ export class NotificationController {
   static async registerPushToken(req: Request, res: Response): Promise<void> {
     try {
       const userIdStr = req.params['userId'];
-      const userId = userIdStr ? parseInt(userIdStr) : NaN;
+      const userId = userIdStr ? parseInt(userIdStr as string) : NaN;
       const { pushToken } = req.body;
 
       if (isNaN(userId)) {
@@ -107,7 +107,7 @@ export class NotificationController {
   static async removePushToken(req: Request, res: Response): Promise<void> {
     try {
       const userIdStr = req.params['userId'];
-      const userId = userIdStr ? parseInt(userIdStr) : NaN;
+      const userId = userIdStr ? parseInt(userIdStr as string) : NaN;
 
       if (isNaN(userId)) {
         sendError(res, 'Invalid user ID', HTTP_STATUS.BAD_REQUEST);

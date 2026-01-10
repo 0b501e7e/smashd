@@ -51,7 +51,7 @@ export class DriverController {
    */
   acceptOrder = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const orderId = parseInt(req.params['orderId'] || '', 10);
+      const orderId = parseInt(req.params['orderId'] as string || '', 10);
       const driverId = req.user?.userId;
 
       if (isNaN(orderId)) {
@@ -87,7 +87,7 @@ export class DriverController {
    */
   markDelivered = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const orderId = parseInt(req.params['orderId'] || '', 10);
+      const orderId = parseInt(req.params['orderId'] as string || '', 10);
       const driverId = req.user?.userId;
 
       if (isNaN(orderId)) {
@@ -123,7 +123,7 @@ export class DriverController {
    */
   getOrderDetails = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const orderId = parseInt(req.params['orderId'] || '', 10);
+      const orderId = parseInt(req.params['orderId'] as string || '', 10);
 
       if (isNaN(orderId)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);

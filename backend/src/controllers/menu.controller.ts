@@ -84,7 +84,7 @@ export class MenuController {
         return;
       }
 
-      const customizations = await this.menuService.getMenuItemCustomizations(itemId);
+      const customizations = await this.menuService.getMenuItemCustomizations(itemId as string);
 
       console.log('Sending menu item customizations');
       sendSuccess(res, customizations, 'Menu item customizations retrieved successfully');
@@ -112,7 +112,7 @@ export class MenuController {
         return;
       }
 
-      const menuItem = await this.menuService.getMenuItemById(id);
+      const menuItem = await this.menuService.getMenuItemById(id as string);
 
       if (!menuItem) {
         sendError(res, 'Menu item not found', HTTP_STATUS.NOT_FOUND);

@@ -82,7 +82,7 @@ export class AdminController {
         return;
       }
 
-      const itemId = parseInt(id);
+      const itemId = parseInt(id as string);
 
       if (isNaN(itemId)) {
         sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
@@ -124,7 +124,7 @@ export class AdminController {
         return;
       }
 
-      const itemId = parseInt(id);
+      const itemId = parseInt(id as string);
 
       if (isNaN(itemId)) {
         sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
@@ -158,7 +158,7 @@ export class AdminController {
         return;
       }
 
-      const itemId = parseInt(id);
+      const itemId = parseInt(id as string);
 
       if (isNaN(itemId)) {
         sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
@@ -221,7 +221,7 @@ export class AdminController {
         return;
       }
 
-      const orderIdNum = parseInt(orderId);
+      const orderIdNum = parseInt(orderId as string);
 
       if (isNaN(orderIdNum)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
@@ -264,7 +264,7 @@ export class AdminController {
         return;
       }
 
-      const orderIdNum = parseInt(orderId);
+      const orderIdNum = parseInt(orderId as string);
 
       if (isNaN(orderIdNum)) {
         sendError(res, 'Invalid order ID', HTTP_STATUS.BAD_REQUEST);
@@ -305,7 +305,7 @@ export class AdminController {
         return;
       }
 
-      const orderId = parseInt(id);
+      const orderId = parseInt(id as string);
       const updatedOrder = await this.adminService.markOrderReady(orderId);
 
       console.log(`AdminController: Order ${orderId} marked as ready`);
@@ -330,7 +330,7 @@ export class AdminController {
         return;
       }
 
-      const orderIdNum = parseInt(id);
+      const orderIdNum = parseInt(id as string);
       const driverIdNum = parseInt(driverId);
 
       const updatedOrder = await this.adminService.assignDriver(orderIdNum, driverIdNum);
@@ -355,7 +355,7 @@ export class AdminController {
         return;
       }
 
-      const orderId = parseInt(id);
+      const orderId = parseInt(id as string);
       const updatedOrder = await this.adminService.completePickup(orderId);
 
       console.log(`AdminController: Pickup order ${orderId} completed and marked as delivered`);
@@ -431,7 +431,7 @@ export class AdminController {
         return;
       }
 
-      const updatedCategory = await this.adminService.updateCustomizationCategory(parseInt(id), categoryData);
+      const updatedCategory = await this.adminService.updateCustomizationCategory(parseInt(id as string), categoryData);
       sendSuccess(res, updatedCategory);
     } catch (error) {
       console.error('AdminController: Error updating customization category:', error);
@@ -452,7 +452,7 @@ export class AdminController {
         return;
       }
 
-      const result = await this.adminService.deleteCustomizationCategory(parseInt(id));
+      const result = await this.adminService.deleteCustomizationCategory(parseInt(id as string));
       sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error deleting customization category:', error);
@@ -489,7 +489,7 @@ export class AdminController {
         return;
       }
 
-      const updatedOption = await this.adminService.updateCustomizationOption(parseInt(id), optionData);
+      const updatedOption = await this.adminService.updateCustomizationOption(parseInt(id as string), optionData);
       sendSuccess(res, updatedOption);
     } catch (error) {
       console.error('AdminController: Error updating customization option:', error);
@@ -510,7 +510,7 @@ export class AdminController {
         return;
       }
 
-      const result = await this.adminService.deleteCustomizationOption(parseInt(id));
+      const result = await this.adminService.deleteCustomizationOption(parseInt(id as string));
       sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error deleting customization option:', error);
@@ -547,7 +547,7 @@ export class AdminController {
         return;
       }
 
-      const itemId = parseInt(menuItemId);
+      const itemId = parseInt(menuItemId as string);
 
       if (isNaN(itemId)) {
         sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
@@ -584,7 +584,7 @@ export class AdminController {
         return;
       }
 
-      const itemId = parseInt(menuItemId);
+      const itemId = parseInt(menuItemId as string);
 
       if (isNaN(itemId)) {
         sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
