@@ -59,6 +59,9 @@ export class AdminService implements IAdminService {
           name: menuItemData.name,
           description: menuItemData.description,
           price: menuItemData.price,
+          originalPrice: menuItemData.originalPrice ?? null,
+          promotionTitle: menuItemData.promotionTitle ?? null,
+          vatRate: menuItemData.vatRate || 0.10,
           category: menuItemData.category,
           imageUrl: menuItemData.imageUrl,
           isAvailable: menuItemData.isAvailable ?? true

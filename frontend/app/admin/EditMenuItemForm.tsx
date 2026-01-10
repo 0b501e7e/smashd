@@ -26,6 +26,9 @@ interface MenuItem {
   imageUrl?: string; // Keep optional, but new uploads will make it mandatory for saving
   category: string;
   isAvailable?: boolean; // Added based on PUT endpoint fields
+  originalPrice?: number | null;
+  promotionTitle?: string | null;
+  vatRate?: number;
 }
 
 interface EditMenuItemFormProps {
@@ -40,6 +43,8 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const [isPromoting, setIsPromoting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -47,7 +52,8 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setEditedItem(item);
       setError(null);
       setIsLoading(false);
-      setSelectedFile(null);
+
+      setIsPromoting(!!item.originalPrice); // Set promoting state based on existence of originalPrice
       // Set initial image preview from item.imageUrl if it exists
       if (item.imageUrl) {
         let fullImageUrl = item.imageUrl;
@@ -105,6 +111,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+    console.log('Debugging Cloudinary Config:', {
+      cloudName,
+      uploadPreset
+    });
+
     if (!cloudName || !uploadPreset) {
       setError("Cloudinary configuration missing. Please checking environment variables.");
       return null;
@@ -150,6 +161,24 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     } : null);
   };
 
+  const handlePromotionToggle = (checked: boolean) => {
+    setIsPromoting(checked);
+    if (!checked) {
+      // Clear promotion fields when disabling
+      setEditedItem(prev => prev ? {
+        ...prev,
+        originalPrice: null,
+        promotionTitle: null
+      } : null);
+    } else {
+      // Default original price to current price if empty when enabling
+      setEditedItem(prev => prev ? {
+        ...prev,
+        originalPrice: prev.price
+      } : null);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editedItem) return;
@@ -160,6 +189,12 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
 
     if (!editedItem.name || !editedItem.category || price < 0) { // Price can be 0 or more
       setError("Name, Category, and a valid Price are required.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (isPromoting && (!editedItem.originalPrice || editedItem.originalPrice <= price)) {
+      setError("For promotions, Regular Price must be greater than Sale Price.");
       setIsLoading(false);
       return;
     }
@@ -285,18 +320,78 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
                 className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
-            <div>
-              <Label htmlFor={`price-edit-${item.id}`} className="text-gray-300">Price (€)</Label>
+            <div className="flex items-center space-x-2 my-4">
+              <input
+                type="checkbox"
+                id="isPromoting"
+                checked={isPromoting}
+                onChange={(e) => handlePromotionToggle(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+              />
+              <Label htmlFor="isPromoting" className="text-yellow-400 font-medium cursor-pointer select-none">Promote this Item (On Sale)</Label>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor={`price-edit-${item.id}`} className="text-gray-300">
+                  {isPromoting ? "Sale Price (€)" : "Price (€)"}
+                </Label>
+                <Input
+                  id={`price-edit-${item.id}`}
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editedItem.price}
+                  onChange={handleChange}
+                  className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                  required
+                />
+              </div>
+
+              {isPromoting && (
+                <>
+                  <div>
+                    <Label htmlFor={`originalPrice-edit-${item.id}`} className="text-gray-300">Regular Price (€)</Label>
+                    <Input
+                      id={`originalPrice-edit-${item.id}`}
+                      name="originalPrice"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={editedItem.originalPrice || ''}
+                      onChange={(e) => setEditedItem(prev => prev ? { ...prev, originalPrice: parseFloat(e.target.value) } : null)}
+                      className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                      required={isPromoting}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor={`promotionTitle-edit-${item.id}`} className="text-gray-300">Promotion Label (Opt.)</Label>
+                    <Input
+                      id={`promotionTitle-edit-${item.id}`}
+                      name="promotionTitle"
+                      placeholder="e.g. 50% OFF!"
+                      value={editedItem.promotionTitle || ''}
+                      onChange={(e) => setEditedItem(prev => prev ? { ...prev, promotionTitle: e.target.value } : null)}
+                      className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mt-2">
+              <Label htmlFor={`vatRate-edit-${item.id}`} className="text-gray-300">VAT Rate (0.10 = 10%)</Label>
               <Input
-                id={`price-edit-${item.id}`}
-                name="price"
+                id={`vatRate-edit-${item.id}`}
+                name="vatRate"
                 type="number"
                 step="0.01"
                 min="0"
-                value={editedItem.price}
-                onChange={handleChange}
+                max="1"
+                value={editedItem.vatRate || 0.10}
+                onChange={(e) => setEditedItem(prev => prev ? { ...prev, vatRate: parseFloat(e.target.value) } : null)}
                 className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-                required
               />
             </div>
             <div>
@@ -326,7 +421,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               {imagePreview && (
                 <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
                   {/* Use unoptimized for blob URLs to avoid Next.js image optimization errors */}
-                  <Image src={imagePreview} alt={selectedFile ? "New image preview" : "Current image"} layout="fill" objectFit="contain" unoptimized={imagePreview.startsWith('blob:') || !imagePreview.startsWith('/')} />
+                  <Image src={imagePreview} alt={selectedFile ? "New image preview" : "Current image"} fill className="object-contain" unoptimized={imagePreview.startsWith('blob:') || !imagePreview.startsWith('/')} />
                 </div>
               )}
             </div>

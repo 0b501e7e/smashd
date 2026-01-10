@@ -12,11 +12,11 @@ export const handleValidationErrors = (
   next: NextFunction
 ): void => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     const validationErrors = errors.array();
     console.warn('Validation errors:', validationErrors);
-    
+
     // Format errors for better client consumption
     const formattedErrors = validationErrors.map(error => ({
       field: error.type === 'field' ? error.path : 'unknown',
@@ -27,7 +27,7 @@ export const handleValidationErrors = (
     sendValidationError(res, formattedErrors, 'Validation failed');
     return;
   }
-  
+
   next();
 };
 
@@ -52,7 +52,7 @@ export const runValidation = async (
 ): Promise<{ isValid: boolean; errors: any[] }> => {
   // Run all validations
   await Promise.all(validations.map(validation => validation.run(req)));
-  
+
   const errors = validationResult(req);
   return {
     isValid: errors.isEmpty(),
@@ -89,7 +89,7 @@ export const isFutureDate = (errorMessage = 'Date must be in the future') => {
   return (value: string) => {
     const date = new Date(value);
     const now = new Date();
-    
+
     if (date <= now) {
       throw new Error(errorMessage);
     }
@@ -104,7 +104,7 @@ export const isPastDate = (errorMessage = 'Date must be in the past') => {
   return (value: string) => {
     const date = new Date(value);
     const now = new Date();
-    
+
     if (date >= now) {
       throw new Error(errorMessage);
     }
@@ -121,11 +121,11 @@ export const isMinimumAge = (minAge: number, errorMessage?: string) => {
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
-      ? age - 1 
+
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())
+      ? age - 1
       : age;
-    
+
     if (actualAge < minAge) {
       throw new Error(errorMessage || `Minimum age required is ${minAge} years`);
     }
@@ -143,10 +143,10 @@ export const isStrongPassword = (errorMessage?: string) => {
     const hasNumbers = /\d/.test(value);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(value);
     const isLongEnough = value.length >= 8;
-    
+
     if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar || !isLongEnough) {
       throw new Error(
-        errorMessage || 
+        errorMessage ||
         'Password must be at least 8 characters long and contain uppercase, lowercase, numbers, and special characters'
       );
     }
@@ -160,7 +160,7 @@ export const isStrongPassword = (errorMessage?: string) => {
 export const hasUniqueItems = (errorMessage = 'Array must contain unique items') => {
   return (value: any[]) => {
     const uniqueValues = [...new Set(value)];
-    
+
     if (uniqueValues.length !== value.length) {
       throw new Error(errorMessage);
     }
@@ -193,30 +193,30 @@ export const validateUserRegistration: ValidationChain[] = [
     .isEmail()
     .normalizeEmail()
     .withMessage('Must be a valid email address'),
-  
+
   body('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
-  
+
   body('name')
     .trim()
     .isLength({ min: 2 })
     .withMessage('Name must be at least 2 characters long'),
-  
+
   body('dateOfBirth')
     .isISO8601()
     .withMessage('Date of birth must be a valid date'),
-  
+
   body('address')
     .trim()
     .isLength({ min: 5 })
     .withMessage('Address must be at least 5 characters long'),
-  
+
   body('phoneNumber')
     .trim()
     .isMobilePhone('es-ES')
     .withMessage('Phone number must be a valid Spanish number'),
-  
+
   body('acceptedTerms')
     .isBoolean()
     .custom(value => {
@@ -237,7 +237,7 @@ export const validateUserLogin: ValidationChain[] = [
     .isEmail()
     .normalizeEmail()
     .withMessage('Must be a valid email address'),
-  
+
   body('password')
     .not()
     .isEmpty()
@@ -252,20 +252,20 @@ export const validateMenuItemCreation: ValidationChain[] = [
     .trim()
     .notEmpty()
     .withMessage('Name is required'),
-  
+
   body('description')
     .trim()
     .notEmpty()
     .withMessage('Description is required'),
-  
+
   body('price')
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
-  
+
   body('category')
     .isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT'])
     .withMessage('Invalid category'),
-  
+
   body('imageUrl')
     .isURL()
     .withMessage('Valid image URL is required')
@@ -279,24 +279,24 @@ export const validateMenuItemUpdate: ValidationChain[] = [
     .trim()
     .notEmpty()
     .withMessage('Name is required'),
-  
+
   body('description')
     .trim()
     .notEmpty()
     .withMessage('Description is required'),
-  
+
   body('price')
     .isFloat({ min: 0 })
     .withMessage('Price must be a positive number'),
-  
+
   body('category')
     .isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT'])
     .withMessage('Invalid category'),
-  
+
   body('isAvailable')
     .isBoolean()
     .withMessage('isAvailable must be a boolean'),
-  
+
   body('imageUrl')
     .isURL()
     .withMessage('Valid image URL is required')
@@ -318,15 +318,15 @@ export const validateOrderCreation: ValidationChain[] = [
   body('items')
     .isArray()
     .withMessage('Items must be an array'),
-  
+
   body('items.*.menuItemId')
     .isInt()
     .withMessage('Invalid menu item ID'),
-  
+
   body('items.*.quantity')
     .isInt({ min: 1 })
     .withMessage('Quantity must be at least 1'),
-  
+
   body('total')
     .isFloat({ min: 0 })
     .withMessage('Total must be a positive number')
@@ -349,15 +349,15 @@ export const validateCustomizationCategoryCreation: ValidationChain[] = [
     .trim()
     .notEmpty()
     .withMessage('Name is required'),
-  
+
   body('options')
     .isArray()
     .withMessage('Options must be an array'),
-  
+
   body('options.*.name')
     .isString()
     .withMessage('Option name must be a string'),
-  
+
   body('options.*.price')
     .isFloat({ min: 0 })
     .withMessage('Option price must be a positive number')
@@ -370,7 +370,7 @@ export const validateMenuItemCustomizationLink: ValidationChain[] = [
   body('optionIds')
     .isArray()
     .withMessage('optionIds must be an array'),
-  
+
   body('optionIds.*')
     .isInt()
     .withMessage('Each optionId must be an integer')
@@ -404,7 +404,7 @@ export const validatePaginationQuery: ValidationChain[] = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Page must be a positive integer'),
-  
+
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
@@ -443,6 +443,9 @@ export const validateCreateMenuItem = [
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2 and 100 characters'),
   body('description').trim().notEmpty().withMessage('Description is required'),
   body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('originalPrice').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Original Price must be a positive number'),
+  body('promotionTitle').optional({ nullable: true }).trim().isString(),
+  body('vatRate').optional().isFloat({ min: 0, max: 1 }).withMessage('VAT Rate must be between 0 and 1'),
   body('category').isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
   body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
   body('imageUrl').trim().notEmpty().withMessage('Image URL is required'),
@@ -456,6 +459,9 @@ export const validateUpdateMenuItem = [
   body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
   body('description').optional().trim().notEmpty().withMessage('Description cannot be empty'),
   body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('originalPrice').optional({ nullable: true }).isFloat({ min: 0 }).withMessage('Original Price must be a positive number'),
+  body('promotionTitle').optional({ nullable: true }).trim().isString(),
+  body('vatRate').optional().isFloat({ min: 0, max: 1 }).withMessage('VAT Rate must be between 0 and 1'),
   body('category').optional().isIn(['BURGER', 'SIDE', 'DRINK', 'DESSERT']).withMessage('Invalid category'),
   body('isAvailable').optional().isBoolean().withMessage('isAvailable must be a boolean'),
   body('imageUrl').optional().trim().notEmpty().withMessage('Image URL cannot be empty'),

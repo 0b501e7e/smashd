@@ -25,6 +25,9 @@ interface MenuItem {
   price: number;
   imageUrl?: string;
   category: string;
+  originalPrice?: number;
+  promotionTitle?: string;
+  vatRate?: number;
 }
 
 interface AddMenuItemFormProps {
@@ -37,6 +40,9 @@ const initialFormData = {
   price: '',
   category: 'BURGER', // Default category
   imageUrl: '',
+  originalPrice: '',
+  promotionTitle: '',
+  vatRate: '0.10',
 };
 
 const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
@@ -46,6 +52,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isPromoting, setIsPromoting] = useState(false);
 
   useEffect(() => {
     // Reset form and errors when dialog opens
@@ -54,7 +61,9 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       setSelectedFile(null);
       setImagePreview(null);
       setError(null);
+      setError(null);
       setIsLoading(false);
+      setIsPromoting(false);
     }
   }, [isOpen]);
 
@@ -92,6 +101,12 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   const uploadImage = async (file: File): Promise<string | null> => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    console.log('Debugging Cloudinary Config:', {
+      cloudName,
+      uploadPreset,
+      NODE_ENV: process.env.NODE_ENV
+    });
 
     if (!cloudName || !uploadPreset) {
       setError("Cloudinary configuration missing. Please checking environment variables.");
@@ -137,6 +152,9 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     let finalImageUrl = formData.imageUrl; // Use existing if no new file
 
     const price = parseFloat(formData.price);
+    const originalPrice = isPromoting ? parseFloat(formData.originalPrice) : undefined;
+    const vatRate = parseFloat(formData.vatRate) || 0.10;
+
 
     if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
       setError("Name, Category, and a valid Price are required.");
@@ -175,7 +193,14 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ ...formData, price, imageUrl: finalImageUrl }),
+        body: JSON.stringify({
+          ...formData,
+          price,
+          imageUrl: finalImageUrl,
+          originalPrice: isPromoting ? originalPrice : undefined, // Only send if promoting
+          promotionTitle: isPromoting ? formData.promotionTitle : undefined,
+          vatRate
+        }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -248,18 +273,79 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
               required
             />
           </div>
-          <div>
-            <Label htmlFor="price-add" className="text-gray-300">Price (€)</Label>
+          <div className="flex items-center space-x-2 my-4">
+            <input
+              type="checkbox"
+              id="isPromoting-add"
+              checked={isPromoting}
+              onChange={(e) => setIsPromoting(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            />
+            <Label htmlFor="isPromoting-add" className="text-yellow-400 font-medium cursor-pointer select-none">Promote this Item (On Sale)</Label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="price-add" className="text-gray-300">
+                {isPromoting ? "Sale Price (€)" : "Price (€)"}
+              </Label>
+              <Input
+                id="price-add"
+                name="price"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={handleChange}
+                className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                required
+              />
+            </div>
+
+            {isPromoting && (
+              <>
+                <div>
+                  <Label htmlFor="originalPrice-add" className="text-gray-300">Regular Price (€)</Label>
+                  <Input
+                    id="originalPrice-add"
+                    name="originalPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Was..."
+                    value={formData.originalPrice}
+                    onChange={handleChange}
+                    className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                    required={isPromoting}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label htmlFor="promotionTitle-add" className="text-gray-300">Promotion Label (Opt.)</Label>
+                  <Input
+                    id="promotionTitle-add"
+                    name="promotionTitle"
+                    placeholder="e.g. 50% OFF!"
+                    value={formData.promotionTitle}
+                    onChange={handleChange}
+                    className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="mt-2">
+            <Label htmlFor="vatRate-add" className="text-gray-300">VAT Rate (0.10 = 10%)</Label>
             <Input
-              id="price-add"
-              name="price"
+              id="vatRate-add"
+              name="vatRate"
               type="number"
               step="0.01"
               min="0"
-              value={formData.price}
+              max="1"
+              value={formData.vatRate}
               onChange={handleChange}
               className="mt-1 bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring"
-              required
             />
           </div>
 
@@ -275,13 +361,13 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
             />
             {imagePreview && (
               <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
-                <Image src={imagePreview} alt="Image Preview" layout="fill" objectFit="contain" />
+                <Image src={imagePreview} alt="Image Preview" fill style={{ objectFit: "contain" }} />
               </div>
             )}
             {/* Display existing image URL if no new preview and imageUrl exists from a previous attempt or default */}
             {!imagePreview && formData.imageUrl && (
               <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
-                <Image src={formData.imageUrl} alt="Current Menu Item Image" layout="fill" objectFit="contain" unoptimized />
+                <Image src={formData.imageUrl} alt="Current Menu Item Image" fill style={{ objectFit: "contain" }} unoptimized />
               </div>
             )}
           </div>

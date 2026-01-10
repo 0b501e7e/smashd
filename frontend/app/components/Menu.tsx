@@ -107,11 +107,12 @@ export function Menu() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                                         {(menuItems[category] || []).map((item, itemIndex) => {
                                             // Get API base URL, remove trailing /v1 or /api suffix
+                                            // Get API base URL, remove trailing /v1 or /api suffix
                                             const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
-                                            // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-                                            const imageSrc = item.imageUrl && apiUrl
-                                                ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
-                                                : '/burger.png'; // Use fallback from frontend/public
+                                            // Construct full image URL: Check if absolute, else prepend base URL
+                                            const imageSrc = item.imageUrl
+                                                ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
+                                                : '/burger.png'; // Use fallback
                                             console.log(`Menu Item: Rendering image for ${item.name}: src=${imageSrc}`);
 
                                             return (

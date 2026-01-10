@@ -8,6 +8,9 @@ export interface AdminMenuItemData {
   name: string;
   description: string;
   price: number;
+  originalPrice?: number;
+  promotionTitle?: string;
+  vatRate?: number;
   category: 'BURGER' | 'SIDE' | 'DRINK' | 'DESSERT';
   imageUrl: string;
   isAvailable?: boolean;

@@ -15,6 +15,12 @@ const nextConfig = {
         hostname: 'backend-production-e9ac.up.railway.app',
         pathname: '/images/**',
       },
+      // Cloudinary
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
   },
 };
