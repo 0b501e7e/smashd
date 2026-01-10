@@ -1,4 +1,5 @@
 import { PrismaClient, Order } from '@prisma/client';
+import { OrderService } from './order.service';
 import { IDriverService, DriverOrderDetails } from '../interfaces/IDriverService';
 import { INotificationService } from '../interfaces/INotificationService';
 
@@ -14,6 +15,7 @@ import { INotificationService } from '../interfaces/INotificationService';
 export class DriverService implements IDriverService {
   constructor(
     private prisma: PrismaClient,
+    private orderService: OrderService,
     private notificationService: INotificationService
   ) { }
 
@@ -276,6 +278,11 @@ export class DriverService implements IDriverService {
           status: 'DELIVERED'
         }
       });
+
+      // Award loyalty points if not already awarded
+      if (updatedOrder.userId) {
+        await this.orderService.awardLoyaltyPointsIfEligible(updatedOrder.id, updatedOrder.userId);
+      }
 
       // Notify customer if order has user (NOT the driver)
       if (order.userId) {

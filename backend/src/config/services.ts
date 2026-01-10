@@ -35,7 +35,7 @@ export class ServiceContainer {
 
   private constructor() {
     console.log('🔧 Initializing Service Container...');
-    
+
     // Create single database connection
     this._prisma = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
@@ -47,9 +47,9 @@ export class ServiceContainer {
     this._notificationService = new NotificationService(this._prisma);
     this._orderService = new OrderService(this._prisma);
     this._userService = new UserService(this._prisma);
-    this._adminService = new AdminService(this._prisma, this._notificationService);
+    this._adminService = new AdminService(this._prisma, this._orderService, this._notificationService);
     this._paymentService = new PaymentService(this._prisma);
-    this._driverService = new DriverService(this._prisma, this._notificationService);
+    this._driverService = new DriverService(this._prisma, this._orderService, this._notificationService);
 
     console.log('✅ Service Container initialized successfully');
   }

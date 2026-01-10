@@ -1,4 +1,5 @@
 import { PrismaClient, MenuItem, Order } from '@prisma/client';
+import { OrderService } from './order.service';
 import { IAdminService } from '../interfaces/IAdminService';
 import { INotificationService } from '../interfaces/INotificationService';
 import {
@@ -28,6 +29,7 @@ import { getSumupAccessToken, makeHttpRequest } from './sumupService';
 export class AdminService implements IAdminService {
   constructor(
     private prisma: PrismaClient,
+    private orderService: OrderService,
     private notificationService?: INotificationService
   ) { }
 
@@ -254,6 +256,11 @@ export class AdminService implements IAdminService {
           readyAt: null // Order is just accepted, not ready yet
         }
       });
+
+      // Award loyalty points if eligible
+      if (updatedOrder.userId) {
+        await this.orderService.awardLoyaltyPointsIfEligible(updatedOrder.id, updatedOrder.userId);
+      }
 
       console.log(`AdminService: Order ${acceptData.orderId} updated successfully. New status: ${updatedOrder.status}, readyAt: ${updatedOrder.readyAt}`);
 

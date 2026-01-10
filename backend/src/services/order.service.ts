@@ -360,10 +360,40 @@ export class OrderService implements IOrderService {
       });
 
       console.log(`OrderService: Order ${orderId} status updated to ${status}`);
+
+      // Award loyalty points if the order has just been confirmed as paid
+      // and points haven't been awarded yet.
+      if (['PAYMENT_CONFIRMED', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'COMPLETED'].includes(status) && updatedOrder.userId) {
+        await this.awardLoyaltyPointsIfEligible(orderId, updatedOrder.userId);
+      }
+
       return updatedOrder;
     } catch (error) {
       console.error(`OrderService: Error updating order status ${orderId}:`, error);
       throw new Error('Failed to update order status');
+    }
+  }
+
+  /**
+   * Helper to ensure points are awarded for an order, avoiding duplicates
+   */
+  public async awardLoyaltyPointsIfEligible(orderId: number, userId: number): Promise<void> {
+    try {
+      // Check if points were already awarded
+      const existingTransaction = await this.prisma.pointsTransaction.findFirst({
+        where: {
+          orderId: orderId,
+          userId: userId,
+          reason: 'ORDER_EARNED'
+        }
+      });
+
+      if (!existingTransaction) {
+        console.log(`OrderService: Awarding points for order ${orderId} as part of status update`);
+        await this.awardLoyaltyPoints(orderId, userId);
+      }
+    } catch (error) {
+      console.error(`OrderService: Error ensuring points awarded for order ${orderId}:`, error);
     }
   }
 
@@ -723,33 +753,52 @@ export class OrderService implements IOrderService {
 
   async awardLoyaltyPoints(orderId: number, userId: number): Promise<number> {
     try {
-      const order = await this.prisma.order.findUnique({
-        where: { id: orderId },
-        select: { total: true }
-      });
+      return await this.prisma.$transaction(async (tx) => {
+        const order = await tx.order.findUnique({
+          where: { id: orderId },
+          select: { total: true }
+        });
 
-      if (!order) {
-        throw new Error('Order not found for loyalty points calculation');
-      }
-
-      const loyaltyPointsToAdd = Math.floor(order.total * 0.1); // 10% of order total as points
-
-      await this.prisma.loyaltyPoints.upsert({
-        where: { userId: userId },
-        update: {
-          points: { increment: loyaltyPointsToAdd }
-        },
-        create: {
-          userId: userId,
-          points: loyaltyPointsToAdd
+        if (!order) {
+          throw new Error('Order not found for loyalty points calculation');
         }
-      });
 
-      console.log(`OrderService: Awarded ${loyaltyPointsToAdd} loyalty points to user ${userId} for order ${orderId}`);
-      return loyaltyPointsToAdd;
+        const loyaltyPointsToAdd = Math.floor(order.total * 0.1); // 10% of order total as points
+
+        // 1. Get or create loyalty points account
+        const loyaltyAccount = await tx.loyaltyPoints.upsert({
+          where: { userId: userId },
+          update: {
+            points: { increment: loyaltyPointsToAdd },
+            totalSpentThisYear: { increment: order.total }
+          },
+          create: {
+            userId: userId,
+            points: loyaltyPointsToAdd,
+            totalSpentThisYear: order.total
+          }
+        });
+
+        // 2. Create transaction record
+        await tx.pointsTransaction.create({
+          data: {
+            userId: userId,
+            loyaltyPointsId: loyaltyAccount.id,
+            points: loyaltyPointsToAdd,
+            reason: 'ORDER_EARNED',
+            orderId: orderId,
+            details: `Points earned from order #${orderId}`
+          }
+        });
+
+        console.log(`OrderService: Awarded ${loyaltyPointsToAdd} loyalty points to user ${userId} for order ${orderId}. Total spent this year updated.`);
+        return loyaltyPointsToAdd;
+      });
     } catch (error) {
       console.error(`OrderService: Error awarding loyalty points for order ${orderId}:`, error);
-      throw new Error('Failed to award loyalty points');
+      // We don't throw here to avoid failing the whole fulfillment process if loyalty fails
+      // However, the caller might want to know, so we return 0 if it fails but log it.
+      return 0;
     }
   }
 } 

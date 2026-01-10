@@ -112,12 +112,11 @@ export default function Profile() {
           <CardTitle className="text-2xl font-bold text-yellow-400">Detalles del Perfil</CardTitle>
         </CardHeader>
         <CardContent className="p-6 space-y-3 text-white">
-          <p><span className="font-semibold text-yellow-300 mr-2">Nombre de usuario:</span> {user.username}</p>
+          <p><span className="font-semibold text-yellow-300 mr-2">Nombre:</span> {user.name}</p>
           <p><span className="font-semibold text-yellow-300 mr-2">Correo electrónico:</span> {user.email}</p>
           {user.loyaltyPoints !== undefined && (
-            <div className="pt-3 mt-3 border-t border-yellow-700/30 flex items-center space-x-2">
-              <span className="font-semibold text-yellow-300">Puntos de Fidelidad:</span>
-              <Badge variant="default" className="text-lg font-bold">{user.loyaltyPoints}</Badge>
+            <div className="pt-3 mt-3 border-t border-yellow-700/30">
+              <p><span className="font-semibold text-yellow-300 mr-2">Puntos de Fidelidad:</span> {user.loyaltyPoints}</p>
             </div>
           )}
         </CardContent>

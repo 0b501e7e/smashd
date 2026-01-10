@@ -41,7 +41,11 @@ export class UserService implements IUserService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: query.userId },
-        include: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
           loyaltyPoints: query.includeLoyalty !== false
         }
       });
@@ -53,9 +57,9 @@ export class UserService implements IUserService {
       const profileData: UserProfileData = {
         id: user.id,
         email: user.email,
-        name: user.name,
+        name: user.name || '',
         role: user.role,
-        loyaltyPoints: user.loyaltyPoints?.points || 0
+        loyaltyPoints: user.loyaltyPoints?.points ?? 0
       };
 
       console.log(`UserService: Retrieved profile for user ${query.userId}`);
@@ -85,16 +89,13 @@ export class UserService implements IUserService {
         include: { loyaltyPoints: true }
       });
 
-      const profileData: UserProfileData = {
+      return {
         id: updatedUser.id,
         email: updatedUser.email,
-        name: updatedUser.name,
+        name: updatedUser.name || '',
         role: updatedUser.role,
         loyaltyPoints: updatedUser.loyaltyPoints?.points || 0
       };
-
-      console.log(`UserService: Updated profile for user ${updateQuery.userId}`);
-      return profileData;
     } catch (error) {
       console.error(`UserService: Error updating user profile ${updateQuery.userId}:`, error);
       throw new Error(error instanceof Error ? error.message : 'Failed to update user profile');
@@ -414,20 +415,6 @@ export class UserService implements IUserService {
         return null;
       }
 
-      // Calculate additional loyalty metrics
-      const currentYear = new Date().getFullYear();
-      const yearStart = new Date(currentYear, 0, 1);
-
-      const ordersThisYear = await this.prisma.order.findMany({
-        where: {
-          userId,
-          createdAt: { gte: yearStart },
-          status: { in: ['DELIVERED', 'READY'] }
-        }
-      });
-
-      const totalSpentThisYear = ordersThisYear.reduce((sum, order) => sum + order.total, 0);
-
       // Determine tier based on points
       let tier = 'Bronze';
       if (loyaltyPoints.points >= 1000) tier = 'Gold';
@@ -436,7 +423,7 @@ export class UserService implements IUserService {
       const loyaltyData: UserLoyaltyData = {
         points: loyaltyPoints.points,
         tier,
-        totalSpentThisYear,
+        totalSpentThisYear: loyaltyPoints.totalSpentThisYear,
         birthdayRewardSent: loyaltyPoints.birthdayRewardSent
       };
 
@@ -495,7 +482,7 @@ export class UserService implements IUserService {
       const userProfiles: UserProfileData[] = users.map(user => ({
         id: user.id,
         email: user.email,
-        name: user.name,
+        name: user.name || '',
         role: user.role,
         loyaltyPoints: user.loyaltyPoints?.points || 0
       }));

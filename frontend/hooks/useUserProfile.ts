@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 // --- Type Definitions (Consider moving to a shared types file) ---
 export interface UserProfile {
   id: number;
-  username: string;
+  name: string;
   email: string;
   role: string;
   loyaltyPoints?: number; // Optional based on previous file
@@ -67,7 +67,8 @@ export function useUserProfile(): UseUserProfileReturn {
         throw new Error(`Failed to fetch user profile (${profileResponse.status})`);
       }
 
-      const userData: UserProfile = await profileResponse.json();
+      const profileJson = await profileResponse.json();
+      const userData: UserProfile = profileJson.data || profileJson;
       setUser(userData);
 
       // Fetch orders using the user ID from profile
@@ -79,7 +80,8 @@ export function useUserProfile(): UseUserProfileReturn {
         setOrders([]); // Set empty orders on failure
         setError('Failed to load order history.'); // Set specific error for orders
       } else {
-        const ordersData: OrderHistoryItem[] = await ordersResponse.json();
+        const ordersJson = await ordersResponse.json();
+        const ordersData: OrderHistoryItem[] = ordersJson.data || ordersJson;
         setOrders(ordersData);
       }
 

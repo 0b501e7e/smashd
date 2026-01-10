@@ -25,6 +25,7 @@ type AuthContextType = {
     acceptedTerms: boolean
   ) => Promise<void>;
   loading: boolean;
+  checkAuth: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -165,6 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         register,
         loading,
+        checkAuth,
       }}
     >
       {children}

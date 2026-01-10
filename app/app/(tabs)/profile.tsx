@@ -1,14 +1,10 @@
-import { FlatList, ActivityIndicator, View, ScrollView } from 'react-native';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import React, { useEffect, useState, useCallback } from 'react';
+import { FlatList, ActivityIndicator, View, ScrollView, RefreshControl } from 'react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useState, useCallback } from 'react';
 import { orderAPI } from '@/services/api';
 import { User, ShoppingBag, Award, LogOut, Calendar, Package } from 'lucide-react-native';
-
-
-// RNR Components
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -53,12 +49,13 @@ const STATUS_LABELS = {
 };
 
 export default function ProfileScreen() {
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, logout, checkAuth } = useAuth();
   const insets = useSafeAreaInsets();
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     if (!isLoggedIn || !user?.id) {
@@ -97,6 +94,15 @@ export default function ProfileScreen() {
     }
   }, [isLoggedIn, user?.id]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchOrders(),
+      checkAuth() // Refresh user data (loyalty points, etc.)
+    ]);
+    setRefreshing(false);
+  }, [fetchOrders, checkAuth]);
+
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
@@ -119,7 +125,7 @@ export default function ProfileScreen() {
             <Text className="text-center mb-6 text-lg" style={{ color: '#FFFFFF' }}>
               Por favor, inicia sesión para ver tu perfil e historial de pedidos
             </Text>
-            <Button 
+            <Button
               onPress={handleLogin}
               className="w-full"
               style={{ backgroundColor: '#FAB10A' }}
@@ -160,7 +166,7 @@ export default function ProfileScreen() {
               Pedido #{item.id}
             </Text>
           </View>
-          <Badge 
+          <Badge
             className={`${STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] || 'bg-gray-500'}`}
           >
             <Text className="text-xs font-medium text-white">
@@ -175,7 +181,7 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </CardHeader>
-      
+
       <CardContent className="pt-0">
         <View className="mb-4">
           {item.items.map((orderItem, index) => (
@@ -184,9 +190,9 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
-        
+
         <Separator style={{ backgroundColor: '#333333' }} />
-        
+
         <View className="flex-row justify-between items-center mt-4">
           <Text className="text-sm font-medium" style={{ color: '#CCCCCC' }}>
             Total del pedido:
@@ -200,9 +206,9 @@ export default function ProfileScreen() {
   );
 
   return (
-    <View 
-      className="flex-1" 
-      style={{ 
+    <View
+      className="flex-1"
+      style={{
         backgroundColor: '#000000',
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
@@ -210,14 +216,22 @@ export default function ProfileScreen() {
         paddingRight: insets.right
       }}
     >
-      <ScrollView 
+      <ScrollView
         className="flex-1"
-        contentContainerStyle={{ 
+        contentContainerStyle={{
           paddingTop: 20,
           paddingBottom: 20,
           paddingHorizontal: 16
         }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FAB10A"
+            colors={["#FAB10A"]}
+          />
+        }
       >
         {/* Profile Header */}
         <Card className="mb-6" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
@@ -330,7 +344,7 @@ export default function ProfileScreen() {
         )}
 
         {/* Logout Button */}
-        <Button 
+        <Button
           onPress={handleLogout}
           className="w-full"
           style={{ backgroundColor: '#ff4444' }}

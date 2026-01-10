@@ -9,7 +9,7 @@ export interface UserProfileData {
   email: string;
   name: string;
   role: string;
-  loyaltyPoints: number;
+  loyaltyPoints?: number;
 }
 
 export interface UserProfileQuery {
