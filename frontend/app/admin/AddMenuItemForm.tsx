@@ -334,13 +334,13 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
               id="image-add"
               name="menuItemImage" // Name for the backend to identify the file part
               type="file"
-              accept="image/png, image/jpeg, image/gif" // Specify accepted file types
+              accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" // Mobile Chrome requires no spaces
               onChange={handleFileChange}
               className="mt-1 bg-input border-border text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"
             />
             {imagePreview && (
               <div className="mt-3 relative w-full h-48 border border-gray-700 rounded-md overflow-hidden">
-                <Image src={imagePreview} alt="Image Preview" fill style={{ objectFit: "contain" }} />
+                <Image src={imagePreview} alt="Image Preview" fill style={{ objectFit: "contain" }} unoptimized />
               </div>
             )}
             {/* Display existing image URL if no new preview and imageUrl exists from a previous attempt or default */}

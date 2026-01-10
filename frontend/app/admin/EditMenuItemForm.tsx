@@ -395,7 +395,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
                 id={`imageUrl-edit-${item.id}`}
                 name="menuItemImage"
                 type="file"
-                accept="image/png, image/jpeg, image/gif"
+                accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
                 onChange={handleFileChange}
                 className="mt-1 bg-input border-border text-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-400 file:text-black hover:file:bg-yellow-300"
               />
