@@ -1,22 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import { IPaymentService } from '../interfaces/IPaymentService';
-import { 
-  createSumUpCheckout, 
-  getSumUpCheckoutStatus, 
-  testSumUpConnection, 
-  getSumUpMerchantProfile 
+import {
+  createSumUpCheckout,
+  getSumUpCheckoutStatus,
+  testSumUpConnection,
+  getSumUpMerchantProfile
 } from './sumupService';
 
 export class PaymentService implements IPaymentService {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClient) { }
 
   async initiateCheckout(orderId: number): Promise<{ orderId: number; checkoutId: string; checkoutUrl: string }> {
     console.log(`PaymentService: Looking for order ${orderId}`);
-    
+
     // Initial delay to handle database connection pooling/replication lag
     console.log(`PaymentService: Waiting 100ms for database consistency...`);
     await new Promise(resolve => setTimeout(resolve, 100));
-    
+
     // Enhanced retry mechanism with exponential backoff to handle read-after-write consistency issues
     let order = null;
     let attempts = 0;
@@ -26,10 +26,10 @@ export class PaymentService implements IPaymentService {
     while (!order && attempts < maxAttempts) {
       attempts++;
       console.log(`PaymentService: Attempt ${attempts} to find order ${orderId}`);
-      
+
       order = await this.prisma.order.findUnique({
         where: { id: orderId },
-        include: { 
+        include: {
           items: {
             include: { menuItem: true }
           }
@@ -66,9 +66,9 @@ export class PaymentService implements IPaymentService {
     }
 
     // Check if SumUp credentials are configured
-    if (!process.env.SUMUP_CLIENT_ID || 
-        !process.env.SUMUP_CLIENT_SECRET || 
-        !process.env['SUMUP_MERCHANT_EMAIL']) {
+    if (!process.env.SUMUP_CLIENT_ID ||
+      !process.env.SUMUP_CLIENT_SECRET ||
+      !process.env['SUMUP_MERCHANT_EMAIL']) {
       throw new Error('SumUp credentials not configured');
     }
 
@@ -105,15 +105,8 @@ export class PaymentService implements IPaymentService {
     // Query SumUp API using imported utility function
     const sumupStatus = await getSumUpCheckoutStatus(checkoutId);
 
-    // Auto-update order status when SumUp reports payment success
-    if (order && order.status === 'AWAITING_PAYMENT' && ['PAID', 'SUCCESSFUL'].includes((sumupStatus.status || '').toUpperCase())) {
-      console.log(`PaymentService: SumUp reports payment success for order ${order.id}, updating status to PAYMENT_CONFIRMED`);
-      await this.prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'PAYMENT_CONFIRMED' }
-      });
-    }
-    
+
+
     return {
       checkoutId,
       orderId: order.id,
@@ -134,7 +127,7 @@ export class PaymentService implements IPaymentService {
 
     // Return the standard SumUp checkout URL format
     const checkoutUrl = `https://checkout.sumup.com/pay/${checkoutId}`;
-    
+
     return {
       checkoutId,
       checkoutUrl,
@@ -156,17 +149,17 @@ export class PaymentService implements IPaymentService {
     // Find the order with full details
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { 
+      include: {
         items: {
           include: { menuItem: true }
         }
       }
     });
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
-    
+
     // If order has a checkout ID, check with SumUp for payment status
     if (order.sumupCheckoutId) {
       try {
