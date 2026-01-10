@@ -14,6 +14,10 @@ export interface WeeklyAnalytics {
   totalCustomers: number;
   newCustomers: number;
   returningCustomers: number;
+  metadata?: {
+    operatingHours: number;
+    dataGeneratedAt: string;
+  };
 }
 
 export interface RevenueAnalytics {
@@ -73,9 +77,9 @@ export interface CustomerAnalytics {
 }
 
 export const analyticsAPI = {
-  async getCurrentWeek(): Promise<WeeklyAnalytics> {
+  async getCurrentWeek(refresh: boolean = false): Promise<WeeklyAnalytics> {
     try {
-      const response = await api.get('/analytics/current-week');
+      const response = await api.get(`/analytics/current-week${refresh ? '?refresh=true' : ''}`);
 
       if (!response.ok) {
         throw new Error(`Analytics API Error: ${response.status} - ${response.statusText}`);
@@ -89,9 +93,9 @@ export const analyticsAPI = {
     }
   },
 
-  async getRevenue(weeks: number = 8): Promise<RevenueAnalytics> {
+  async getRevenue(weeks: number = 8, refresh: boolean = false): Promise<RevenueAnalytics> {
     try {
-      const response = await api.get(`/analytics/revenue?weeks=${weeks}`);
+      const response = await api.get(`/analytics/revenue?weeks=${weeks}${refresh ? '&refresh=true' : ''}`);
 
       if (!response.ok) {
         throw new Error(`Analytics API Error: ${response.status} - ${response.statusText}`);
@@ -105,9 +109,9 @@ export const analyticsAPI = {
     }
   },
 
-  async getMenuPerformance(weeks: number = 4): Promise<MenuPerformance> {
+  async getMenuPerformance(weeks: number = 4, refresh: boolean = false): Promise<MenuPerformance> {
     try {
-      const response = await api.get(`/analytics/menu-performance?weeks=${weeks}`);
+      const response = await api.get(`/analytics/menu-performance?weeks=${weeks}${refresh ? '&refresh=true' : ''}`);
 
       if (!response.ok) {
         throw new Error(`Analytics API Error: ${response.status} - ${response.statusText}`);
@@ -121,9 +125,9 @@ export const analyticsAPI = {
     }
   },
 
-  async getCustomers(weeks: number = 4): Promise<CustomerAnalytics> {
+  async getCustomers(weeks: number = 4, refresh: boolean = false): Promise<CustomerAnalytics> {
     try {
-      const response = await api.get(`/analytics/customers?weeks=${weeks}`);
+      const response = await api.get(`/analytics/customers?weeks=${weeks}${refresh ? '&refresh=true' : ''}`);
 
       if (!response.ok) {
         throw new Error(`Analytics API Error: ${response.status} - ${response.statusText}`);

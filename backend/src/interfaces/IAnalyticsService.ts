@@ -36,8 +36,8 @@ export interface IAnalyticsService {
   // Weekly analytics
   generateWeeklyAnalytics(weekStartDate: Date): Promise<WeeklyMetrics>;
   getWeeklyAnalytics(weekStartDate: Date): Promise<WeeklyMetrics | null>;
-  getWeeklyAnalyticsRange(startDate: Date, endDate: Date): Promise<WeeklyMetrics[]>;
-  getCurrentWeekAnalytics(): Promise<WeeklyMetrics>;
+  getWeeklyAnalyticsRange(startDate: Date, endDate: Date, forceRefresh?: boolean): Promise<WeeklyMetrics[]>;
+  getCurrentWeekAnalytics(forceRefresh?: boolean): Promise<WeeklyMetrics>;
 
   // Maintenance
   cleanupOldEvents(retentionDays?: number): Promise<void>;

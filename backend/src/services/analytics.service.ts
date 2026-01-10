@@ -53,11 +53,11 @@ export class AnalyticsService {
         eventType,
         metadata: metadata || {},
       };
-      
+
       if (userId) {
         data.userId = userId;
       }
-      
+
       if (sessionId) {
         data.sessionId = sessionId;
       }
@@ -182,7 +182,7 @@ export class AnalyticsService {
     const totalRevenue = weeklyOrders.reduce((sum, order) => sum + order.total, 0);
     const totalOrders = weeklyOrders.length;
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    
+
     // Assuming 4 hours operation per day, 7 days a week = 28 hours
     const operatingHours = 28; // You can make this configurable
     const revenuePerHour = totalRevenue / operatingHours;
@@ -191,7 +191,7 @@ export class AnalyticsService {
     const customerIds = weeklyOrders
       .filter(order => order.userId)
       .map(order => order.userId!);
-    
+
     const uniqueCustomers = [...new Set(customerIds)];
     const totalCustomers = uniqueCustomers.length;
 
@@ -342,7 +342,15 @@ export class AnalyticsService {
   /**
    * Get analytics for multiple weeks
    */
-  async getWeeklyAnalyticsRange(startDate: Date, endDate: Date): Promise<WeeklyMetrics[]> {
+  async getWeeklyAnalyticsRange(startDate: Date, endDate: Date, forceRefresh: boolean = false): Promise<WeeklyMetrics[]> {
+    // If the range includes the current week, ensure it's up to date
+    const now = new Date();
+    const currentWeekStart = this.getWeekStartDate(now);
+
+    if (endDate >= currentWeekStart) {
+      await this.getCurrentWeekAnalytics(forceRefresh);
+    }
+
     const analytics = await this.prisma.weeklyAnalytics.findMany({
       where: {
         weekStartDate: {
@@ -357,19 +365,34 @@ export class AnalyticsService {
   }
 
   /**
-   * Get current week analytics (or generate if missing)
+   * Get current week analytics (or generate if missing/stale)
    */
-  async getCurrentWeekAnalytics(): Promise<WeeklyMetrics> {
+  async getCurrentWeekAnalytics(forceRefresh: boolean = false): Promise<WeeklyMetrics> {
     const now = new Date();
     const weekStartDate = this.getWeekStartDate(now);
-    
+
     let analytics = await this.getWeeklyAnalytics(weekStartDate);
-    
-    if (!analytics) {
+
+    const shouldRefresh = forceRefresh || !analytics || this.isAnalyticsStale(analytics);
+
+    if (shouldRefresh) {
       analytics = await this.generateWeeklyAnalytics(weekStartDate);
     }
 
-    return analytics;
+    return analytics!;
+  }
+
+  /**
+   * Check if analytics data is stale (older than 5 minutes)
+   */
+  private isAnalyticsStale(analytics: WeeklyMetrics): boolean {
+    const dataGeneratedAt = analytics.metadata?.dataGeneratedAt;
+    if (!dataGeneratedAt) return true;
+
+    const generatedDate = new Date(dataGeneratedAt);
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+    return generatedDate < fiveMinutesAgo;
   }
 
   /**

@@ -1,19 +1,19 @@
 import { Request, Response } from 'express';
-import { AnalyticsService } from '../services/analytics.service';
-import { PrismaClient } from '@prisma/client';
 import { sendSuccess, sendError } from '../utils/response.utils';
 
-const prisma = new PrismaClient();
-const analyticsService = new AnalyticsService(prisma);
+import { services } from '../config/services';
+
+const analyticsService = services.analyticsService;
 
 export const analyticsController = {
   /**
    * GET /analytics/current-week
    * Get current week analytics
    */
-  getCurrentWeekAnalytics: async (_req: Request, res: Response) => {
+  getCurrentWeekAnalytics: async (req: Request, res: Response) => {
     try {
-      const analytics = await analyticsService.getCurrentWeekAnalytics();
+      const forceRefresh = req.query['refresh'] === 'true';
+      const analytics = await analyticsService.getCurrentWeekAnalytics(forceRefresh);
 
       sendSuccess(res, analytics, 'Current week analytics retrieved successfully');
     } catch (error: any) {
@@ -35,7 +35,8 @@ export const analyticsController = {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
 
-      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
+      const forceRefresh = req.query['refresh'] === 'true';
+      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate, forceRefresh);
 
       sendSuccess(res, {
         analytics,
@@ -63,7 +64,8 @@ export const analyticsController = {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
 
-      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
+      const forceRefresh = req.query['refresh'] === 'true';
+      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate, forceRefresh);
 
       // Calculate trends
       const revenueData = analytics.map(week => ({
@@ -116,7 +118,8 @@ export const analyticsController = {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
 
-      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
+      const forceRefresh = req.query['refresh'] === 'true';
+      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate, forceRefresh);
 
       // Aggregate menu data across all weeks
       const itemAggregation = new Map();
@@ -195,7 +198,8 @@ export const analyticsController = {
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - (weeks * 7));
 
-      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate);
+      const forceRefresh = req.query['refresh'] === 'true';
+      const analytics = await analyticsService.getWeeklyAnalyticsRange(startDate, endDate, forceRefresh);
 
       const customerData = analytics.map(week => ({
         weekStart: week.weekStartDate,

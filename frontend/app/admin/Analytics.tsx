@@ -27,17 +27,18 @@ export default function Analytics() {
     loadAnalyticsData();
   }, []);
 
-  const loadAnalyticsData = async () => {
+  const loadAnalyticsData = async (options?: { refresh?: boolean }) => {
     try {
-      setLoading(true);
+      setLoading(options?.refresh ? false : true);
+      if (options?.refresh) setRefreshing(true);
       setError(null);
 
       // Load all analytics data in parallel
       const [currentWeekData, revenueAnalytics, menuPerformance, customerAnalytics] = await Promise.all([
-        analyticsAPI.getCurrentWeek(),
-        analyticsAPI.getRevenue(8),
-        analyticsAPI.getMenuPerformance(4),
-        analyticsAPI.getCustomers(4)
+        analyticsAPI.getCurrentWeek(options?.refresh || false),
+        analyticsAPI.getRevenue(8, options?.refresh || false),
+        analyticsAPI.getMenuPerformance(4, options?.refresh || false),
+        analyticsAPI.getCustomers(4, options?.refresh || false)
       ]);
 
       setCurrentWeek(currentWeekData);
@@ -53,16 +54,14 @@ export default function Analytics() {
   };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadAnalyticsData();
+    await loadAnalyticsData({ refresh: true });
     setRefreshing(false);
   };
 
   const handleGenerateWeekly = async () => {
     try {
       setRefreshing(true);
-      await analyticsAPI.generateWeeklyAnalytics();
-      await loadAnalyticsData();
+      await loadAnalyticsData({ refresh: true });
     } catch (err: any) {
       setError(err.message || 'Failed to generate weekly analytics');
     } finally {
@@ -106,7 +105,7 @@ export default function Analytics() {
         <AlertDescription className="text-red-800">
           {error}
           <Button
-            onClick={loadAnalyticsData}
+            onClick={() => loadAnalyticsData()}
             variant="outline"
             size="sm"
             className="ml-4"
@@ -141,6 +140,11 @@ export default function Analytics() {
           <h2 className="text-3xl font-bold text-yellow-400">Analytics Dashboard</h2>
           <p className="text-gray-400 mt-1">
             Business insights and performance metrics
+            {currentWeek?.metadata?.dataGeneratedAt && (
+              <span className="ml-2 text-xs text-gray-500">
+                (Last updated: {new Date(currentWeek.metadata.dataGeneratedAt).toLocaleTimeString()})
+              </span>
+            )}
           </p>
         </div>
         <div className="flex gap-2">

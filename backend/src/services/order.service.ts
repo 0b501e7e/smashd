@@ -18,6 +18,7 @@ import {
   OrderStatus
 } from '../types/order.types';
 import { getSumUpCheckoutStatus } from './sumupService';
+import { IAnalyticsService } from '../interfaces/IAnalyticsService';
 
 /**
  * OrderService - Handles all order-related business logic
@@ -31,7 +32,10 @@ import { getSumUpCheckoutStatus } from './sumupService';
  * - Admin order management operations
  */
 export class OrderService implements IOrderService {
-  constructor(private prisma: PrismaClient) { }
+  constructor(
+    private prisma: PrismaClient,
+    private analyticsService: IAnalyticsService
+  ) { }
 
   // =====================
   // ORDER CREATION
@@ -464,6 +468,12 @@ export class OrderService implements IOrderService {
 
         // 6. Update order status
         let updatedOrder = await this.updateOrderStatus(orderId, newStatus);
+
+        // 6.1 Track successful order in analytics
+        if (newStatus === 'PAYMENT_CONFIRMED') {
+          this.analyticsService.trackOrderPlaced(orderId, order.userId || undefined)
+            .catch(err => console.error('Failed to track order in analytics:', err));
+        }
 
         // AUTO-ACCEPT LOGIC FOR TESTING/BETA
         if (newStatus === 'PAYMENT_CONFIRMED' && process.env['AUTO_ACCEPT_ORDERS'] === 'true') {
