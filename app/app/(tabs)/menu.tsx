@@ -205,8 +205,8 @@ export default function MenuScreen() {
                     }}
                   >
                     <Card className="mb-4 h-full" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
-                      <Pressable onPress={() => handleItemPress(item)} className="h-full flex-1">
-                        <View className="flex-1 justify-between">
+                      <View className="h-full flex-1">
+                        <Pressable onPress={() => handleItemPress(item)} className="flex-1">
                           <CardHeader className="pb-3">
                             <View className="flex-row justify-between items-start">
                               <View className="flex-1 mr-3">
@@ -243,24 +243,24 @@ export default function MenuScreen() {
                               )}
                             </View>
                           </CardHeader>
-                          <CardFooter className="pt-0 flex-row justify-between items-center">
-                            <View className="flex-1 mr-3">
-                              <Badge className="self-start" style={{ backgroundColor: '#FAB10A' }}>
-                                <Text className="text-xs font-medium" style={{ color: '#000000' }}>
-                                  {CATEGORY_CONFIG[item.category].title}
-                                </Text>
-                              </Badge>
-                            </View>
-                            <TouchableOpacity
-                              onPress={() => handleAddToCart(item)}
-                              className="w-10 h-10 rounded-full items-center justify-center"
-                              style={{ backgroundColor: '#FAB10A' }}
-                            >
-                              <Plus size={20} color="#000000" />
-                            </TouchableOpacity>
-                          </CardFooter>
-                        </View>
-                      </Pressable>
+                        </Pressable>
+                        <CardFooter className="pt-0 flex-row justify-between items-center">
+                          <View className="flex-1 mr-3">
+                            <Badge className="self-start" style={{ backgroundColor: '#FAB10A' }}>
+                              <Text className="text-xs font-medium" style={{ color: '#000000' }}>
+                                {CATEGORY_CONFIG[item.category].title}
+                              </Text>
+                            </Badge>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => handleAddToCart(item)}
+                            className="w-10 h-10 rounded-full items-center justify-center"
+                            style={{ backgroundColor: '#FAB10A' }}
+                          >
+                            <Plus size={20} color="#000000" />
+                          </TouchableOpacity>
+                        </CardFooter>
+                      </View>
                     </Card>
                   </View>
                 ))}

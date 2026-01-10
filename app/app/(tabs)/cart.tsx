@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
@@ -24,9 +25,9 @@ export default function CartScreen() {
 
   if (items.length === 0) {
     return (
-      <View 
+      <View
         className="flex-1 justify-center items-center px-6"
-        style={{ 
+        style={{
           backgroundColor: '#000000',
           paddingTop: insets.top + 40,
           paddingBottom: insets.bottom + 40,
@@ -44,7 +45,7 @@ export default function CartScreen() {
           <Text className="text-center text-base leading-6 mb-8" style={{ color: '#CCCCCC' }}>
             Agrega algunos deliciosos burgers para comenzar
           </Text>
-          <Button 
+          <Button
             className="px-8 py-4"
             style={{ backgroundColor: '#FAB10A' }}
             onPress={() => router.push('/(tabs)/menu')}
@@ -59,18 +60,18 @@ export default function CartScreen() {
   }
 
   return (
-    <View 
-      className="flex-1" 
-      style={{ 
+    <View
+      className="flex-1"
+      style={{
         backgroundColor: '#000000',
         paddingLeft: insets.left,
         paddingRight: insets.right
       }}
     >
       {/* Header */}
-      <View 
+      <View
         className="items-center py-6 px-6"
-        style={{ 
+        style={{
           paddingTop: insets.top + 20,
           backgroundColor: '#FAB10A'
         }}
@@ -83,7 +84,7 @@ export default function CartScreen() {
         </Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         className="flex-1"
         contentContainerStyle={{
           padding: 24,
@@ -94,7 +95,7 @@ export default function CartScreen() {
         {/* Cart Items */}
         <View className="gap-4 mb-6">
           {items.map((item, index) => (
-            <Card 
+            <Card
               key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`}
               style={{ backgroundColor: '#111111', borderColor: '#333333' }}
             >
@@ -109,12 +110,15 @@ export default function CartScreen() {
                       €{item.price.toFixed(2)}
                     </Text>
                   </View>
-                  
+
                   {/* Remove Button */}
                   <Button
                     variant="ghost"
                     className="p-2"
-                    onPress={() => removeItem(Number(item.id))}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      removeItem(item.id, item.customizations);
+                    }}
                   >
                     <Trash2 size={20} color="#FF4444" />
                   </Button>
@@ -133,7 +137,7 @@ export default function CartScreen() {
                         </Text>
                       </View>
                     )}
-                    
+
                     {item.customizations.sauces && item.customizations.sauces.length > 0 && (
                       <View className="mb-2">
                         <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
@@ -144,7 +148,7 @@ export default function CartScreen() {
                         </Text>
                       </View>
                     )}
-                    
+
                     {item.customizations.toppings && item.customizations.toppings.length > 0 && (
                       <View>
                         <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
@@ -164,27 +168,33 @@ export default function CartScreen() {
                     <Button
                       variant="outline"
                       className="w-10 h-10 p-0"
-                      style={{ 
-                        borderColor: '#333333', 
-                        backgroundColor: '#1A1A1A' 
+                      style={{
+                        borderColor: '#333333',
+                        backgroundColor: '#1A1A1A'
                       }}
-                      onPress={() => updateQuantity(Number(item.id), Math.max(0, item.quantity - 1))}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        updateQuantity(item.id, Math.max(0, item.quantity - 1), item.customizations);
+                      }}
                     >
                       <Minus size={16} color="#FFFFFF" />
                     </Button>
-                    
+
                     <Text className="text-lg font-semibold min-w-8 text-center" style={{ color: '#FFFFFF' }}>
                       {item.quantity}
                     </Text>
-                    
+
                     <Button
                       variant="outline"
                       className="w-10 h-10 p-0"
-                      style={{ 
-                        borderColor: '#333333', 
-                        backgroundColor: '#1A1A1A' 
+                      style={{
+                        borderColor: '#333333',
+                        backgroundColor: '#1A1A1A'
                       }}
-                      onPress={() => updateQuantity(Number(item.id), item.quantity + 1)}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        updateQuantity(item.id, item.quantity + 1, item.customizations);
+                      }}
                     >
                       <Plus size={16} color="#FFFFFF" />
                     </Button>
@@ -211,7 +221,7 @@ export default function CartScreen() {
               </Text>
             </View>
 
-            <Button 
+            <Button
               className="h-14"
               style={{ backgroundColor: '#FAB10A' }}
               onPress={handleCheckout}

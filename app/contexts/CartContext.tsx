@@ -11,8 +11,8 @@ type CustomizationOptions = {
 type CartContextType = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  removeItem: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
+  removeItem: (id: string | number, customizations?: CustomizationOptions) => void;
+  updateQuantity: (id: string | number, quantity: number, customizations?: CustomizationOptions) => void;
   clearCart: () => void;
   total: number;
   order: {
@@ -27,18 +27,18 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [order, setOrder] = useState<{items: CartItem[], total: number}>({ items: [], total: 0 });
+  const [order, setOrder] = useState<{ items: CartItem[], total: number }>({ items: [], total: 0 });
 
   const addItem = (newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     const itemQuantity = newItem.quantity || 1;
-    
+
     setItems(currentItems => {
       // Only consider it the same item if the ID and customizations match
-      const existingItemIndex = currentItems.findIndex(item => 
-        item.id === newItem.id && 
+      const existingItemIndex = currentItems.findIndex(item =>
+        String(item.id) === String(newItem.id) &&
         JSON.stringify(item.customizations) === JSON.stringify(newItem.customizations)
       );
-      
+
       if (existingItemIndex !== -1) {
         return currentItems.map((item, index) =>
           index === existingItemIndex
@@ -46,24 +46,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             : item
         );
       }
-      
+
       return [...currentItems, { ...newItem, quantity: itemQuantity }];
     });
   };
 
-  const removeItem = (id: number) => {
-    setItems(currentItems => currentItems.filter(item => item.id !== id));
+  const removeItem = (id: string | number, customizations?: CustomizationOptions) => {
+    setItems(currentItems => currentItems.filter(item =>
+      !(String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+    ));
   };
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: string | number, quantity: number, customizations?: CustomizationOptions) => {
     setItems(currentItems => {
       if (quantity <= 0) {
         // Remove item when quantity reaches 0 or below
-        return currentItems.filter(item => item.id !== id);
+        return currentItems.filter(item =>
+          !(String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+        );
       }
-      
+
       return currentItems.map(item =>
-        item.id === id ? { ...item, quantity } : item
+        (String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+          ? { ...item, quantity }
+          : item
       );
     });
   };
@@ -79,19 +85,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         items: items,
         total: total
       };
-      
+
       const response = await api.post('/orders', orderData);
       const newOrder = response.data;
-      
+
       // Set the current order
       setOrder({
         items: [...items],
         total: total
       });
-      
+
       // Clear the cart after creating the order
       clearCart();
-      
+
       return newOrder;
     } catch (error) {
       console.error('Failed to create order:', error);
