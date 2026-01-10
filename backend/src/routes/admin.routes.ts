@@ -32,6 +32,7 @@ router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.b
 router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));
 router.post('/orders/:id/ready', validateOrderId, adminController.markOrderReady.bind(adminController));
 router.post('/orders/:id/assign-driver', validateOrderId, adminController.assignDriver.bind(adminController));
+router.post('/orders/:id/complete-pickup', validateOrderId, adminController.completePickup.bind(adminController));
 
 // Driver management
 router.get('/drivers/available', adminController.getAvailableDrivers.bind(adminController));

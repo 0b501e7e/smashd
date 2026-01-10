@@ -343,6 +343,37 @@ export class AdminController {
     }
   }
 
+  /**
+   * Complete a pickup order (mark as delivered)
+   * POST /v1/admin/orders/:id/complete-pickup
+   */
+  async completePickup(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        sendError(res, 'Order ID is required', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const orderId = parseInt(id);
+      const updatedOrder = await this.adminService.completePickup(orderId);
+
+      console.log(`AdminController: Pickup order ${orderId} completed and marked as delivered`);
+      sendSuccess(res, updatedOrder);
+    } catch (error) {
+      console.error('AdminController: Error completing pickup order:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        sendError(res, error.message, HTTP_STATUS.NOT_FOUND);
+        return;
+      }
+      if (error instanceof Error && error.message.includes('cannot be completed')) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================

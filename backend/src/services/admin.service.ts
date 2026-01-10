@@ -350,6 +350,40 @@ export class AdminService implements IAdminService {
     return updatedOrder;
   }
 
+  async completePickup(orderId: number): Promise<Order> {
+    try {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId }
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      if (order.status !== 'READY') {
+        throw new Error(`Order with status ${order.status} cannot be completed. Only READY orders can be marked as picked up.`);
+      }
+
+      if (order.fulfillmentMethod !== 'PICKUP') {
+        throw new Error('Only pickup orders can be completed using this endpoint.');
+      }
+
+      const updatedOrder = await this.prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'DELIVERED',
+          readyAt: new Date() // Mark when it was picked up
+        }
+      });
+
+      console.log(`AdminService: Pickup order ${orderId} completed successfully and marked as delivered`);
+      return updatedOrder;
+    } catch (error) {
+      console.error(`AdminService: Error completing pickup order ${orderId}:`, error);
+      throw new Error(error instanceof Error ? error.message : 'Failed to complete pickup order');
+    }
+  }
+
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================

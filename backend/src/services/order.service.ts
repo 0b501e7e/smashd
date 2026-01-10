@@ -773,7 +773,7 @@ export class OrderService implements IOrderService {
       const updatedOrder = await this.prisma.order.update({
         where: { id: orderId },
         data: {
-          driverId,
+          driverId: driverId,
           status: 'OUT_FOR_DELIVERY'
         },
         include: {
@@ -784,10 +784,10 @@ export class OrderService implements IOrderService {
             select: { name: true, email: true }
           }
         }
-      });
+      } as any); // Type assertion for the entire update call to handle Prisma relation inference
 
       console.log(`OrderService: Order ${orderId} assigned to driver ${driverId}`);
-      return updatedOrder as any;
+      return updatedOrder;
     } catch (error) {
       console.error(`OrderService: Error assigning driver to order ${orderId}:`, error);
       throw new Error(error instanceof Error ? error.message : 'Failed to assign driver');

@@ -104,6 +104,13 @@ export interface IAdminService {
    */
   assignDriver(orderId: number, driverId: number): Promise<Order>;
 
+  /**
+   * Complete a pickup order (mark as delivered)
+   * @param orderId - Order ID to complete
+   * @returns Updated order
+   */
+  completePickup(orderId: number): Promise<Order>;
+
   // =====================
   // CUSTOMIZATION MANAGEMENT
   // =====================

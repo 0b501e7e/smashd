@@ -202,6 +202,19 @@ export default function OrderManagement() {
     }
   };
 
+  const handleCompletePickup = async (orderId: number) => {
+    setIsLoading(true);
+    try {
+      const response = await api.post(`/admin/orders/${orderId}/complete-pickup`, {});
+      if (!response.ok) throw new Error('Failed to complete pickup');
+      await fetchOrders();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    };
+  };
+
   const handleSetSelectedPrepTime = (orderId: number, time: number | null) => {
     setOrders(prevOrders =>
       prevOrders.map(order =>
@@ -313,6 +326,7 @@ export default function OrderManagement() {
                 </>
               ) : (
                 <button
+                  onClick={() => handleCompletePickup(order.id)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded text-sm transition"
                 >
                   Complete Pickup
