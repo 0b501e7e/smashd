@@ -190,6 +190,12 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editedItem) return;
+
+    // Mobile Chrome fix: explicitly blur the active input to close keyboard and prevent focus conflicts
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     setIsLoading(true);
     setError(null);
     const price = typeof editedItem.price === 'string' ? (parseFloat(editedItem.price) || 0) : editedItem.price;
@@ -252,11 +258,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setImagePreview(null); // Clear preview before closing
       onClose(); // Close modal on success
 
-      // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
-      // Increased to 500ms to allow Radix UI exit animations to fully complete
-      setTimeout(() => {
+      // Defer parent refresh until after dialog closes
+      // Using requestAnimationFrame to ensure clean render cycle
+      requestAnimationFrame(() => {
         onItemUpdated();
-      }, 500);
+      });
     } catch (err) {
       console.error('Update Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -288,7 +294,10 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white max-h-[85vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white max-h-[85vh] overflow-y-auto"
+        onCloseAutoFocus={(e) => e.preventDefault()} // Prevent Radix from trying to restore focus to trigger (mobile fix)
+      >
         <DialogHeader>
           <DialogTitle className="text-yellow-400">Edit Menu Item</DialogTitle>
           <DialogDescription className="text-gray-300">

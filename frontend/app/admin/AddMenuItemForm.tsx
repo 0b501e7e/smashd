@@ -162,6 +162,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     const originalPrice = isPromoting ? parseFloat(formData.originalPrice) : undefined;
     const vatRate = parseFloat(formData.vatRate) || 0.10;
 
+    // Mobile Chrome fix: explicitly blur the active input to close keyboard and prevent focus conflicts
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
       setError("Name, Category, and a valid Price are required.");
       setIsLoading(false);
@@ -211,11 +216,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       setImagePreview(null); // Clear preview before closing
       setIsOpen(false);
 
-      // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
-      // Increased to 500ms to allow Radix UI exit animations to fully complete
-      setTimeout(() => {
+      // Defer parent refresh until after dialog closes
+      // Using requestAnimationFrame to ensure clean render cycle
+      requestAnimationFrame(() => {
         onItemAdded();
-      }, 500);
+      });
     } catch (err) {
       console.error('Add Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -234,7 +239,10 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
           <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"> {/* Increased width slightly */}
+      <DialogContent
+        className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"
+        onCloseAutoFocus={(e) => e.preventDefault()} // Prevent Radix from trying to restore focus to trigger (mobile fix)
+      >
         <DialogHeader>
           <DialogTitle className="text-yellow-400">Add New Menu Item</DialogTitle>
           <DialogDescription className="text-gray-300">
