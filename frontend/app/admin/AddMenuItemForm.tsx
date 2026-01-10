@@ -32,6 +32,8 @@ interface MenuItem {
 }
 
 interface AddMenuItemFormProps {
+  isOpen: boolean;
+  onClose: () => void;
   onItemAdded: () => void; // Callback to refresh the list after adding
 }
 
@@ -46,8 +48,7 @@ const initialFormData = {
   vatRate: '0.10',
 };
 
-const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ isOpen, onClose, onItemAdded }) => {
   const [formData, setFormData] = useState(initialFormData);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -61,7 +62,6 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       setFormData(initialFormData);
       setSelectedFile(null);
       setImagePreview(null);
-      setError(null);
       setError(null);
       setIsLoading(false);
       setIsPromoting(false);
@@ -214,13 +214,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
 
       setIsLoading(false);
       setImagePreview(null); // Clear preview before closing
-      setIsOpen(false);
 
-      // Defer parent refresh until after dialog closes
-      // Using requestAnimationFrame to ensure clean render cycle
-      requestAnimationFrame(() => {
-        onItemAdded();
-      });
+      // Use clean callback without hacks
+      onItemAdded();
+      onClose();
+
     } catch (err) {
       console.error('Add Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -229,16 +227,13 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   };
 
   const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
+    if (!open) {
+      onClose();
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="bg-yellow-400 hover:bg-yellow-300 text-black">
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
-        </Button>
-      </DialogTrigger>
       <DialogContent
         className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"
         onCloseAutoFocus={(e) => e.preventDefault()} // Prevent Radix from trying to restore focus to trigger (mobile fix)
@@ -394,7 +389,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
             </Alert>
           )}
           <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || (!selectedFile && !formData.imageUrl)}> {/* Disable if no file and no existing URL */}

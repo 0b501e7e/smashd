@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Edit, Trash2, Loader2, Settings2 } from 'lucide-react';
+import { Edit, Trash2, Loader2, Settings2, PlusCircle } from 'lucide-react';
 import AddMenuItemForm from './AddMenuItemForm';
 import EditMenuItemForm from './EditMenuItemForm';
 import ManageCustomizationsModal from './ManageCustomizationsModal';
@@ -81,6 +81,9 @@ const MenuList = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
 
+  // State for add item modal
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   // State for customization modal
   const [isCustomizationModalOpen, setIsCustomizationModalOpen] = useState(false);
   const [itemForCustomization, setItemForCustomization] = useState<MenuItem | null>(null);
@@ -112,6 +115,15 @@ const MenuList = () => {
   useEffect(() => {
     fetchMenuItems(true);
   }, [fetchMenuItems]);
+
+  const handleOpenAddModal = () => {
+    setApiError(null);
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
 
   const handleEditItem = (item: MenuItem) => {
     setApiError(null); // Clear previous API errors
@@ -184,8 +196,9 @@ const MenuList = () => {
     <div className="mt-10"> { /* Increased top margin */}
       <div className="flex justify-between items-center mb-6"> { /* Increased bottom margin */}
         <h2 className="text-2xl font-semibold text-yellow-300">Menu Items</h2>
-        {/* Assume AddMenuItemForm uses a Button internally */}
-        <AddMenuItemForm onItemAdded={() => fetchMenuItems(false)} />
+        <Button onClick={handleOpenAddModal} className="bg-yellow-400 hover:bg-yellow-300 text-black">
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+        </Button>
       </div>
 
       {/* Use Alert for API errors (add/edit/delete failures) */}
@@ -242,7 +255,15 @@ const MenuList = () => {
         </TableBody>
       </Table>
 
-      {/* Assume EditMenuItemForm uses Dialog/Sheet and is styled internally */}
+      <AddMenuItemForm
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onItemAdded={() => {
+          fetchMenuItems(false);
+          // handleCloseAddModal(); // Handled in the form now or here, form calls onClose so we just need to refresh
+        }}
+      />
+
       <EditMenuItemForm
         item={itemToEdit}
         isOpen={isEditModalOpen}
@@ -278,8 +299,6 @@ const MenuList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Placeholder for ManageCustomizationsModal - will be created next */}
 
       <ManageCustomizationsModal
         item={itemForCustomization}
