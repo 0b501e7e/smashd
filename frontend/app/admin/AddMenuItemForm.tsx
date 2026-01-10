@@ -173,7 +173,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     }
 
     try {
-      await api.post('/admin/menu', {
+      const response = await api.post('/admin/menu', {
         ...formData,
         price,
         imageUrl: finalImageUrl,
@@ -181,6 +181,10 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
         promotionTitle: isPromoting ? formData.promotionTitle : undefined,
         vatRate
       });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || result.message || `Failed to add menu item: ${response.statusText}`);
+      }
       setIsLoading(false);
       setIsOpen(false);
       onItemAdded();
