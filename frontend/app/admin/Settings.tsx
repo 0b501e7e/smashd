@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { API_BASE_URL } from '../../lib/apiConstants'; // Import API_BASE_URL
+import { api } from '@/lib/api';
 
 export default function AdminSettings() {
   const [deliveryRadius, setDeliveryRadius] = useState<number>(5); // Default to 5 km
@@ -14,14 +14,7 @@ export default function AdminSettings() {
     setError(null);
     setSuccessMessage(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/settings/delivery-radius`, { // Use API_BASE_URL
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add Authorization header if your API requires it
-        },
-        body: JSON.stringify({ radius: deliveryRadius }),
-      });
+      const response = await api.post('/admin/settings/delivery-radius', { radius: deliveryRadius });
 
       const result = await response.json();
       if (!response.ok) {

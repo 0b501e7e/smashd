@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { MenuItem } from './BasketContext'; // Import MenuItem type
+import { api } from '@/lib/api';
 
 // Define IDs of burgers to feature
 const FEATURED_BURGER_IDS = [1, 3, 5]; // Example: Barbacoa, Cheeseburger, Oklahoma 2.0
@@ -22,15 +23,7 @@ export function Hero({ scrollToMenu }: { scrollToMenu: () => void }) {
       setIsLoading(true);
       setError(null);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        if (!apiUrl) {
-          throw new Error("API URL not configured.");
-        }
-        const menuEndpoint = `${apiUrl}/menu`;
-        const response = await fetch(menuEndpoint);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        const response = await api.get('/menu');
         const responseData = await response.json();
 
         // Handle new API response structure

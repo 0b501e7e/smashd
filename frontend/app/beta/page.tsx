@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { api } from '@/lib/api';
 import { motion } from 'framer-motion';
 
 export default function BetaSignup() {
@@ -18,13 +19,7 @@ export default function BetaSignup() {
         setErrorMessage('');
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/v1/beta/signup`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData),
-            });
+            const response = await api.post('/beta/signup', formData);
 
             const data = await response.json();
 

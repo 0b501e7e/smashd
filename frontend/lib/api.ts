@@ -30,9 +30,9 @@ export const api = {
                 headers,
             });
 
-            if (response.status === 401) {
+            if (response.status === 401 || response.status === 403) {
                 // Token expired or invalid
-                console.warn('Token expired or invalid, redirecting to login...');
+                console.warn(`Auth error (${response.status}), redirecting to login...`);
 
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem('token');
@@ -40,7 +40,7 @@ export const api = {
 
                     // Only redirect if we are not already on the login page
                     if (!window.location.pathname.includes('/login')) {
-                        window.location.href = '/login';
+                        window.location.href = '/login?error=session_expired';
                     }
                 }
 

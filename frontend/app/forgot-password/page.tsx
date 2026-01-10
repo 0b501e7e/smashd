@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react';
+import { api } from '@/lib/api';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,11 +18,7 @@ export default function ForgotPassword() {
         setMessage('');
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
+            const response = await api.post('/auth/forgot-password', { email });
 
             const data = await response.json();
 

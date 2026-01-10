@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 
 // --- Type Definitions (Consider moving to a shared types file) ---
 export interface UserProfile {
@@ -13,11 +14,11 @@ export interface UserProfile {
 }
 
 export interface OrderItemDetail {
-    quantity: number;
-    menuItem: {
-      name: string;
-      price: number;
-    }
+  quantity: number;
+  menuItem: {
+    name: string;
+    price: number;
+  }
 }
 
 export interface OrderHistoryItem {
@@ -59,47 +60,27 @@ export function useUserProfile(): UseUserProfileReturn {
     }
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error("API URL not configured.");
-      }
-
       // Fetch profile first to get user ID
-      const profileResponse = await fetch(`${apiUrl}/users/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      // Handle expired/invalid token (403) or not logged in (401)
-      if (profileResponse.status === 401 || profileResponse.status === 403) {
-        // Handle unauthorized access explicitly
-        localStorage.removeItem('token'); // Clear invalid token
-        router.push('/login?error=session_expired'); // Redirect with specific reason
-        return;
-      }
+      const profileResponse = await api.get('/users/profile');
 
       if (!profileResponse.ok) {
-          throw new Error(`Failed to fetch user profile (${profileResponse.status})`);
+        throw new Error(`Failed to fetch user profile (${profileResponse.status})`);
       }
 
       const userData: UserProfile = await profileResponse.json();
       setUser(userData);
 
       // Fetch orders using the user ID from profile
-      const ordersResponse = await fetch(`${apiUrl}/users/${userData.id}/orders`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const ordersResponse = await api.get(`/users/${userData.id}/orders`);
+
       if (!ordersResponse.ok) {
-          // Don't throw here, profile might still be useful. Set partial error?
-          console.warn(`Failed to fetch orders (${ordersResponse.status})`);
-          setOrders([]); // Set empty orders on failure
-          setError('Failed to load order history.'); // Set specific error for orders
+        // Don't throw here, profile might still be useful. Set partial error?
+        console.warn(`Failed to fetch orders (${ordersResponse.status})`);
+        setOrders([]); // Set empty orders on failure
+        setError('Failed to load order history.'); // Set specific error for orders
       } else {
-           const ordersData: OrderHistoryItem[] = await ordersResponse.json();
-           setOrders(ordersData);
+        const ordersData: OrderHistoryItem[] = await ordersResponse.json();
+        setOrders(ordersData);
       }
 
     } catch (err) {
@@ -110,7 +91,7 @@ export function useUserProfile(): UseUserProfileReturn {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]); // Add router to dependency array as it's used for navigation
 
   useEffect(() => {

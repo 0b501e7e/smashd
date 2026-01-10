@@ -19,6 +19,7 @@ import { Edit, Trash2, Loader2, Settings2 } from 'lucide-react';
 import AddMenuItemForm from './AddMenuItemForm';
 import EditMenuItemForm from './EditMenuItemForm';
 import ManageCustomizationsModal from './ManageCustomizationsModal';
+import { api } from '@/lib/api';
 
 // Assuming MenuItem type structure based on BasketContext and common fields
 // TODO: Potentially refine this based on exact API response
@@ -91,21 +92,8 @@ const MenuList = () => {
     }
     setError(null);
     setApiError(null);
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setError("Authentication token not found.");
-      setIsLoading(false);
-      setIsApiLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu/all`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await api.get('/admin/menu/all');
 
       const result = await response.json();
       if (!response.ok) {
@@ -157,19 +145,8 @@ const MenuList = () => {
     if (!itemToDelete) return;
     setIsApiLoading(true);
     setApiError(null);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setApiError("Authentication token not found.");
-      setIsApiLoading(false);
-      return;
-    }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu/${itemToDelete.id}`, { // Ensure using admin endpoint
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await api.delete(`/admin/menu/${itemToDelete.id}`);
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.error || result.message || `Failed to delete menu item: ${response.statusText}`);

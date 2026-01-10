@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MenuItem } from '@/app/components/BasketContext'; // Corrected import path
+import { api } from '@/lib/api';
 
 interface UseMenuReturn {
   menuItems: Record<string, MenuItem[]>;
@@ -19,22 +20,13 @@ export function useMenu(): UseMenuReturn {
     setIsLoading(true);
     setError(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-          throw new Error("API URL not configured in environment variables.");
-      }
-      const menuEndpoint = `${apiUrl}/menu`;
-      console.log('Getting menu from', menuEndpoint); // Keep log for debugging
-      const response = await fetch(menuEndpoint);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await api.get('/menu');
       const responseData = await response.json();
       console.log('Menu response data:', responseData); // Keep log for debugging
 
       // Handle new API response structure
       const data: MenuItem[] = responseData.data || responseData; // Support both old and new formats
-      
+
       if (!Array.isArray(data)) {
         throw new Error('Invalid menu data format received from server');
       }
@@ -58,7 +50,7 @@ export function useMenu(): UseMenuReturn {
       // Set a user-friendly error message
       setError(err instanceof Error ? err.message : 'Failed to load menu items. Please try again later.');
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 

@@ -17,6 +17,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, PlusCircle } from 'lucide-react';
 import Image from 'next/image'; // For image preview
+import { api } from '@/lib/api';
 
 interface MenuItem {
   id?: number; // ID is optional for new items
@@ -102,25 +103,19 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-    console.log('Debugging Cloudinary Config:', {
-      cloudName,
-      uploadPreset,
-      NODE_ENV: process.env.NODE_ENV
-    });
-
     if (!cloudName || !uploadPreset) {
-      setError("Cloudinary configuration missing. Please checking environment variables.");
+      setError("Cloudinary configuration missing. Please check environment variables.");
       return null;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
+    const imageFormData = new FormData();
+    imageFormData.append('file', file);
+    imageFormData.append('upload_preset', uploadPreset);
 
     try {
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST',
-        body: formData,
+        body: imageFormData,
       });
 
       const result = await response.json();
@@ -155,7 +150,6 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
     const originalPrice = isPromoting ? parseFloat(formData.originalPrice) : undefined;
     const vatRate = parseFloat(formData.vatRate) || 0.10;
 
-
     if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
       setError("Name, Category, and a valid Price are required.");
       setIsLoading(false);
@@ -167,45 +161,26 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       if (uploadedUrl) {
         finalImageUrl = uploadedUrl;
       } else {
-        // Error already set by uploadImage function
         setIsLoading(false);
-        return; // Stop submission if image upload failed
+        return; // Stop if image upload failed
       }
     }
 
-    if (!finalImageUrl && !selectedFile) { // Check if image is still missing after potential upload attempt
+    if (!finalImageUrl && !selectedFile) {
       setError("Menu item image is required. Please select an image to upload.");
       setIsLoading(false);
       return;
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/menu`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          price,
-          imageUrl: finalImageUrl,
-          originalPrice: isPromoting ? originalPrice : undefined, // Only send if promoting
-          promotionTitle: isPromoting ? formData.promotionTitle : undefined,
-          vatRate
-        }),
+      await api.post('/admin/menu', {
+        ...formData,
+        price,
+        imageUrl: finalImageUrl,
+        originalPrice: isPromoting ? originalPrice : undefined,
+        promotionTitle: isPromoting ? formData.promotionTitle : undefined,
+        vatRate
       });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || result.message || `Failed to add menu item: ${response.statusText}`);
-      }
       setIsLoading(false);
       setIsOpen(false);
       onItemAdded();

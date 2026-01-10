@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 export default function TestPage() {
   const [testResult, setTestResult] = useState<string>('Loading...');
@@ -9,22 +10,16 @@ export default function TestPage() {
   useEffect(() => {
     const testApi = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL?.endsWith('/') 
-          ? process.env.NEXT_PUBLIC_API_URL.slice(0, -1) 
-          : process.env.NEXT_PUBLIC_API_URL;
-        
-        console.log('Testing API endpoint:', `${apiUrl}/v1/menu`);
-        
-        const response = await fetch(`${apiUrl}/v1/menu`);
+        const response = await api.get('/menu');
         console.log('Response status:', response.status);
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         console.log('Data received:', data);
-        
+
         if (data && data.length > 0) {
           setTestResult(`API working! Found ${data.length} menu items.`);
         } else {

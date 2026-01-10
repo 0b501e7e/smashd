@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, X } from 'lucide-react';
+import { api } from '@/lib/api';
 
 // Types
 interface MenuItem {
@@ -53,15 +54,8 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
 
   // Fetch all available customization options
   const fetchAllCustomizationOptions = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found.");
-      return;
-    }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await api.get('/admin/customization-options');
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch all customization options');
       setAllOptions(result.data || []);
@@ -73,15 +67,8 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
 
   // Fetch IDs of options currently linked to the menu item
   const fetchLinkedOptionIds = useCallback(async (menuItemId: number): Promise<Set<number>> => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found.");
-      return new Set<number>(); // Return empty set on auth error
-    }
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${menuItemId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const response = await api.get(`/admin/customization-options/${menuItemId}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch linked customization options');
       // Expecting result.data to be { optionIds: number[] }
@@ -129,22 +116,8 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
     if (!item) return;
     setIsSaving(true);
     setError(null);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setError("Authentication token not found.");
-      setIsSaving(false);
-      return;
-    }
-
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${item.id}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ optionIds: Array.from(linkedOptionIds) }),
-      });
+      const response = await api.post(`/admin/customization-options/${item.id}`, { optionIds: Array.from(linkedOptionIds) });
 
       const result = await response.json();
 

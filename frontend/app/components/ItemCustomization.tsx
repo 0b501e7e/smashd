@@ -14,6 +14,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { api } from '@/lib/api';
 
 // --- Define Types for Fetched Customization Data ---
 type FetchedCustomizationOption = {
@@ -58,10 +59,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             setIsLoadingCustomizations(true);
             setCustomizationError(null);
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/menu/customizations`);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch customization options');
-                }
+                const response = await api.get('/menu/customizations');
                 const responseData = await response.json();
                 // Handle new API response structure
                 const data: FetchedCustomizationCategory[] = responseData.data || responseData;

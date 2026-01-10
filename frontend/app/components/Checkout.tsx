@@ -7,6 +7,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
 
 export function Checkout() {
   const { basket, clearBasket, getTotalPrice } = useBasket();
@@ -19,14 +20,6 @@ export function Checkout() {
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
     setError(null);
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      setError("Debes iniciar sesión para realizar un pedido.");
-      setIsProcessing(false);
-      return;
-    }
-
     try {
       // Step 1: Create the order with detailed items
       const orderPayload = {
@@ -39,14 +32,7 @@ export function Checkout() {
         total: total
       };
 
-      const orderResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/orders`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderPayload),
-      });
+      const orderResponse = await api.post('/orders', orderPayload);
 
       if (!orderResponse.ok) {
         const errorData = await orderResponse.json().catch(() => ({ error: `HTTP error ${orderResponse.status}` }));
@@ -69,14 +55,7 @@ export function Checkout() {
       console.log(`Stored pendingOrderId: ${createdOrderId} in sessionStorage`);
 
       // Step 2: Initiate SumUp checkout - FIXED ROUTE
-      const initiateCheckoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payment/initiate-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ orderId: createdOrderId }),
-      });
+      const initiateCheckoutResponse = await api.post('/payment/initiate-checkout', { orderId: createdOrderId });
 
       if (!initiateCheckoutResponse.ok) {
         const errorData = await initiateCheckoutResponse.json().catch(() => ({ error: `HTTP error ${initiateCheckoutResponse.status}` }));

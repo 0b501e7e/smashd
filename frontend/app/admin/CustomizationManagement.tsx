@@ -26,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash2, Plus, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { api } from '@/lib/api';
 
 interface CustomizationOption {
     id: number;
@@ -66,12 +67,8 @@ const CustomizationManagement = () => {
     const fetchCategories = useCallback(async () => {
         setIsLoading(true);
         setError(null);
-        const token = localStorage.getItem('token');
-
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/customization-categories`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
+            const response = await api.get('/admin/customization-categories');
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch customization categories');
             setCategories(result.data || []);
@@ -89,24 +86,16 @@ const CustomizationManagement = () => {
     const handleSaveCategory = async () => {
         if (!categoryName.trim()) return;
         setIsPending(true);
-        const token = localStorage.getItem('token');
-
         try {
             const url = editingCategory
-                ? `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-categories/${editingCategory.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-categories`;
+                ? `/admin/customization-categories/${editingCategory.id}`
+                : `/admin/customization-categories`;
 
-            const method = editingCategory ? 'PUT' : 'POST';
             const body = editingCategory ? { name: categoryName } : { name: categoryName, options: [] };
 
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(body),
-            });
+            const response = editingCategory
+                ? await api.put(url, body)
+                : await api.post(url, body);
 
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || result.message || 'Failed to save category');
@@ -125,31 +114,20 @@ const CustomizationManagement = () => {
     const handleSaveOption = async () => {
         if (!optionName.trim() || activeCategoryId === null) return;
         setIsPending(true);
-        const token = localStorage.getItem('token');
-
         try {
             const url = editingOption
-                ? `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${editingOption.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-categories/${activeCategoryId}/options`; // Wait, I need to check if I have this route or if I should add it
+                ? `/admin/customization-options/${editingOption.id}`
+                : `/admin/customization-options`;
 
-            // I don't have a specific "add option to category" route yet, but I can add it to the backend or use the category update. 
-            // Actually, let's assume I'll add POST /admin/customization-options with categoryId in body or similar.
-            // Let's check AdminController again.
+            const body = {
+                name: optionName,
+                price: parseFloat(optionPrice),
+                categoryId: activeCategoryId
+            };
 
-            const response = await fetch(editingOption
-                ? `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options/${editingOption.id}`
-                : `${process.env.NEXT_PUBLIC_API_URL}/admin/customization-options`, {
-                method: editingOption ? 'PUT' : 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    name: optionName,
-                    price: parseFloat(optionPrice),
-                    categoryId: activeCategoryId
-                }),
-            });
+            const response = editingOption
+                ? await api.put(url, body)
+                : await api.post(url, body);
 
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || result.message || 'Failed to save option');
@@ -169,17 +147,12 @@ const CustomizationManagement = () => {
     const handleDelete = async () => {
         if (!deleteTarget) return;
         setIsPending(true);
-        const token = localStorage.getItem('token');
-
         try {
             const endpoint = deleteTarget.type === 'category'
                 ? `customization-categories/${deleteTarget.id}`
                 : `customization-options/${deleteTarget.id}`;
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/${endpoint}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await api.delete(`/admin/${endpoint}`);
 
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || result.message || 'Deletion failed');
