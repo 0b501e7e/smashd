@@ -212,9 +212,10 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       setIsOpen(false);
 
       // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
+      // Increased to 500ms to allow Radix UI exit animations to fully complete
       setTimeout(() => {
         onItemAdded();
-      }, 0);
+      }, 500);
     } catch (err) {
       console.error('Add Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');

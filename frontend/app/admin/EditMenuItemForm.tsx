@@ -253,9 +253,10 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       onClose(); // Close modal on success
 
       // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
+      // Increased to 500ms to allow Radix UI exit animations to fully complete
       setTimeout(() => {
         onItemUpdated();
-      }, 0);
+      }, 500);
     } catch (err) {
       console.error('Update Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
