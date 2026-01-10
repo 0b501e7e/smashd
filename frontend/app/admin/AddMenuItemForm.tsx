@@ -210,7 +210,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       setIsLoading(false);
       setImagePreview(null); // Clear preview before closing
       setIsOpen(false);
-      onItemAdded();
+
+      // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
+      setTimeout(() => {
+        onItemAdded();
+      }, 0);
     } catch (err) {
       console.error('Add Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');

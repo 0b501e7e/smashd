@@ -250,8 +250,12 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
 
       setIsLoading(false);
       setImagePreview(null); // Clear preview before closing
-      onItemUpdated();
       onClose(); // Close modal on success
+
+      // Defer parent refresh until after dialog closes (mobile Chrome DOM race condition fix)
+      setTimeout(() => {
+        onItemUpdated();
+      }, 0);
     } catch (err) {
       console.error('Update Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
