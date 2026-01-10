@@ -82,7 +82,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
   useEffect(() => {
     return () => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Mobile Chrome can throw if URL already revoked, silently ignore
+        }
       }
     };
   }, [imagePreview]);
@@ -93,7 +97,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setSelectedFile(file);
       const previewUrl = URL.createObjectURL(file);
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview); // Clean up previous blob URL
+        try {
+          URL.revokeObjectURL(imagePreview); // Clean up previous blob URL
+        } catch (e) {
+          // Mobile Chrome can throw if already revoked
+        }
       }
       setImagePreview(previewUrl);
       // Update editedItem.imageUrl optimistically for preview, but actual save uses server URL
@@ -102,7 +110,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setSelectedFile(null);
       // If file input is cleared, revert preview to original item image or null
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Mobile Chrome can throw if already revoked
+        }
       }
       setImagePreview(editedItem?.imageUrl || null);
     }
@@ -226,7 +238,18 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       if (!response.ok) {
         throw new Error(result.error || result.message || `Failed to update menu item: ${response.statusText}`);
       }
+
+      // Clean up blob URL before closing dialog (mobile Chrome fix)
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Ignore revocation errors on mobile
+        }
+      }
+
       setIsLoading(false);
+      setImagePreview(null); // Clear preview before closing
       onItemUpdated();
       onClose(); // Close modal on success
     } catch (err) {
@@ -238,7 +261,11 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
 
   const handleClose = () => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview);
+      try {
+        URL.revokeObjectURL(imagePreview);
+      } catch (e) {
+        // Mobile Chrome can throw if already revoked
+      }
     }
     setError(null);
     setSelectedFile(null);

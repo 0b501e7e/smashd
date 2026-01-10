@@ -72,7 +72,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
   useEffect(() => {
     return () => {
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Mobile Chrome can throw if URL already revoked, silently ignore
+        }
       }
     };
   }, [imagePreview]);
@@ -84,14 +88,22 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       // Create a preview URL
       const previewUrl = URL.createObjectURL(file);
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview); // Clean up previous blob URL
+        try {
+          URL.revokeObjectURL(imagePreview); // Clean up previous blob URL
+        } catch (e) {
+          // Mobile Chrome can throw if already revoked
+        }
       }
       setImagePreview(previewUrl);
       // No need to set formData.imageUrl here yet, will be set after successful upload
     } else {
       setSelectedFile(null);
       if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Mobile Chrome can throw if already revoked
+        }
       }
       setImagePreview(null);
       // If a file was previously selected and now cleared, also clear from formData if it was a blob
@@ -185,7 +197,18 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ onItemAdded }) => {
       if (!response.ok) {
         throw new Error(result.error || result.message || `Failed to add menu item: ${response.statusText}`);
       }
+
+      // Clean up blob URL before closing dialog (mobile Chrome fix)
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        try {
+          URL.revokeObjectURL(imagePreview);
+        } catch (e) {
+          // Ignore revocation errors on mobile
+        }
+      }
+
       setIsLoading(false);
+      setImagePreview(null); // Clear preview before closing
       setIsOpen(false);
       onItemAdded();
     } catch (err) {
