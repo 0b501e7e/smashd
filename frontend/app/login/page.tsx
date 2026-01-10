@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -74,15 +76,29 @@ export default function Login() {
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 />
               </div>
-              <div className="flex flex-col space-y-1.5">
-                <Input
-                  id="password"
-                  placeholder="Contraseña"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
-                />
+              <div className="flex flex-col space-y-1.5 relative">
+                <div className="relative">
+                  <Input
+                    id="password"
+                    placeholder="Contraseña"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                <div className="flex justify-end">
+                  <a href="/forgot-password" className="text-xs text-yellow-400 hover:underline">
+                    ¿Olvidaste tu contraseña?
+                  </a>
+                </div>
               </div>
               {error && <p className="text-red-500">{error}</p>}
             </div>

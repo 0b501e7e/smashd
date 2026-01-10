@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, ActivityIndicator } from 'react-native';
+import { View, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
 import { router, Link } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Mail, Lock, LogIn, User } from 'lucide-react-native';
+import { Mail, Lock, LogIn, User, Eye, EyeOff } from 'lucide-react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -112,10 +113,17 @@ export default function LoginScreen() {
                     placeholderTextColor="#666666"
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry
+                    secureTextEntry={!isPasswordVisible}
                     className="flex-1 ml-3 border-0 p-0 h-auto bg-transparent"
                     style={{ color: '#FFFFFF' }}
                   />
+                  <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
+                    {isPasswordVisible ? (
+                      <EyeOff size={20} color="#CCCCCC" />
+                    ) : (
+                      <Eye size={20} color="#CCCCCC" />
+                    )}
+                  </TouchableOpacity>
                 </View>
               </View>
 
