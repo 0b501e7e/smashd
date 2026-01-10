@@ -6,6 +6,16 @@ import { Navbar } from './components/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Smash'd Admin",
+  description: "Admin panel for Smash'd",
+  other: {
+    google: "notranslate"
+  }
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -20,7 +30,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="es" className="dark">
+    <html lang="es" className="dark notranslate" translate="no">
       {/* Padding on body pushes content below fixed Navbar */}
       <body className="overflow-x-hidden pt-[var(--navbar-height,4rem)]">
         <BasketProvider>
