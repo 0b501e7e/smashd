@@ -1,20 +1,10 @@
-'use client'
+'use client';
 
 import { BasketProvider } from './components/BasketContext';
 import './globals.css'
 import { Navbar } from './components/Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
-
-import { Metadata } from 'next';
-
-export const metadata: Metadata = {
-  title: "Smash'd Admin",
-  description: "Admin panel for Smash'd",
-  other: {
-    google: "notranslate"
-  }
-};
 
 export default function RootLayout({
   children,
@@ -31,6 +21,9 @@ export default function RootLayout({
 
   return (
     <html lang="es" className="dark notranslate" translate="no">
+      <head>
+        <meta name="google" content="notranslate" />
+      </head>
       {/* Padding on body pushes content below fixed Navbar */}
       <body className="overflow-x-hidden pt-[var(--navbar-height,4rem)]">
         <BasketProvider>
@@ -46,7 +39,10 @@ export default function RootLayout({
                 exit="exit"
                 transition={{ type: 'tween', duration: 0.3 }}
               >
-                {children}
+                {/* StackOverflow Fix: Wrap children in a div to prevent translation tools from breaking React hydration */}
+                <div id="translation-fix-wrapper">
+                  {children}
+                </div>
               </motion.div>
             </AnimatePresence>
           </main>

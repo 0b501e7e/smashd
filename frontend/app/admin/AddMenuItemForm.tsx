@@ -162,10 +162,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ isOpen, onClose, onIt
     const originalPrice = isPromoting ? parseFloat(formData.originalPrice) : undefined;
     const vatRate = parseFloat(formData.vatRate) || 0.10;
 
-    // Mobile Chrome fix: explicitly blur the active input to close keyboard and prevent focus conflicts
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+
 
     if (!formData.name || !formData.category || formData.price === '' || isNaN(price) || price <= 0) {
       setError("Name, Category, and a valid Price are required.");
@@ -236,7 +233,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ isOpen, onClose, onIt
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"
-        onCloseAutoFocus={(e) => e.preventDefault()} // Prevent Radix from trying to restore focus to trigger (mobile fix)
+      // Removed onCloseAutoFocus hack
       >
         <DialogHeader>
           <DialogTitle className="text-yellow-400">Add New Menu Item</DialogTitle>
@@ -390,11 +387,11 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ isOpen, onClose, onIt
           )}
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-              Cancel
+              <span>Cancel</span>
             </Button>
             <Button type="submit" disabled={isLoading || (!selectedFile && !formData.imageUrl)}> {/* Disable if no file and no existing URL */}
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Adding...' : 'Add Item'}
+              <span>{isLoading ? 'Adding...' : 'Add Item'}</span>
             </Button>
           </DialogFooter>
         </form>

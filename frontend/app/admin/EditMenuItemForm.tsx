@@ -191,10 +191,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     e.preventDefault();
     if (!editedItem) return;
 
-    // Mobile Chrome fix: explicitly blur the active input to close keyboard and prevent focus conflicts
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+
 
     setIsLoading(true);
     setError(null);
@@ -258,11 +255,8 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
       setImagePreview(null); // Clear preview before closing
       onClose(); // Close modal on success
 
-      // Defer parent refresh until after dialog closes
-      // Using requestAnimationFrame to ensure clean render cycle
-      requestAnimationFrame(() => {
-        onItemUpdated();
-      });
+      // Clean callback
+      onItemUpdated();
     } catch (err) {
       console.error('Update Item Error:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -296,7 +290,7 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white max-h-[85vh] overflow-y-auto"
-        onCloseAutoFocus={(e) => e.preventDefault()} // Prevent Radix from trying to restore focus to trigger (mobile fix)
+      // Removed onCloseAutoFocus hack
       >
         <DialogHeader>
           <DialogTitle className="text-yellow-400">Edit Menu Item</DialogTitle>
@@ -455,10 +449,12 @@ const EditMenuItemForm: React.FC<EditMenuItemFormProps> = ({ item, isOpen, onClo
               </Alert>
             )}
             <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
+                <span>Cancel</span>
+              </Button>
               <Button type="submit" disabled={isLoading || (!editedItem.imageUrl && !selectedFile)}> {/* Disable if no image and no new file selected */}
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? 'Saving...' : 'Save Changes'}
+                <span>{isLoading ? 'Saving...' : 'Save Changes'}</span>
               </Button>
             </DialogFooter>
           </form>
