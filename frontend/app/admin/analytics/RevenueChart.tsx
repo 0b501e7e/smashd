@@ -29,7 +29,7 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
     });
   };
 
-  const chartData = data.weeklyData.map(week => ({
+  const chartData = data.weeklyData.slice().reverse().map(week => ({
     ...week,
     weekStart: formatDate(week.weekStart),
     formattedRevenue: formatCurrency(week.revenue)
@@ -266,7 +266,7 @@ export default function RevenueChart({ data, compact = false }: RevenueChartProp
                 </tr>
               </thead>
               <tbody>
-                {data.weeklyData.map((week, index) => (
+                {data.weeklyData.slice().reverse().map((week, index) => (
                   <tr key={index} className="border-b border-gray-800 hover:bg-gray-800/50">
                     <td className="py-3 px-2 text-white">{formatDate(week.weekStart)}</td>
                     <td className="py-3 px-2 text-right text-green-400 font-medium">

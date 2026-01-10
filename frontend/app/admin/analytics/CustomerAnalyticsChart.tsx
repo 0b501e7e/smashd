@@ -20,7 +20,7 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
     });
   };
 
-  const chartData = data.weeklyData.map(week => ({
+  const chartData = data.weeklyData.slice().reverse().map(week => ({
     ...week,
     weekStart: formatDate(week.weekStart),
     retentionRate: week.totalCustomers > 0 ? (week.returningCustomers / week.totalCustomers) * 100 : 0
@@ -119,30 +119,30 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
           <ResponsiveContainer width="100%" height={400}>
             <AreaChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="weekStart" 
+              <XAxis
+                dataKey="weekStart"
                 stroke="#9CA3AF"
                 fontSize={12}
               />
-              <YAxis 
+              <YAxis
                 stroke="#9CA3AF"
                 fontSize={12}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="newCustomers" 
+              <Area
+                type="monotone"
+                dataKey="newCustomers"
                 stackId="1"
-                stroke="#10B981" 
+                stroke="#10B981"
                 fill="#10B981"
                 fillOpacity={0.8}
                 name="New Customers"
               />
-              <Area 
-                type="monotone" 
-                dataKey="returningCustomers" 
+              <Area
+                type="monotone"
+                dataKey="returningCustomers"
                 stackId="1"
-                stroke="#3B82F6" 
+                stroke="#3B82F6"
                 fill="#3B82F6"
                 fillOpacity={0.8}
                 name="Returning Customers"
@@ -165,36 +165,36 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="weekStart" 
+                <XAxis
+                  dataKey="weekStart"
                   stroke="#9CA3AF"
                   fontSize={12}
                 />
-                <YAxis 
+                <YAxis
                   stroke="#9CA3AF"
                   fontSize={12}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="newCustomers" 
-                  stroke="#10B981" 
+                <Line
+                  type="monotone"
+                  dataKey="newCustomers"
+                  stroke="#10B981"
                   strokeWidth={3}
                   dot={{ fill: '#10B981', strokeWidth: 2, r: 5 }}
                   name="New Customers"
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="returningCustomers" 
-                  stroke="#3B82F6" 
+                <Line
+                  type="monotone"
+                  dataKey="returningCustomers"
+                  stroke="#3B82F6"
                   strokeWidth={3}
                   dot={{ fill: '#3B82F6', strokeWidth: 2, r: 5 }}
                   name="Returning Customers"
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="totalCustomers" 
-                  stroke="#F59E0B" 
+                <Line
+                  type="monotone"
+                  dataKey="totalCustomers"
+                  stroke="#F59E0B"
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   dot={{ fill: '#F59E0B', strokeWidth: 2, r: 3 }}
@@ -216,18 +216,18 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
             <ResponsiveContainer width="100%" height={350}>
               <AreaChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis 
-                  dataKey="weekStart" 
+                <XAxis
+                  dataKey="weekStart"
                   stroke="#9CA3AF"
                   fontSize={12}
                 />
-                <YAxis 
+                <YAxis
                   stroke="#9CA3AF"
                   fontSize={12}
                   domain={[0, 100]}
                   tickFormatter={(value) => `${value}%`}
                 />
-                <Tooltip 
+                <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
                       return (
@@ -242,10 +242,10 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
                     return null;
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="retentionRate" 
-                  stroke="#EF4444" 
+                <Area
+                  type="monotone"
+                  dataKey="retentionRate"
+                  stroke="#EF4444"
                   fill="#EF4444"
                   fillOpacity={0.3}
                   strokeWidth={3}
@@ -268,25 +268,25 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
           <ResponsiveContainer width="100%" height={350}>
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis 
-                dataKey="weekStart" 
+              <XAxis
+                dataKey="weekStart"
                 stroke="#9CA3AF"
                 fontSize={12}
               />
-              <YAxis 
+              <YAxis
                 stroke="#9CA3AF"
                 fontSize={12}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Bar 
-                dataKey="newCustomers" 
-                fill="#10B981" 
+              <Bar
+                dataKey="newCustomers"
+                fill="#10B981"
                 name="New Customers"
                 opacity={0.8}
               />
-              <Bar 
-                dataKey="returningCustomers" 
-                fill="#3B82F6" 
+              <Bar
+                dataKey="returningCustomers"
+                fill="#3B82F6"
                 name="Returning Customers"
                 opacity={0.8}
               />
@@ -317,10 +317,10 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
                 </tr>
               </thead>
               <tbody>
-                {data.weeklyData.map((week, index) => {
+                {data.weeklyData.slice().reverse().map((week, index) => {
                   const retentionRate = week.totalCustomers > 0 ? (week.returningCustomers / week.totalCustomers) * 100 : 0;
                   const isGoodRetention = retentionRate >= 50;
-                  
+
                   return (
                     <tr key={index} className="border-b border-gray-800 hover:bg-gray-800/50">
                       <td className="py-3 px-2 text-white">{formatDate(week.weekStart)}</td>
@@ -337,7 +337,7 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
                         {retentionRate.toFixed(1)}%
                       </td>
                       <td className="py-3 px-2 text-center">
-                        <Badge 
+                        <Badge
                           variant={isGoodRetention ? "default" : "secondary"}
                           className={`text-xs ${isGoodRetention ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'}`}
                         >
@@ -371,7 +371,7 @@ export default function CustomerAnalyticsChart({ data }: CustomerAnalyticsChartP
                 <p>• {data.summary.totalReturningCustomers} customers have returned</p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <h4 className="font-semibold text-white">Retention Analysis</h4>
               <div className="space-y-2 text-sm text-gray-300">
