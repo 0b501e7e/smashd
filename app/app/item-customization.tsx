@@ -35,7 +35,7 @@ export default function ItemCustomization() {
     if (allCustomizations) {
       // Add prices from selected customizations
       [...allCustomizations.extras, ...allCustomizations.sauces, ...allCustomizations.toppings]
-        .filter(option => selectedCustomizations[Number(option.id)])
+        .filter(option => selectedCustomizations[Number(option.id)] && !option.isDefaultSelected)
         .forEach(option => total += (option.price || 0) * quantity);
     }
 
@@ -56,6 +56,14 @@ export default function ItemCustomization() {
 
         setItem(itemData);
         setAllCustomizations(customizationsData);
+
+        // Pre-select options marked as default
+        const defaults: { [key: number]: boolean } = {};
+        [...customizationsData.extras, ...customizationsData.sauces, ...customizationsData.toppings]
+          .forEach(option => {
+            if (option.isDefaultSelected) defaults[Number(option.id)] = true;
+          });
+        setSelectedCustomizations(defaults);
 
         // Build "goes well with" suggestions: items from different categories
         if (itemData && allItems) {
@@ -95,15 +103,31 @@ export default function ItemCustomization() {
     const getSelectedNames = (options: CustomizationOption[]) =>
       options.filter(option => selectedCustomizations[Number(option.id)]).map(option => option.name);
 
+    const removedDefaults = (options: CustomizationOption[]) =>
+      options
+        .filter(option => option.isDefaultSelected && !selectedCustomizations[Number(option.id)])
+        .map(option => option.name);
+
     const customizations: any = {
       extras: getSelectedNames(allCustomizations.extras),
       sauces: getSelectedNames(allCustomizations.sauces),
       toppings: getSelectedNames(allCustomizations.toppings),
+      removed: [
+        ...removedDefaults(allCustomizations.extras),
+        ...removedDefaults(allCustomizations.sauces),
+        ...removedDefaults(allCustomizations.toppings),
+      ],
     };
 
     if (specialRequests.trim()) {
       customizations.specialRequests = specialRequests.trim();
     }
+
+    if (!customizations.extras.length) delete customizations.extras;
+    if (!customizations.sauces.length) delete customizations.sauces;
+    if (!customizations.toppings.length) delete customizations.toppings;
+    if (!customizations.removed.length) delete customizations.removed;
+    if (!customizations.specialRequests) delete customizations.specialRequests;
 
     addItem({
       id: item.id,
@@ -150,7 +174,8 @@ export default function ItemCustomization() {
                     style={{ color: isSelected ? '#000000' : '#FFFFFF' }}
                   >
                     {option.name}
-                    {option.price > 0 && ` (+€${option.price.toFixed(2)})`}
+                    {option.isDefaultSelected ? ' • Incluido' : ''}
+                    {option.price > 0 && !option.isDefaultSelected && ` (+€${option.price.toFixed(2)})`}
                   </Text>
                 </TouchableOpacity>
               );

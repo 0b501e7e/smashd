@@ -159,6 +159,28 @@ export default function CartScreen() {
                         </Text>
                       </View>
                     )}
+
+                    {item.customizations.removed && item.customizations.removed.length > 0 && (
+                      <View className="mt-2">
+                        <Text className="text-sm font-medium" style={{ color: '#FF7A7A' }}>
+                          Sin:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.removed.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+
+                    {item.customizations.specialRequests && (
+                      <View className="mt-2">
+                        <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
+                          Peticiones especiales:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.specialRequests}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 )}
 

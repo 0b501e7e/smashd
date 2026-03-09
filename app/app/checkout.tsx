@@ -272,6 +272,24 @@ export default function CheckoutScreen() {
                         </Text>
                       </View>
                     )}
+
+                    {item.customizations.removed && item.customizations.removed.length > 0 && (
+                      <View className="flex-row items-center mb-1">
+                        <Minus size={12} color="#FF7A7A" className="mr-1" />
+                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
+                          Sin: {item.customizations.removed.join(', ')}
+                        </Text>
+                      </View>
+                    )}
+
+                    {item.customizations.specialRequests && (
+                      <View className="flex-row items-center mb-1">
+                        <AlertCircle size={12} color="#FAB10A" className="mr-1" />
+                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
+                          Peticiones: {item.customizations.specialRequests}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 )}
               </View>

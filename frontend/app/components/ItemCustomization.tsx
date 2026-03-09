@@ -53,17 +53,32 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
     const [isImageLoading, setIsImageLoading] = useState(true);
     const [imageLoadError, setImageLoadError] = useState(false);
 
-    // Fetch customization data
+    // Fetch item-specific customization data so default selections are preserved.
     useEffect(() => {
+        if (!isOpen || !item || item.category !== 'BURGER') {
+            if (!isOpen) {
+                setCustomizationCategories([]);
+                setCustomizationError(null);
+                setIsLoadingCustomizations(false);
+            }
+            return;
+        }
+
         const fetchCustomizations = async () => {
             setIsLoadingCustomizations(true);
             setCustomizationError(null);
             try {
-                const response = await api.get('/menu/customizations');
+                const response = await api.get(`/menu/items/${item.id}/customizations`);
                 const responseData = await response.json();
-                // Handle new API response structure
-                const data: FetchedCustomizationCategory[] = responseData.data || responseData;
-                setCustomizationCategories(data);
+
+                const groupedData: Record<string, FetchedCustomizationOption[]> = responseData.data || responseData || {};
+                const categories = Object.entries(groupedData).map(([name, options], index) => ({
+                    id: options[0]?.categoryId ?? -(index + 1),
+                    name,
+                    options,
+                }));
+
+                setCustomizationCategories(categories);
             } catch (err) {
                 console.error("Fetch Customization Error:", err);
                 setCustomizationError(err instanceof Error ? err.message : 'No se pudieron cargar las opciones');
@@ -73,7 +88,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
         };
 
         fetchCustomizations();
-    }, []); // Fetch once on mount
+    }, [isOpen, item]); // Refetch when the selected item changes
 
     // Initialize selections when categories load or item changes
     useEffect(() => {

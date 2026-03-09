@@ -42,6 +42,12 @@ module.exports = ({ config }) => {
     experiments: {
       typedRoutes: true
     },
+    updates: {
+      url: "https://u.expo.dev/36b14cff-7f2e-43ac-9da6-f163563fd773"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
+    },
     extra: {
       router: {
         origin: false

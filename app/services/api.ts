@@ -237,6 +237,7 @@ type CustomizationOption = {
   id: string | number; // Support both string and number IDs for flexibility
   name: string;
   price: number;
+  isDefaultSelected?: boolean;
 };
 
 type AllCustomizations = {

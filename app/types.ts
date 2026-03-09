@@ -16,6 +16,7 @@ export interface CustomizationOption {
   name: string;
   price: number;
   categoryId?: number;
+  isDefaultSelected?: boolean;
   category?: {
     id: number;
     name: string;
@@ -26,6 +27,7 @@ export interface CustomizationOptions {
   extras?: string[];
   sauces?: string[];
   toppings?: string[];
+  removed?: string[];
   specialRequests?: string;
 }
 
