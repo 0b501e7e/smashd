@@ -232,7 +232,7 @@ const AddMenuItemForm: React.FC<AddMenuItemFormProps> = ({ isOpen, onClose, onIt
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white"
+        className="sm:max-w-[480px] bg-gray-950 border-yellow-400/30 text-white max-h-[85vh] overflow-y-auto"
       // Removed onCloseAutoFocus hack
       >
         <DialogHeader>

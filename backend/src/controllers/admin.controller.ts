@@ -616,6 +616,45 @@ export class AdminController {
   }
 
   // =====================
+  // SETTINGS
+  // =====================
+
+  /**
+   * Get delivery radius setting
+   * GET /v1/admin/settings/delivery-radius
+   */
+  async getDeliveryRadius(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const radius = await this.adminService.getDeliveryRadius();
+      sendSuccess(res, { radius });
+    } catch (error) {
+      console.error('AdminController: Error fetching delivery radius:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Set delivery radius setting
+   * POST /v1/admin/settings/delivery-radius
+   */
+  async setDeliveryRadius(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { radius } = req.body;
+
+      if (radius === undefined || typeof radius !== 'number' || radius < 1) {
+        sendError(res, 'Radius must be a number >= 1', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      await this.adminService.setDeliveryRadius(radius);
+      sendSuccess(res, { radius }, 'Delivery radius saved successfully');
+    } catch (error) {
+      console.error('AdminController: Error setting delivery radius:', error);
+      next(error);
+    }
+  }
+
+  // =====================
   // SUMUP INTEGRATION
   // =====================
 

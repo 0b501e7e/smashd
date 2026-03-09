@@ -50,6 +50,10 @@ router.delete('/customization-options/:id', (req: Request, res: Response, next: 
 router.get('/customization-options/:menuItemId', validateMenuItemId, adminController.getLinkedCustomizationOptions.bind(adminController));
 router.post('/customization-options/:menuItemId', validateMenuItemId, adminController.setLinkedCustomizationOptions.bind(adminController));
 
+// Settings
+router.get('/settings/delivery-radius', adminController.getDeliveryRadius.bind(adminController));
+router.post('/settings/delivery-radius', adminController.setDeliveryRadius.bind(adminController));
+
 // SumUp integration
 router.post('/sync-menu-to-sumup', adminController.syncMenuToSumUp.bind(adminController));
 

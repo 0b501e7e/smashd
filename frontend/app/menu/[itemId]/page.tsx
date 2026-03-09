@@ -60,6 +60,8 @@ export default function MenuItemDetailPage() {
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [selectedSauces, setSelectedSauces] = useState<string[]>([]);
   const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [suggestedItems, setSuggestedItems] = useState<MenuItem[]>([]);
 
   // Fetch item details
   useEffect(() => {
@@ -68,23 +70,28 @@ export default function MenuItemDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await api.get(`/menu/${itemId}`);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch item: ${response.statusText}`);
+        const [itemResponse, menuResponse] = await Promise.all([
+          api.get(`/menu/${itemId}`),
+          api.get('/menu'),
+        ]);
+
+        if (!itemResponse.ok) {
+          throw new Error(`Failed to fetch item: ${itemResponse.statusText}`);
         }
-        const responseData = await response.json();
-        // Handle new API response structure
+        const responseData = await itemResponse.json();
         const data: MenuItem = responseData.data || responseData;
         setItem(data);
 
-        // Set default selections based on item type if needed
-        // Example: Pre-select standard toppings for a burger
-        if (data.category === 'BURGER') {
-          // Example: Default sauces/toppings could be set here
-          // setSelectedSauces(['ketchup', 'mayo']);
-          // setSelectedToppings(['lettuce', 'tomato', 'onion']);
+        // Build "goes well with" suggestions from other categories
+        if (menuResponse.ok) {
+          const menuData = await menuResponse.json();
+          const allItems: MenuItem[] = menuData.data || menuData;
+          const suggestions = allItems
+            .filter(i => i.id !== data.id && i.category !== data.category)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 4);
+          setSuggestedItems(suggestions);
         }
-
       } catch (err) {
         console.error(err);
         setError(err instanceof Error ? err.message : 'Failed to load item details.');
@@ -154,6 +161,7 @@ export default function MenuItemDetailPage() {
     if (selectedExtras.length > 0) customizations.extras = mapSelections(selectedExtras, categoryConfig.EXTRAS);
     if (selectedSauces.length > 0) customizations.sauces = mapSelections(selectedSauces, categoryConfig.SAUCES);
     if (selectedToppings.length > 0) customizations.toppings = mapSelections(selectedToppings, categoryConfig.TOPPINGS);
+    if (specialRequests.trim()) customizations.specialRequests = specialRequests.trim();
 
     addToBasket({
       menuItemId: item.id,
@@ -204,8 +212,8 @@ export default function MenuItemDetailPage() {
   // Get API base URL, remove trailing /v1 or /api suffix
   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
   // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-  const imageSrc = item.imageUrl && apiUrl
-    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+  const imageSrc = item.imageUrl
+    ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
     : '/burger.png'; // Keep using frontend fallback
   const fallbackSrc = '/burger.png'; // Define fallback for error handling
   console.log(`Detail Page: Using image path: ${imageSrc}`);
@@ -248,7 +256,20 @@ export default function MenuItemDetailPage() {
               {renderOptions('Sauces', categoryConfig.SAUCES, selectedSauces, 'SAUCES')}
               {renderOptions('Toppings', categoryConfig.TOPPINGS, selectedToppings, 'TOPPINGS')}
 
-              {/* Spacer if no customizations */} \n                {Object.keys(categoryConfig).length === 0 && <div className="h-16"></div>}
+              {/* Spacer if no customizations */}
+              {Object.keys(categoryConfig).length === 0 && <div className="h-16"></div>}
+
+              {/* Special Requests */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 text-yellow-300">Special Requests</h3>
+                <textarea
+                  value={specialRequests}
+                  onChange={(e) => setSpecialRequests(e.target.value)}
+                  placeholder="E.g. No onions, well done..."
+                  rows={3}
+                  className="w-full bg-black/50 border border-yellow-400/30 rounded-md p-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400/50 resize-none"
+                />
+              </div>
             </CardContent>
 
             <Separator className="my-4 bg-yellow-400/30" />
@@ -289,6 +310,45 @@ export default function MenuItemDetailPage() {
           </div>
         </div>
       </Card>
+
+      {/* Goes Well With */}
+      {suggestedItems.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-yellow-400 mb-4">Goes Well With</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {suggestedItems.map((suggested) => {
+              const suggestedImageSrc = suggested.imageUrl
+                ? (suggested.imageUrl.startsWith('http') ? suggested.imageUrl : (apiUrl ? `${apiUrl}${suggested.imageUrl}` : suggested.imageUrl))
+                : '/burger.png';
+
+              return (
+                <Card
+                  key={suggested.id}
+                  className="bg-black/50 border border-yellow-600/30 hover:border-yellow-500/50 transition-all cursor-pointer hover:scale-[1.02]"
+                  onClick={() => router.push(`/menu/${suggested.id}`)}
+                >
+                  <div className="relative aspect-video w-full overflow-hidden rounded-t-lg bg-gray-800">
+                    <Image
+                      src={suggestedImageSrc}
+                      alt={suggested.name}
+                      fill
+                      style={{ objectFit: 'cover' }}
+                      sizes="(max-width: 768px) 45vw, 23vw"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/burger.png';
+                      }}
+                    />
+                  </div>
+                  <CardContent className="p-3">
+                    <p className="text-sm font-medium text-white truncate">{suggested.name}</p>
+                    <p className="text-sm text-yellow-400">€{suggested.price.toFixed(2)}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

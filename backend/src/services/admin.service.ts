@@ -130,10 +130,31 @@ export class AdminService implements IAdminService {
         throw new Error('Menu item not found');
       }
 
-      // Delete menu item and related customization links in transaction
+      // Check if menu item has associated orders
+      const orderItemCount = await this.prisma.orderItem.count({
+        where: { menuItemId }
+      });
+
+      if (orderItemCount > 0) {
+        // Soft delete: mark as unavailable instead of deleting to preserve order history
+        const updatedMenuItem = await this.prisma.menuItem.update({
+          where: { id: menuItemId },
+          data: { isAvailable: false }
+        });
+        console.log(`AdminService: Menu item soft-deleted (has ${orderItemCount} order references): ${updatedMenuItem.name} (ID: ${menuItemId})`);
+        return {
+          message: `Menu item "${updatedMenuItem.name}" has been removed from the menu (archived due to existing orders)`,
+          deletedMenuItem: updatedMenuItem
+        };
+      }
+
+      // Hard delete: no orders reference this item, safe to fully remove
       const deletedMenuItem = await this.prisma.$transaction(async (tx) => {
-        // Delete customization links first
+        // Delete customization links first (both join tables)
         await tx.menuItemCustomizationOption.deleteMany({
+          where: { menuItemId }
+        });
+        await tx.menuItemCustomizationCategory.deleteMany({
           where: { menuItemId }
         });
 
@@ -617,6 +638,26 @@ export class AdminService implements IAdminService {
       }
       throw new Error('Failed to update linked customization options');
     }
+  }
+
+  // =====================
+  // SETTINGS
+  // =====================
+
+  async getDeliveryRadius(): Promise<number> {
+    const setting = await this.prisma.appSetting.findUnique({
+      where: { key: 'delivery_radius_km' }
+    });
+    return setting ? parseFloat(setting.value) : 5; // Default 5km
+  }
+
+  async setDeliveryRadius(radius: number): Promise<void> {
+    await this.prisma.appSetting.upsert({
+      where: { key: 'delivery_radius_km' },
+      update: { value: String(radius) },
+      create: { key: 'delivery_radius_km', value: String(radius) },
+    });
+    console.log(`AdminService: Delivery radius updated to ${radius} km`);
   }
 
   // =====================

@@ -1,13 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 
 export default function AdminSettings() {
-  const [deliveryRadius, setDeliveryRadius] = useState<number>(5); // Default to 5 km
+  const [deliveryRadius, setDeliveryRadius] = useState<number>(5);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Load current delivery radius on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await api.get('/admin/settings/delivery-radius');
+        if (response.ok) {
+          const result = await response.json();
+          const data = result.data || result;
+          if (data.radius !== undefined) {
+            setDeliveryRadius(data.radius);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const handleSaveSettings = async () => {
     setIsLoading(true);
@@ -48,7 +70,8 @@ export default function AdminSettings() {
           value={deliveryRadius}
           onChange={(e) => setDeliveryRadius(parseFloat(e.target.value))}
           min="1"
-          className="w-full md:w-1/3 bg-gray-700 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          disabled={isFetching}
+          className="w-full md:w-1/3 bg-gray-700 text-white p-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-50"
           placeholder="Enter delivery radius in km"
         />
         <p className="text-xs text-gray-400 mt-1">Set the maximum distance for deliveries.</p>

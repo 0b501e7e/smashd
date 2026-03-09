@@ -6,6 +6,7 @@ type CustomizationOptions = {
   extras?: string[];
   sauces?: string[];
   toppings?: string[];
+  specialRequests?: string;
 };
 
 type CartContextType = {

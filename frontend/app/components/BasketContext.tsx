@@ -17,6 +17,7 @@ export type CustomizationSelection = {
   extras?: string[]; // e.g., ["Extra Patty", "Bacon"]
   sauces?: string[]; // e.g., ["Ketchup", "Special Sauce"]
   toppings?: string[]; // e.g., ["Lettuce", "Onion", "Jalapenos"]
+  specialRequests?: string;
 };
 
 // New type for items *in* the basket

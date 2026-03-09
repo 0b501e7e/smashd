@@ -276,3 +276,9 @@ model BetaTester {
   // Platform removed as requested
   createdAt DateTime @default(now())
 }
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

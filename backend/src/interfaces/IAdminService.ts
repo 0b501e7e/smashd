@@ -186,6 +186,13 @@ export interface IAdminService {
   setLinkedCustomizationOptions(linkData: MenuItemCustomizationLinkData): Promise<{ message: string }>;
 
   // =====================
+  // SETTINGS
+  // =====================
+
+  getDeliveryRadius(): Promise<number>;
+  setDeliveryRadius(radius: number): Promise<void>;
+
+  // =====================
   // SUMUP INTEGRATION
   // =====================
 

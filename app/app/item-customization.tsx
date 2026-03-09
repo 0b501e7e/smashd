@@ -1,4 +1,4 @@
-import { ScrollView, Image, View, ActivityIndicator, TouchableOpacity, Dimensions } from 'react-native';
+import { ScrollView, Image, View, ActivityIndicator, TouchableOpacity, TextInput, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useCart } from '@/contexts/CartContext';
@@ -23,6 +23,8 @@ export default function ItemCustomization() {
   const [allCustomizations, setAllCustomizations] = useState<AllCustomizations | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedCustomizations, setSelectedCustomizations] = useState<{ [key: number]: boolean }>({});
+  const [specialRequests, setSpecialRequests] = useState('');
+  const [suggestedItems, setSuggestedItems] = useState<any[]>([]);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
 
@@ -46,14 +48,23 @@ export default function ItemCustomization() {
 
     const fetchData = async () => {
       try {
-        const [itemData, customizationsData] = await Promise.all([
+        const [itemData, customizationsData, allItems] = await Promise.all([
           menuAPI.getMenuItemById(Number(itemId)),
           menuAPI.getItemCustomizations(Number(itemId)),
+          menuAPI.getMenuItems(),
         ]);
 
         setItem(itemData);
-        // API service already handles the response transformation
         setAllCustomizations(customizationsData);
+
+        // Build "goes well with" suggestions: items from different categories
+        if (itemData && allItems) {
+          const otherItems = allItems
+            .filter((i: any) => i.id !== itemData.id && i.category !== itemData.category && i.isAvailable !== false)
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 4);
+          setSuggestedItems(otherItems);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         setAllCustomizations({ extras: [], sauces: [], toppings: [] });
@@ -84,16 +95,20 @@ export default function ItemCustomization() {
     const getSelectedNames = (options: CustomizationOption[]) =>
       options.filter(option => selectedCustomizations[Number(option.id)]).map(option => option.name);
 
-    const customizations = {
+    const customizations: any = {
       extras: getSelectedNames(allCustomizations.extras),
       sauces: getSelectedNames(allCustomizations.sauces),
       toppings: getSelectedNames(allCustomizations.toppings),
     };
 
+    if (specialRequests.trim()) {
+      customizations.specialRequests = specialRequests.trim();
+    }
+
     addItem({
       id: item.id,
       name: item.name,
-      price: getTotalPrice() / quantity, // Price per item with customizations
+      price: getTotalPrice() / quantity,
       quantity,
       customizations,
     });
@@ -217,6 +232,90 @@ export default function ItemCustomization() {
           <CustomizationCategory title="Extras" options={allCustomizations.extras} />
           <CustomizationCategory title="Salsas" options={allCustomizations.sauces} />
           <CustomizationCategory title="Ingredientes" options={allCustomizations.toppings} />
+
+          {/* Special Requests */}
+          <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+            <CardHeader>
+              <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                Peticiones Especiales
+              </Text>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <TextInput
+                value={specialRequests}
+                onChangeText={setSpecialRequests}
+                placeholder="Ej: Sin cebolla, poco hecho..."
+                placeholderTextColor="#666666"
+                multiline
+                numberOfLines={3}
+                style={{
+                  backgroundColor: '#000000',
+                  borderWidth: 1,
+                  borderColor: '#333333',
+                  borderRadius: 8,
+                  padding: 12,
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  minHeight: 80,
+                  textAlignVertical: 'top',
+                }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Goes Well With */}
+          {suggestedItems.length > 0 && (
+            <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
+              <CardHeader>
+                <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
+                  Combina bien con
+                </Text>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View className="flex-row gap-3">
+                    {suggestedItems.map((suggested: any) => {
+                      const suggestedImageUri = suggested.imageUrl
+                        ? (suggested.imageUrl.startsWith('http')
+                          ? suggested.imageUrl
+                          : (API_URL ? `${API_URL.replace(/\/(v1|api)$/, "")}${suggested.imageUrl}` : null))
+                        : null;
+
+                      return (
+                        <Pressable
+                          key={suggested.id}
+                          onPress={() => router.push(`/item-customization?itemId=${suggested.id}`)}
+                          style={{ width: 140 }}
+                        >
+                          <View style={{ backgroundColor: '#000000', borderRadius: 8, borderWidth: 1, borderColor: '#333333', overflow: 'hidden' }}>
+                            {suggestedImageUri ? (
+                              <Image
+                                source={{ uri: suggestedImageUri }}
+                                style={{ width: 140, height: 100 }}
+                                resizeMode="cover"
+                              />
+                            ) : (
+                              <View style={{ width: 140, height: 100, justifyContent: 'center', alignItems: 'center', backgroundColor: '#222222' }}>
+                                <ImageIcon size={24} color="#666666" />
+                              </View>
+                            )}
+                            <View style={{ padding: 8 }}>
+                              <Text className="text-sm font-medium" style={{ color: '#FFFFFF' }} numberOfLines={1}>
+                                {suggested.name}
+                              </Text>
+                              <Text className="text-xs" style={{ color: '#FAB10A' }}>
+                                €{(suggested.price || 0).toFixed(2)}
+                              </Text>
+                            </View>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              </CardContent>
+            </Card>
+          )}
         </View>
       </ScrollView>
 

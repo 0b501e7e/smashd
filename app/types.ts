@@ -26,6 +26,7 @@ export interface CustomizationOptions {
   extras?: string[];
   sauces?: string[];
   toppings?: string[];
+  specialRequests?: string;
 }
 
 export interface AllCustomizations {
