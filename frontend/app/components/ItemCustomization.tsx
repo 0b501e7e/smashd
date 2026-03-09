@@ -225,8 +225,8 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
 
     // Construct image URL the same way Menu component does
     const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
-    const imageSrc = item.imageUrl && apiUrl
-        ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+    const imageSrc = item.imageUrl
+        ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
         : '/burger.png'; // Use fallback from frontend/public
     const fallbackSrc = '/burger.png'; // Define fallback for error handling
 

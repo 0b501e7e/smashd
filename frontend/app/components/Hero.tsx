@@ -90,8 +90,8 @@ export function Hero({ scrollToMenu }: { scrollToMenu: () => void }) {
 
   // *** FIX: Construct the correct image source URL ***
   const baseApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
-  const imageSrc = currentBurger?.imageUrl && baseApiUrl
-    ? `${baseApiUrl}${currentBurger.imageUrl}` // Prepend base URL
+  const imageSrc = currentBurger?.imageUrl
+    ? (currentBurger.imageUrl.startsWith('http') ? currentBurger.imageUrl : (baseApiUrl ? `${baseApiUrl}${currentBurger.imageUrl}` : currentBurger.imageUrl))
     : placeholderImage;
 
   return (

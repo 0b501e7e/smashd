@@ -80,8 +80,8 @@ export function BasketButton() {
                   // Get API base URL, remove trailing /v1 or /api suffix
                   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
                   // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-                  const imageSrc = item.imageUrl && apiUrl
-                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                  const imageSrc = item.imageUrl
+                    ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
                     : '/burger.png'; // Keep using frontend fallback
                   const fallbackSrc = '/burger.png';
                   console.log(`Basket Item: Using image path: ${imageSrc}`);
