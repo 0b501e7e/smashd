@@ -52,6 +52,7 @@ export interface CustomizationOption {
   price: number;
   categoryId: number;
   category?: Omit<CustomizationCategory, 'options'>;
+  isDefaultSelected?: boolean;
 }
 
 export interface CustomizationOptionCreateData {

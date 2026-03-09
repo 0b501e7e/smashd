@@ -93,7 +93,7 @@ export interface CustomizationOptionWithCategory extends CustomizationOption {
 
 export interface MenuItemCustomizationLinkData {
   menuItemId: number;
-  optionIds: number[];
+  options: { optionId: number; isDefault: boolean }[];
 }
 
 // =====================

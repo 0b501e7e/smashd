@@ -590,16 +590,19 @@ export class AdminService implements IAdminService {
     }
   }
 
-  async getLinkedCustomizationOptions(menuItemId: number): Promise<number[]> {
+  async getLinkedCustomizationOptions(menuItemId: number): Promise<{ optionId: number, isDefault: boolean }[]> {
     try {
       const links = await this.prisma.menuItemCustomizationOption.findMany({
         where: { menuItemId },
-        select: { customizationOptionId: true }
+        select: { customizationOptionId: true, isDefault: true }
       });
 
-      const optionIds = links.map(link => link.customizationOptionId);
-      console.log(`AdminService: Retrieved ${optionIds.length} linked customization options for menu item ${menuItemId}`);
-      return optionIds;
+      const options = links.map(link => ({
+        optionId: link.customizationOptionId,
+        isDefault: link.isDefault
+      }));
+      console.log(`AdminService: Retrieved ${options.length} linked customization options for menu item ${menuItemId}`);
+      return options;
     } catch (error) {
       console.error(`AdminService: Error fetching linked customization options for menu item ${menuItemId}:`, error);
       throw new Error('Failed to retrieve linked customization options');
@@ -614,19 +617,20 @@ export class AdminService implements IAdminService {
           where: { menuItemId: linkData.menuItemId }
         });
 
-        // Create new links if optionIds is not empty
-        if (linkData.optionIds && linkData.optionIds.length > 0) {
+        // Create new links if options array is not empty
+        if (linkData.options && linkData.options.length > 0) {
           await tx.menuItemCustomizationOption.createMany({
-            data: linkData.optionIds.map(optionId => ({
+            data: linkData.options.map(opt => ({
               menuItemId: linkData.menuItemId,
-              customizationOptionId: optionId
+              customizationOptionId: opt.optionId,
+              isDefault: opt.isDefault
             })),
             skipDuplicates: true
           });
         }
       });
 
-      console.log(`AdminService: Updated customization options for menu item ${linkData.menuItemId}: ${linkData.optionIds.length} options linked`);
+      console.log(`AdminService: Updated customization options for menu item ${linkData.menuItemId}: ${linkData.options.length} options linked`);
 
       return {
         message: 'Customization options updated successfully for menu item'

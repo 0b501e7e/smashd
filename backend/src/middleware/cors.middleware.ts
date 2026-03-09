@@ -47,8 +47,6 @@ const createCorsOptions = (): CorsOptions => {
       'https://admin.smashdmotril.com',     // Admin panel
       'https://www.admin.smashdmotril.com',
       'https://smashd-one.vercel.app',
-      'http://localhost:3000',        // Local development (temporary)
-      'http://127.0.0.1:3000'         // Alternative localhost (temporary)
     ];
 
     // Add any additional origins from environment variables

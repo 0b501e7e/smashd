@@ -111,7 +111,9 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             const selectedInCategory = selectedOptions[category.id] || [];
             selectedInCategory.forEach(optionId => {
                 const option = category.options.find(o => o.id === optionId);
-                customizationCost += option?.price || 0;
+                if (option && !option.isDefaultSelected) {
+                    customizationCost += option.price;
+                }
             });
         });
 
@@ -147,6 +149,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             extras: [], // Initialize with explicit keys
             sauces: [],
             toppings: [],
+            removed: [],
         };
         const allSelectedOptions: FetchedCustomizationOption[] = [];
 
@@ -167,12 +170,20 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                     allSelectedOptions.push(option);
                 }
             });
+
+            // Track any default options that were unselected (removed)
+            category.options.forEach(option => {
+                if (option.isDefaultSelected && !selectedInCategory.includes(option.id)) {
+                    customizationDetails.removed?.push(option.name);
+                }
+            });
         });
 
         // Remove empty arrays if no options were selected in a category
         if (customizationDetails.extras?.length === 0) delete customizationDetails.extras;
         if (customizationDetails.sauces?.length === 0) delete customizationDetails.sauces;
         if (customizationDetails.toppings?.length === 0) delete customizationDetails.toppings;
+        if (customizationDetails.removed?.length === 0) delete customizationDetails.removed;
 
         const unitPriceWithCustomizations = calculateTotalPrice / quantity;
 
@@ -182,7 +193,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             quantity: quantity,
             unitPrice: unitPriceWithCustomizations,
             imageUrl: item.imageUrl,
-            customizations: item.category === 'BURGER' && allSelectedOptions.length > 0 ? customizationDetails : undefined,
+            customizations: item.category === 'BURGER' && (allSelectedOptions.length > 0 || (customizationDetails.removed && customizationDetails.removed.length > 0)) ? customizationDetails : undefined,
         };
         addToBasket(itemToAdd);
         onOpenChange(false);
@@ -211,9 +222,12 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
                                 />
                                 <Label htmlFor={`option-${option.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer break-words">
                                     {option.name === 'Extras' ? 'Extras' : option.name === 'Sauces' ? 'Salsas' : option.name === 'Toppings' ? 'Ingredientes' : option.name}
+                                    {option.isDefaultSelected && (
+                                        <span className="ml-2 text-xs italic text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded">Incluido</span>
+                                    )}
                                 </Label>
                             </div>
-                            {option.price > 0 && (
+                            {option.price > 0 && !option.isDefaultSelected && (
                                 <span className="text-xs text-gray-400">+{formatCurrency(option.price)}</span>
                             )}
                         </div>

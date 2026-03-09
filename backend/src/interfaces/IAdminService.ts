@@ -174,9 +174,9 @@ export interface IAdminService {
   /**
    * Get linked customization options for a menu item
    * @param menuItemId - Menu item ID
-   * @returns List of linked customization option IDs
+   * @returns List of linked customization options
    */
-  getLinkedCustomizationOptions(menuItemId: number): Promise<number[]>;
+  getLinkedCustomizationOptions(menuItemId: number): Promise<{ optionId: number, isDefault: boolean }[]>;
 
   /**
    * Set linked customization options for a menu item

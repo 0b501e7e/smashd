@@ -17,6 +17,7 @@ export type CustomizationSelection = {
   extras?: string[]; // e.g., ["Extra Patty", "Bacon"]
   sauces?: string[]; // e.g., ["Ketchup", "Special Sauce"]
   toppings?: string[]; // e.g., ["Lettuce", "Onion", "Jalapenos"]
+  removed?: string[]; // e.g., ["Onion", "Pickles"] (items removed from defaults)
   specialRequests?: string;
 };
 
@@ -59,8 +60,8 @@ export const BasketProvider = ({ children }: { children: ReactNode }) => {
       // Check if an identical item (same menuItemId AND same customizations) already exists
       // Note: This simple check might need refinement depending on how complex customizations get
       const existingItemIndex = prevBasket.findIndex(
-          (item) => item.menuItemId === itemToAdd.menuItemId &&
-                   JSON.stringify(item.customizations || {}) === JSON.stringify(itemToAdd.customizations || {})
+        (item) => item.menuItemId === itemToAdd.menuItemId &&
+          JSON.stringify(item.customizations || {}) === JSON.stringify(itemToAdd.customizations || {})
       );
 
       if (existingItemIndex > -1) {
@@ -74,8 +75,8 @@ export const BasketProvider = ({ children }: { children: ReactNode }) => {
       } else {
         // Add as new item
         const newItem: BasketItem = {
-            ...itemToAdd,
-            cartItemId: cartItemId, // Add the generated unique ID
+          ...itemToAdd,
+          cartItemId: cartItemId, // Add the generated unique ID
         };
         return [...prevBasket, newItem];
       }
@@ -105,19 +106,19 @@ export const BasketProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getTotalItems = () => {
-      return basket.reduce((total, item) => total + item.quantity, 0);
+    return basket.reduce((total, item) => total + item.quantity, 0);
   }
 
   return (
     <BasketContext.Provider value={{
-        basket,
-        addToBasket,
-        removeFromBasket,
-        updateQuantity,
-        clearBasket,
-        getTotalPrice,
-        getTotalItems
-     }}>
+      basket,
+      addToBasket,
+      removeFromBasket,
+      updateQuantity,
+      clearBasket,
+      getTotalPrice,
+      getTotalItems
+    }}>
       {children}
     </BasketContext.Provider>
   );

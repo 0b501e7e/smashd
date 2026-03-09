@@ -554,10 +554,10 @@ export class AdminController {
         return;
       }
 
-      const optionIds = await this.adminService.getLinkedCustomizationOptions(itemId);
+      const options = await this.adminService.getLinkedCustomizationOptions(itemId);
 
-      console.log(`AdminController: Retrieved ${optionIds.length} linked customization options for menu item ${itemId}`);
-      sendSuccess(res, { optionIds });
+      console.log(`AdminController: Retrieved ${options.length} linked customization options for menu item ${itemId}`);
+      sendSuccess(res, { options });
     } catch (error) {
       console.error('AdminController: Error fetching linked customization options:', error);
       next(error);
@@ -577,7 +577,7 @@ export class AdminController {
       }
 
       const { menuItemId } = req.params;
-      const { optionIds } = req.body;
+      const { options } = req.body;
 
       if (!menuItemId) {
         sendError(res, 'Menu item ID is required', HTTP_STATUS.BAD_REQUEST);
@@ -591,19 +591,19 @@ export class AdminController {
         return;
       }
 
-      if (!Array.isArray(optionIds)) {
-        sendError(res, 'optionIds must be an array', HTTP_STATUS.BAD_REQUEST);
+      if (!Array.isArray(options)) {
+        sendError(res, 'options must be an array', HTTP_STATUS.BAD_REQUEST);
         return;
       }
 
       const linkData: MenuItemCustomizationLinkData = {
         menuItemId: itemId,
-        optionIds
+        options
       };
 
       const result = await this.adminService.setLinkedCustomizationOptions(linkData);
 
-      console.log(`AdminController: Updated customization options for menu item ${itemId}: ${optionIds.length} options linked`);
+      console.log(`AdminController: Updated customization options for menu item ${itemId}: ${options.length} options linked`);
       sendSuccess(res, result);
     } catch (error) {
       console.error('AdminController: Error setting linked customization options:', error);

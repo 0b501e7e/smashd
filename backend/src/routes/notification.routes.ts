@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { NotificationController } from '../controllers/notification.controller';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticateToken, isAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.patch('/notifications/:notificationId/read', authenticateToken, Notificat
 // Register push token
 router.post('/users/:userId/push-token', authenticateToken, NotificationController.registerPushToken);
 
-// Test notification (development only)
-router.post('/test', NotificationController.testNotification);
+// Test notification - admin only
+router.post('/test', authenticateToken, isAdmin, NotificationController.testNotification);
 
 export default router; 

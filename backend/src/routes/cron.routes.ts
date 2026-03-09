@@ -8,17 +8,16 @@ const router = express.Router();
  * Requires a CRON_SECRET environment variable
  */
 const authenticateCron = (req: Request, res: Response, next: express.NextFunction) => {
-    const authHeader = req.headers['authorization'];
-    // Access environment variable with bracket notation if needed, or stick to dot if configured
     const cronSecret = process.env['CRON_SECRET'];
 
-    // Ideally, use a strong secret. 
     if (!cronSecret) {
-        console.warn('CRON_SECRET is not set. Cron routes are unprotected!');
+        console.error('CRON_SECRET is not set. Cron endpoint is disabled.');
+        res.status(503).json({ error: 'Cron endpoint is not configured' });
+        return;
     }
 
-    // Check for Bearer token or exact match
-    if (authHeader === `Bearer ${cronSecret}` || req.query['secret'] === cronSecret) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader === `Bearer ${cronSecret}`) {
         next();
         return;
     }

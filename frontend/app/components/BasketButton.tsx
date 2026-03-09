@@ -17,19 +17,28 @@ const renderCustomizations = (item: BasketItem) => {
     return null;
   }
 
-  const { extras = [], sauces = [], toppings = [] } = item.customizations;
+  const { extras = [], sauces = [], toppings = [], removed = [] } = item.customizations;
   const allCustomizations = [
     ...(extras.length > 0 ? [`Extras: ${extras.join(', ')}`] : []),
     ...(sauces.length > 0 ? [`Sauces: ${sauces.join(', ')}`] : []),
     ...(toppings.length > 0 ? [`Toppings: ${toppings.join(', ')}`] : []),
   ];
 
-  if (allCustomizations.length === 0) return null;
+  if (allCustomizations.length === 0 && removed.length === 0) return null;
 
   return (
-    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-      {allCustomizations.join('; ')}
-    </p>
+    <div className="mt-1 flex flex-col gap-0.5">
+      {allCustomizations.length > 0 && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {allCustomizations.join('; ')}
+        </p>
+      )}
+      {removed.length > 0 && (
+        <p className="text-xs text-red-500 dark:text-red-400 font-medium italic">
+          - Sin {removed.join(', ')}
+        </p>
+      )}
+    </div>
   );
 };
 

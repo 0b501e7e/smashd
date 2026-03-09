@@ -311,7 +311,7 @@ export class MenuService implements IMenuService {
       throw new Error('Invalid menu item ID');
     }
 
-    // Get linked customization options for this menu item
+    // Get linked customization options for this menu item, including isDefault
     const linkedOptions = await this.prisma.menuItemCustomizationOption.findMany({
       where: { menuItemId: numericId },
       include: {
@@ -337,7 +337,8 @@ export class MenuService implements IMenuService {
         name: option.name,
         price: option.price,
         categoryId: option.categoryId,
-        category: option.category
+        category: option.category,
+        isDefaultSelected: link.isDefault
       });
     }
 
@@ -390,7 +391,7 @@ export class MenuService implements IMenuService {
   /**
    * Link customization options to a menu item
    */
-  async linkCustomizationOptions(menuItemId: ID, optionIds: number[]): Promise<void> {
+  async linkCustomizationOptions(menuItemId: ID, options: { optionId: number, isDefault: boolean }[]): Promise<void> {
     const numericId = typeof menuItemId === 'string' ? parseInt(menuItemId) : menuItemId;
 
     if (isNaN(numericId)) {
@@ -405,11 +406,12 @@ export class MenuService implements IMenuService {
       });
 
       // Create new links if options provided
-      if (optionIds.length > 0) {
+      if (options.length > 0) {
         await tx.menuItemCustomizationOption.createMany({
-          data: optionIds.map(optionId => ({
+          data: options.map(opt => ({
             menuItemId: numericId,
-            customizationOptionId: optionId
+            customizationOptionId: opt.optionId,
+            isDefault: opt.isDefault
           })),
           skipDuplicates: true
         });
@@ -420,7 +422,7 @@ export class MenuService implements IMenuService {
   /**
    * Get linked customization option IDs for a menu item
    */
-  async getLinkedCustomizationOptions(menuItemId: ID): Promise<number[]> {
+  async getLinkedCustomizationOptions(menuItemId: ID): Promise<{ optionId: number, isDefault: boolean }[]> {
     const numericId = typeof menuItemId === 'string' ? parseInt(menuItemId) : menuItemId;
 
     if (isNaN(numericId)) {
@@ -429,9 +431,9 @@ export class MenuService implements IMenuService {
 
     const links = await this.prisma.menuItemCustomizationOption.findMany({
       where: { menuItemId: numericId },
-      select: { customizationOptionId: true }
+      select: { customizationOptionId: true, isDefault: true }
     });
 
-    return links.map(link => link.customizationOptionId);
+    return links.map(link => ({ optionId: link.customizationOptionId, isDefault: link.isDefault }));
   }
 } 
