@@ -8,7 +8,7 @@ export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement>) => {
+  const scrollToSection = (sectionRef: React.RefObject<HTMLDivElement | null>) => {
     sectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
