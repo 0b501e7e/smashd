@@ -68,6 +68,7 @@ model Order {
   deliveryAddress    String?
   orderCode          String?             @unique
   items              OrderItem[]
+  paymentMethod      PaymentMethod       @default(SUMUP)
   sumupCheckoutId    String? // SumUp checkout reference
   sumupOrderId       String? // If SumUp has a separate order ID
   estimatedReadyTime DateTime? // When business estimates order will be ready
@@ -260,6 +261,12 @@ enum OrderStatus {
 enum FulfillmentMethod {
   PICKUP
   DELIVERY
+}
+
+enum PaymentMethod {
+  SUMUP        // Online payment via SumUp hosted checkout
+  CASH         // Cash payment in store
+  CARD_READER  // Physical card reader in store
 }
 
 model PasswordResetToken {

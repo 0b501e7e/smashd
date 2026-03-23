@@ -8,6 +8,7 @@ import {
   AdminOrderWithDetails,
   OrderAcceptData,
   OrderDeclineData,
+  QuickCreateOrderData,
   CustomizationCategoryWithOptions,
   CreateCustomizationCategoryData,
   CustomizationOptionWithCategory,
@@ -15,7 +16,7 @@ import {
   SumUpSyncResponse,
   ImageUploadResult
 } from '../types/admin.types';
-import { getSumupAccessToken, makeHttpRequest } from './sumupService';
+import { makeHttpRequest } from './sumupService';
 
 /**
  * AdminService - Handles admin-related business logic
@@ -250,6 +251,70 @@ export class AdminService implements IAdminService {
       console.error('AdminService: Error fetching orders for admin:', error);
       throw new Error('Failed to retrieve orders for admin');
     }
+  }
+
+  async createQuickOrder(data: QuickCreateOrderData): Promise<AdminOrderWithDetails> {
+    const { items, paymentMethod, staffUserId } = data;
+
+    if (!items || items.length === 0) {
+      throw new Error('Order must contain at least one item');
+    }
+
+    // Fetch and validate all menu items in one query
+    const menuItemIds = items.map(i => i.menuItemId);
+    const menuItems = await this.prisma.menuItem.findMany({
+      where: { id: { in: menuItemIds } }
+    });
+
+    if (menuItems.length !== menuItemIds.length) {
+      const foundIds = menuItems.map(m => m.id);
+      const missing = menuItemIds.filter(id => !foundIds.includes(id));
+      throw new Error(`Menu item(s) not found: ${missing.join(', ')}`);
+    }
+
+    const unavailable = menuItems.filter(m => !m.isAvailable);
+    if (unavailable.length > 0) {
+      throw new Error(`Item(s) not available: ${unavailable.map(m => m.name).join(', ')}`);
+    }
+
+    const priceMap = new Map(menuItems.map(m => [m.id, m.price]));
+    const round = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
+
+    const total = items.reduce((sum, item) => {
+      const unitPrice = item.unitPrice ?? priceMap.get(item.menuItemId) ?? 0;
+      return sum + unitPrice * item.quantity;
+    }, 0);
+
+    const order = await this.prisma.order.create({
+      data: {
+        userId: staffUserId,
+        total: round(total),
+        status: 'CONFIRMED',
+        paymentMethod,
+        fulfillmentMethod: 'PICKUP',
+        items: {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          create: items.map(item => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: round(item.unitPrice ?? priceMap.get(item.menuItemId) ?? 0),
+            customizations: item.customizations ?? null,
+          })) as any
+        }
+      },
+      include: {
+        items: {
+          include: {
+            menuItem: { select: { name: true, category: true } }
+          }
+        },
+        user: { select: { id: true, name: true, email: true } },
+        driver: { select: { id: true, name: true, email: true, phoneNumber: true } }
+      }
+    });
+
+    console.log(`AdminService: Quick order created (ID: ${order.id}, method: ${paymentMethod}, total: ${order.total})`);
+    return order as AdminOrderWithDetails;
   }
 
   async acceptOrder(acceptData: OrderAcceptData): Promise<Order> {
@@ -671,7 +736,8 @@ export class AdminService implements IAdminService {
   async syncMenuToSumUp(): Promise<SumUpSyncResponse> {
     try {
       // Get SumUp access token
-      const accessToken = await getSumupAccessToken();
+      const accessToken = process.env['SUMUP_API_KEY'];
+      if (!accessToken) throw new Error('SUMUP_API_KEY is not set');
 
       // Fetch all available menu items
       const menuItems = await this.prisma.menuItem.findMany({

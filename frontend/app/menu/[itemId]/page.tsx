@@ -115,9 +115,9 @@ export default function MenuItemDetailPage() {
     if (!item) return;
     const unitPrice = calculateTotalPrice() / quantity;
     const custSelection: CustomizationSelection = {};
+    const selectedByCategory: Record<string, string[]> = {};
 
     for (const [category, options] of Object.entries(customizations)) {
-      const normalizedCategory = category.toLowerCase() as keyof CustomizationSelection;
       const names = options
         .filter(o => selected[category]?.has(o.id))
         .map(o => o.name);
@@ -127,12 +127,13 @@ export default function MenuItemDetailPage() {
         .map(o => o.name);
 
       if (names.length > 0) {
-        (custSelection as any)[normalizedCategory] = names;
+        selectedByCategory[category.toLowerCase()] = names;
       }
       if (removedDefaults.length > 0) {
         custSelection.removed = [...(custSelection.removed ?? []), ...removedDefaults];
       }
     }
+    if (Object.keys(selectedByCategory).length > 0) custSelection.selected = selectedByCategory;
     if (specialRequests.trim()) custSelection.specialRequests = specialRequests.trim();
 
     addToBasket({
@@ -141,7 +142,7 @@ export default function MenuItemDetailPage() {
       quantity,
       unitPrice,
       customizations: Object.keys(custSelection).length > 0 ? custSelection : undefined,
-      imageUrl: item.imageUrl,
+      imageUrl: item.imageUrl ?? undefined,
     });
 
     router.push('/#menu');

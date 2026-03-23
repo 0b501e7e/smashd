@@ -27,6 +27,7 @@ router.patch('/menu/:id/availability', adminController.updateMenuItemAvailabilit
 router.delete('/menu/:id', adminController.deleteMenuItem.bind(adminController));
 
 // Order management
+router.post('/orders/quick-create', adminController.quickCreateOrder.bind(adminController));
 router.get('/orders', adminController.getAdminOrders.bind(adminController));
 router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.bind(adminController));
 router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));

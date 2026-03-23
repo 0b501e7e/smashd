@@ -9,6 +9,7 @@ import {
   AdminMenuItemUpdateData,
   OrderAcceptData,
   OrderDeclineData,
+  QuickCreateOrderData,
   CreateCustomizationCategoryData,
   MenuItemCustomizationLinkData
 } from '../types/admin.types';
@@ -187,6 +188,46 @@ export class AdminController {
 
   /**
    * Get orders for admin dashboard
+   * GET /v1/admin/orders
+   */
+  /**
+   * Create a quick walk-in order (cash or card reader, no SumUp checkout)
+   * POST /v1/admin/orders/quick-create
+   */
+  async quickCreateOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { items, paymentMethod } = req.body;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        sendError(res, 'items must be a non-empty array', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      if (!paymentMethod || !['CASH', 'CARD_READER'].includes(paymentMethod)) {
+        sendError(res, 'paymentMethod must be CASH or CARD_READER', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const data: QuickCreateOrderData = {
+        items,
+        paymentMethod,
+        staffUserId: req.user!.userId,
+      };
+
+      const order = await this.adminService.createQuickOrder(data);
+      sendSuccess(res, order, 'Quick order created', HTTP_STATUS.CREATED);
+    } catch (error) {
+      console.error('AdminController: Error creating quick order:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Get all active orders for admin panel
    * GET /v1/admin/orders
    */
   async getAdminOrders(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {

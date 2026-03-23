@@ -37,6 +37,143 @@ export class OrderService implements IOrderService {
     private analyticsService: IAnalyticsService
   ) { }
 
+  private roundCurrency(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+
+  private sanitizeCustomizations(rawCustomizations: Record<string, any> | undefined): Record<string, any> {
+    if (!rawCustomizations || typeof rawCustomizations !== 'object' || Array.isArray(rawCustomizations)) {
+      return {};
+    }
+
+    const sanitizeStringArray = (value: unknown): string[] => {
+      if (!Array.isArray(value)) return [];
+      return value
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map(entry => entry.trim())
+        .filter(Boolean);
+    };
+
+    const specialRequests = typeof rawCustomizations['specialRequests'] === 'string'
+      ? rawCustomizations['specialRequests'].trim()
+      : '';
+
+    const selectedSource =
+      rawCustomizations['selected'] && typeof rawCustomizations['selected'] === 'object' && !Array.isArray(rawCustomizations['selected'])
+        ? rawCustomizations['selected'] as Record<string, unknown>
+        : {};
+
+    const selected: Record<string, string[]> = {};
+    for (const [key, value] of Object.entries(selectedSource)) {
+      if (key === 'removed' || key === 'specialRequests' || key === 'selected') {
+        continue;
+      }
+
+      const names = sanitizeStringArray(value);
+      if (names.length > 0) {
+        selected[key.toLowerCase()] = names;
+      }
+    }
+
+    const normalized: Record<string, any> = {
+      removed: sanitizeStringArray(rawCustomizations['removed']),
+    };
+
+    if (Object.keys(selected).length > 0) {
+      normalized['selected'] = selected;
+    }
+
+    if (specialRequests) {
+      normalized['specialRequests'] = specialRequests;
+    }
+
+    Object.keys(normalized).forEach((key) => {
+      if (Array.isArray(normalized[key]) && normalized[key].length === 0) {
+        delete normalized[key];
+      }
+    });
+
+    return normalized;
+  }
+
+  private async normalizeOrderItem(item: CreateOrderData['items'][number]) {
+    const menuItem = await this.prisma.menuItem.findUnique({
+      where: { id: item.menuItemId },
+      include: {
+        linkedCustomizationOptions: {
+          include: {
+            customizationOption: {
+              include: { category: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!menuItem) {
+      throw new Error(`Menu item with ID ${item.menuItemId} was not found`);
+    }
+
+    if (!menuItem.isAvailable) {
+      throw new Error(`Menu item "${menuItem.name}" is not available`);
+    }
+
+    const normalizedCustomizations = this.sanitizeCustomizations(item.customizations);
+    const defaultOptionNames = new Set<string>();
+    const linkedOptionLookup = new Map<string, { price: number; isDefault: boolean }>();
+
+    for (const link of menuItem.linkedCustomizationOptions) {
+      const option = link.customizationOption;
+      const categoryKey = option.category.name.toLowerCase();
+
+      linkedOptionLookup.set(`${categoryKey}:${option.name}`, {
+        price: option.price,
+        isDefault: link.isDefault
+      });
+
+      if (link.isDefault) {
+        defaultOptionNames.add(option.name);
+      }
+    }
+
+    const selectedEntries = normalizedCustomizations['selected'] && typeof normalizedCustomizations['selected'] === 'object'
+      ? Object.entries(normalizedCustomizations['selected'] as Record<string, string[]>)
+      : [];
+
+    for (const [categoryKey, selectedNames] of selectedEntries) {
+      for (const selectedName of selectedNames) {
+        const linkedOption = linkedOptionLookup.get(`${categoryKey}:${selectedName}`);
+        if (!linkedOption) {
+          throw new Error(`Customization "${selectedName}" is not available for "${menuItem.name}"`);
+        }
+      }
+    }
+
+    if (Array.isArray(normalizedCustomizations['removed'])) {
+      for (const removedName of normalizedCustomizations['removed']) {
+        if (!defaultOptionNames.has(removedName)) {
+          throw new Error(`Customization "${removedName}" cannot be removed from "${menuItem.name}"`);
+        }
+      }
+    }
+
+    let unitPrice = menuItem.price;
+    for (const [categoryKey, selectedNames] of selectedEntries) {
+      for (const selectedName of selectedNames) {
+        const linkedOption = linkedOptionLookup.get(`${categoryKey}:${selectedName}`);
+        if (linkedOption && !linkedOption.isDefault) {
+          unitPrice += linkedOption.price;
+        }
+      }
+    }
+
+    return {
+      menuItem,
+      normalizedCustomizations,
+      unitPrice: this.roundCurrency(unitPrice)
+    };
+  }
+
   // =====================
   // ORDER CREATION
   // =====================
@@ -45,23 +182,13 @@ export class OrderService implements IOrderService {
     console.log("OrderService: Starting order creation");
 
     try {
-      // Validate all menu items exist and are available
-      for (const item of orderData.items) {
-        const menuItem = await this.prisma.menuItem.findUnique({
-          where: { id: item.menuItemId }
-        });
-
-        if (!menuItem) {
-          throw new Error(`Menu item with ID ${item.menuItemId} was not found`);
-        }
-
-        if (!menuItem.isAvailable) {
-          throw new Error(`Menu item "${menuItem.name}" is not available`);
-        }
-
-        // Use current menu item price, not the one sent from client
-        item.price = menuItem.price;
-      }
+      const normalizedItems = await Promise.all(
+        orderData.items.map(item => this.normalizeOrderItem(item))
+      );
+      const orderTotal = this.roundCurrency(normalizedItems.reduce(
+        (sum, item, index) => sum + (item.unitPrice * orderData.items[index]!.quantity),
+        0
+      ));
 
       const result = await this.prisma.$transaction(async (prisma) => {
         // Create the order with items
@@ -73,17 +200,19 @@ export class OrderService implements IOrderService {
         const newOrder = await prisma.order.create({
           data: {
             userId: orderData.userId || null,
-            total: orderData.total,
+            total: orderTotal,
             status: 'AWAITING_PAYMENT',
             fulfillmentMethod: fulfillmentMethod,
             deliveryAddress: isDelivery ? (orderData.deliveryAddress || null) : null,
             orderCode: isDelivery ? await this.generateUniqueOrderCode(prisma) : null,
             items: {
-              create: orderData.items.map((item) => ({
-                menuItemId: item.menuItemId,
-                quantity: item.quantity,
-                price: item.price,
-                customizations: item.customizations ? JSON.stringify(item.customizations) : null
+              create: normalizedItems.map((item, index) => ({
+                menuItemId: item.menuItem.id,
+                quantity: orderData.items[index]!.quantity,
+                price: item.unitPrice,
+                customizations: Object.keys(item.normalizedCustomizations).length > 0
+                  ? JSON.stringify(item.normalizedCustomizations)
+                  : null
               }))
             }
           },
@@ -448,6 +577,11 @@ export class OrderService implements IOrderService {
             if (status === 'PAID' || status === 'SUCCESSFUL') {
               newStatus = 'PAYMENT_CONFIRMED';
             } else if (status === 'FAILED') {
+              console.warn('OrderService: SumUp reported failed payment:', {
+                orderId,
+                checkoutId: order.sumupCheckoutId,
+                sumupData: sumupStatus
+              });
               newStatus = 'PAYMENT_FAILED';
             }
           } catch (sumupError) {

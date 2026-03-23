@@ -3,7 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.5",
   "scripts": {
-    "start": "APP_VARIANT=development expo start",
+    "start": "APP_VARIANT=development expo start --clear",
     "start:prod": "APP_VARIANT=production expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "APP_VARIANT=development expo run:android",
@@ -38,6 +38,7 @@
     "expo": "~54.0.31",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
+    "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.10",
     "expo-dev-client": "~6.0.20",
     "expo-device": "~8.0.10",

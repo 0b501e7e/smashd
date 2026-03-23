@@ -8,6 +8,7 @@ import StockManagement from './StockManagement';
 import AdminSettings from './Settings';
 import Analytics from './Analytics';
 import CustomizationManagement from './CustomizationManagement';
+import QuickOrder from './QuickOrder';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState('menu');
@@ -19,8 +20,8 @@ export default function AdminDashboardPage() {
         <p className="text-white mb-6">Welcome to the admin area. Manage your restaurant details below.</p>
 
         {/* Tab Navigation */}
-        <div className="mb-6 border-b border-gray-700">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+        <div className="mb-6 border-b border-gray-700 overflow-x-auto scrollbar-hide">
+          <nav className="-mb-px flex space-x-6 min-w-max" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('menu')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
@@ -29,8 +30,15 @@ export default function AdminDashboardPage() {
               Menu Management
             </button>
             <button
+              onClick={() => setActiveTab('quick-order')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                          ${activeTab === 'quick-order' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
+            >
+              Quick Order
+            </button>
+            <button
               onClick={() => setActiveTab('orders')}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm 
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
                           ${activeTab === 'orders' ? 'border-yellow-400 text-yellow-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500'}`}
             >
               Order Management
@@ -67,6 +75,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Content based on active tab */}
+        {activeTab === 'quick-order' && <QuickOrder />}
         {activeTab === 'menu' && <MenuList />}
         {activeTab === 'orders' && <OrderManagement />}
         {activeTab === 'stock' && <StockManagement />}

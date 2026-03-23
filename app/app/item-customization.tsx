@@ -9,7 +9,7 @@ import { menuAPI } from '@/services/api';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_URL } from '@/services/api';
 import { ImageIcon, Plus, Minus, ShoppingCart } from 'lucide-react-native';
-import { AllCustomizations, CustomizationOption } from '@/types';
+import { AllCustomizations, CustomizationCategory, CustomizationOption } from '@/types';
 
 // RNR Components
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,12 @@ export default function ItemCustomization() {
   const [suggestedItems, setSuggestedItems] = useState<any[]>([]);
   const { addItem } = useCart();
   const insets = useSafeAreaInsets();
+  const formatCategoryTitle = (name: string) => {
+    const normalized = name.toLowerCase();
+    if (normalized === 'toppings') return 'Ingredientes';
+    if (normalized === 'sauces') return 'Salsas';
+    return name;
+  };
 
   // Single function to calculate total price
   const getTotalPrice = () => {
@@ -34,7 +40,7 @@ export default function ItemCustomization() {
 
     if (allCustomizations) {
       // Add prices from selected customizations
-      [...allCustomizations.extras, ...allCustomizations.sauces, ...allCustomizations.toppings]
+      allCustomizations.flatMap(category => category.options)
         .filter(option => selectedCustomizations[Number(option.id)] && !option.isDefaultSelected)
         .forEach(option => total += (option.price || 0) * quantity);
     }
@@ -59,7 +65,7 @@ export default function ItemCustomization() {
 
         // Pre-select options marked as default
         const defaults: { [key: number]: boolean } = {};
-        [...customizationsData.extras, ...customizationsData.sauces, ...customizationsData.toppings]
+        customizationsData.flatMap(category => category.options)
           .forEach(option => {
             if (option.isDefaultSelected) defaults[Number(option.id)] = true;
           });
@@ -75,7 +81,7 @@ export default function ItemCustomization() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        setAllCustomizations({ extras: [], sauces: [], toppings: [] });
+        setAllCustomizations([]);
       } finally {
         setLoading(false);
       }
@@ -109,23 +115,19 @@ export default function ItemCustomization() {
         .map(option => option.name);
 
     const customizations: any = {
-      extras: getSelectedNames(allCustomizations.extras),
-      sauces: getSelectedNames(allCustomizations.sauces),
-      toppings: getSelectedNames(allCustomizations.toppings),
-      removed: [
-        ...removedDefaults(allCustomizations.extras),
-        ...removedDefaults(allCustomizations.sauces),
-        ...removedDefaults(allCustomizations.toppings),
-      ],
+      selected: Object.fromEntries(
+        allCustomizations
+          .map(category => [category.key, getSelectedNames(category.options)] as const)
+          .filter(([, names]) => names.length > 0)
+      ),
+      removed: allCustomizations.flatMap(category => removedDefaults(category.options)),
     };
 
     if (specialRequests.trim()) {
       customizations.specialRequests = specialRequests.trim();
     }
 
-    if (!customizations.extras.length) delete customizations.extras;
-    if (!customizations.sauces.length) delete customizations.sauces;
-    if (!customizations.toppings.length) delete customizations.toppings;
+    if (!Object.keys(customizations.selected).length) delete customizations.selected;
     if (!customizations.removed.length) delete customizations.removed;
     if (!customizations.specialRequests) delete customizations.specialRequests;
 
@@ -142,19 +144,19 @@ export default function ItemCustomization() {
   };
 
   // Render customization category
-  const CustomizationCategory = ({ title, options }: { title: string; options: CustomizationOption[] }) => {
-    if (options.length === 0) return null;
+  const CustomizationCategoryCard = ({ category }: { category: CustomizationCategory }) => {
+    if (category.options.length === 0) return null;
 
     return (
       <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
         <CardHeader>
           <Text className="text-lg font-bold" style={{ color: '#FFFFFF' }}>
-            {title}
+            {formatCategoryTitle(category.name)}
           </Text>
         </CardHeader>
         <CardContent className="pt-0">
           <View className="flex-wrap flex-row gap-2">
-            {options.map((option) => {
+            {category.options.map((option) => {
               const optionId = Number(option.id);
               const isSelected = selectedCustomizations[optionId];
 
@@ -254,9 +256,9 @@ export default function ItemCustomization() {
           </Card>
 
           {/* Customizations */}
-          <CustomizationCategory title="Extras" options={allCustomizations.extras} />
-          <CustomizationCategory title="Salsas" options={allCustomizations.sauces} />
-          <CustomizationCategory title="Ingredientes" options={allCustomizations.toppings} />
+          {allCustomizations.map((category) => (
+            <CustomizationCategoryCard key={category.key} category={category} />
+          ))}
 
           {/* Special Requests */}
           <Card className="mb-4" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>

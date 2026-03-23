@@ -130,20 +130,6 @@ const mockSumUpStatusResponse = {
   checkout_reference: 'ORDER-1'
 };
 
-const mockMerchantProfile = {
-  success: true,
-  profile: {
-    merchant_profile: {
-      merchant_code: 'MERCHANT123'
-    },
-    personal_profile: {
-      email: 'merchant@example.com'
-    }
-  },
-  merchant_code: 'MERCHANT123',
-  merchant_email: 'merchant@example.com',
-  message: 'You should set these values in your environment variables'
-};
 
 describe('Payment Integration Tests - TypeScript Backend', () => {
   beforeEach(async () => {
@@ -402,27 +388,13 @@ describe('Payment Integration Tests - TypeScript Backend', () => {
   // =====================
 
   describe('GET /v1/payment/test/merchant-profile', () => {
-    it('should get merchant profile successfully', async () => {
-      mockedSumupService.getSumUpMerchantProfile.mockResolvedValue(mockMerchantProfile);
-
+    it('should return not-supported response for merchant profile', async () => {
       const response = await request(app)
         .get('/v1/payment/test/merchant-profile')
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toEqual(mockMerchantProfile);
-    });
-
-    it('should handle merchant profile errors', async () => {
-      mockedSumupService.getSumUpMerchantProfile.mockRejectedValue(new Error('Unauthorized'));
-
-      const response = await request(app)
-        .get('/v1/payment/test/merchant-profile')
-        .expect(500);
-
-      expect(response.body).toHaveProperty('success', false);
-      expect(response.body).toHaveProperty('error', 'Error retrieving merchant profile');
-      // details masked
+      expect(response.body.data.success).toBe(false);
     });
   });
 

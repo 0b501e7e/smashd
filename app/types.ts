@@ -1,8 +1,16 @@
-export type OrderStatus = 'AWAITING_PAYMENT' | 'PAYMENT_CONFIRMED' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED' | 'PAYMENT_FAILED';
+import type {
+  CustomizationCategoryDTO,
+  CustomizationOptionDTO,
+  CustomizationSelectionDTO,
+  MenuCategoryDTO,
+  OrderStatusDTO
+} from '@shared/contracts';
+
+export type OrderStatus = OrderStatusDTO;
 
 export type UserRole = 'ADMIN' | 'STAFF' | 'DRIVER' | 'CUSTOMER';
 
-export type MenuCategory = 'BURGER' | 'SIDE' | 'DRINK' | 'DESSERT';
+export type MenuCategory = MenuCategoryDTO;
 
 export interface ApiResponse<T = any> {
   data?: T;
@@ -11,31 +19,18 @@ export interface ApiResponse<T = any> {
   success: boolean;
 }
 
-export interface CustomizationOption {
-  id: string | number;
-  name: string;
-  price: number;
-  categoryId?: number;
-  isDefaultSelected?: boolean;
+export interface CustomizationOption extends CustomizationOptionDTO {
   category?: {
     id: number;
     name: string;
   };
 }
 
-export interface CustomizationOptions {
-  extras?: string[];
-  sauces?: string[];
-  toppings?: string[];
-  removed?: string[];
-  specialRequests?: string;
-}
+export interface CustomizationCategory extends CustomizationCategoryDTO<CustomizationOption> {}
 
-export interface AllCustomizations {
-  extras: CustomizationOption[];
-  sauces: CustomizationOption[];
-  toppings: CustomizationOption[];
-}
+export interface CustomizationOptions extends CustomizationSelectionDTO {}
+
+export type AllCustomizations = CustomizationCategory[];
 
 export interface CartItem {
   id: string | number;

@@ -1,36 +1,29 @@
 import { Order, OrderItem, MenuItem } from '@prisma/client';
+import type {
+  CreateOrderItemDTO,
+  FulfillmentMethodDTO,
+  OrderStatusDTO,
+  OrderStatusItemDTO,
+  OrderStatusResponseDTO
+} from '@shared/contracts';
 
 // =====================
 // ORDER STATUS TYPES
 // =====================
 
-export type OrderStatus =
-  | 'AWAITING_PAYMENT'
-  | 'PAYMENT_CONFIRMED'
-  | 'CONFIRMED'
-  | 'PREPARING'
-  | 'READY'
-  | 'OUT_FOR_DELIVERY'
-  | 'DELIVERED'
-  | 'CANCELLED'
-  | 'PAYMENT_FAILED';
+export type OrderStatus = OrderStatusDTO;
 
 // =====================
 // ORDER CREATION TYPES
 // =====================
 
-export interface OrderItemData {
-  menuItemId: number;
-  quantity: number;
-  price: number;
-  customizations?: Record<string, any>;
-}
+export interface OrderItemData extends CreateOrderItemDTO {}
 
 export interface CreateOrderData {
   items: OrderItemData[];
-  total: number;
+  total?: number;
   userId?: number;
-  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  fulfillmentMethod?: FulfillmentMethodDTO;
   deliveryAddress?: string;
 }
 
@@ -49,27 +42,11 @@ export interface OrderWithDetails extends Order {
   })[];
 }
 
-export interface OrderStatusResponse {
-  id: number;
-  status: OrderStatus;
-  readyAt: Date | null;
-  estimatedReadyTime: Date | null;
-  sumupCheckoutId: string | null;
-  total: number;
-  createdAt: Date;
-  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
-  deliveryAddress?: string | null;
+export interface OrderStatusResponse extends Omit<OrderStatusResponseDTO, 'items'> {
   items: OrderItemWithDetails[];
 }
 
-export interface OrderItemWithDetails {
-  id: number;
-  menuItemId: number;
-  quantity: number;
-  price: number;
-  name: string;
-  customizations: Record<string, any>;
-}
+export interface OrderItemWithDetails extends OrderStatusItemDTO {}
 
 // =====================
 // ORDER UPDATE TYPES

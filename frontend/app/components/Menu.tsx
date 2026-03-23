@@ -1,12 +1,10 @@
 'use client'
 
-import { useBasket, MenuItem, BasketItem } from './BasketContext';
+import { MenuItem } from './BasketContext';
 import { motion, useInView } from 'framer-motion';
-import { Plus, ArrowRight } from 'lucide-react';
-import { useState, useRef, useEffect } from 'react';
+import { ArrowRight } from 'lucide-react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,16 +102,57 @@ export function Menu() {
                                     <h3 className="text-2xl md:text-3xl font-bold mb-6 md:mb-8 text-yellow-400 capitalize border-l-4 border-yellow-400 pl-4">
                                         {category.toLowerCase()}
                                     </h3>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                                                    {/* Mobile: horizontal snap carousel (matches app style) */}
+                                    <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 snap-x snap-mandatory">
                                         {(menuItems[category] || []).map((item, itemIndex) => {
-                                            // Get API base URL, remove trailing /v1 or /api suffix
-                                            // Get API base URL, remove trailing /v1 or /api suffix
                                             const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
-                                            // Construct full image URL: Check if absolute, else prepend base URL
                                             const imageSrc = item.imageUrl
                                                 ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
-                                                : '/burger.png'; // Use fallback
-                                            console.log(`Menu Item: Rendering image for ${item.name}: src=${imageSrc}`);
+                                                : '/burger.png';
+                                            return (
+                                                <div
+                                                    key={item.id}
+                                                    className="snap-start flex-shrink-0 w-[75vw] h-36 cursor-pointer"
+                                                    onClick={() => handleCardClick(item)}
+                                                >
+                                                    <Card className="h-full bg-[#111111] border-[#333333] active:scale-[0.98] transition-transform overflow-hidden">
+                                                        <CardContent className="p-3 h-full flex gap-3">
+                                                            <div className="flex-1 flex flex-col justify-between min-w-0">
+                                                                <div>
+                                                                    <CardTitle className="text-base font-bold text-white leading-tight line-clamp-2">
+                                                                        {item.name}
+                                                                    </CardTitle>
+                                                                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>
+                                                                </div>
+                                                                <span className="text-xl font-bold text-yellow-400">{formatCurrency(item.price)}</span>
+                                                            </div>
+                                                            {!imageErrorMap[item.id] && imageSrc && (
+                                                                <div className="w-20 h-20 rounded-lg overflow-hidden bg-[#222222] flex-shrink-0 self-center relative">
+                                                                    <Image
+                                                                        src={imageSrc}
+                                                                        alt={item.name}
+                                                                        fill
+                                                                        style={{ objectFit: 'cover' }}
+                                                                        sizes="80px"
+                                                                        onError={() => handleImageError(item.id)}
+                                                                        priority={itemIndex < 3 && catIndex === 0}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Desktop: grid */}
+                                    <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+                                        {(menuItems[category] || []).map((item, itemIndex) => {
+                                            const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
+                                            const imageSrc = item.imageUrl
+                                                ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
+                                                : '/burger.png';
 
                                             return (
                                                 <motion.div
@@ -136,12 +175,9 @@ export function Menu() {
                                                                         alt={item.name}
                                                                         fill
                                                                         style={{ objectFit: 'cover' }}
-                                                                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, (max-width: 1280px) 30vw, 23vw"
+                                                                        sizes="(max-width: 1024px) 45vw, (max-width: 1280px) 30vw, 23vw"
                                                                         className="transition-transform duration-300 ease-in-out group-hover:scale-105"
-                                                                        onError={() => {
-                                                                            console.error(`Menu Item: Error loading image for ${item.name}: ${imageSrc}`);
-                                                                            handleImageError(item.id);
-                                                                        }}
+                                                                        onError={() => handleImageError(item.id)}
                                                                         priority={itemIndex < 4 && catIndex === 0}
                                                                     />
                                                                 )}

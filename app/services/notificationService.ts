@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import api from './api';
+import type { EventSubscription } from 'expo-modules-core';
 
 // Configure notification behavior
 Notifications.setNotificationHandler({
@@ -17,8 +18,8 @@ Notifications.setNotificationHandler({
 
 class NotificationService {
   private pushToken: string | null = null;
-  private notificationListener: any = null;
-  private responseListener: any = null;
+  private notificationListener: EventSubscription | null = null;
+  private responseListener: EventSubscription | null = null;
 
   /**
    * Initialize the notification service
@@ -228,10 +229,12 @@ class NotificationService {
    */
   cleanup() {
     if (this.notificationListener) {
-      Notifications.removeNotificationSubscription(this.notificationListener);
+      this.notificationListener.remove();
+      this.notificationListener = null;
     }
     if (this.responseListener) {
-      Notifications.removeNotificationSubscription(this.responseListener);
+      this.responseListener.remove();
+      this.responseListener = null;
     }
   }
 }

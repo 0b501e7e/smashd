@@ -481,9 +481,10 @@ export const validateOrderId = [
  */
 export const validateCreateOrder = [
   body('items').isArray().withMessage('Items must be an array'),
+  body('items').notEmpty().withMessage('At least one item is required'),
   body('items.*.menuItemId').isInt().withMessage('Invalid menu item ID'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
-  body('total').isFloat({ min: 0 }).withMessage('Total must be a positive number'),
+  body('total').optional().isFloat({ min: 0 }).withMessage('Total must be a positive number'),
   body('fulfillmentMethod').optional().isIn(['PICKUP', 'DELIVERY']).withMessage('Invalid fulfillment method'),
   body('deliveryAddress').if(body('fulfillmentMethod').equals('DELIVERY')).isString().isLength({ min: 5 }).withMessage('Delivery address is required for delivery orders'),
   handleValidationErrors

@@ -18,6 +18,9 @@ import { Text } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import { buildCartItemKey } from '@/lib/cart';
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
+import { hasConfirmedPayment } from '@/lib/payment';
 
 export default function CheckoutScreen() {
   const { orderId: urlOrderId, returnToApp } = useLocalSearchParams();
@@ -37,7 +40,7 @@ export default function CheckoutScreen() {
     try {
       console.log('Checking status for order:', orderIdToCheck);
       const orderStatus = await sumupService.getPaymentStatus(orderIdToCheck);
-      return orderStatus?.status === 'PAID';
+      return hasConfirmedPayment(orderStatus?.status);
     } catch (error) {
       console.error('Error checking order status:', error);
       return false;
@@ -170,7 +173,6 @@ export default function CheckoutScreen() {
       const orderItems = items.map(item => ({
         menuItemId: typeof item.id === 'string' ? parseInt(item.id) : item.id,
         quantity: item.quantity,
-        price: item.price,
         customizations: item.customizations || {}
       }));
 
@@ -179,7 +181,6 @@ export default function CheckoutScreen() {
 
       const response = await orderAPI.createOrder({
         items: orderItems,
-        total: total,
         fulfillmentMethod,
         ...(fulfillmentMethod === 'DELIVERY' && deliveryAddress ? { deliveryAddress } : {})
       });
@@ -195,7 +196,6 @@ export default function CheckoutScreen() {
           params: { orderId: createdOrderId.toString() }
         });
         
-        clearCart();
       } else {
         console.error('[CheckoutScreen] Invalid response from orderAPI.createOrder:', response);
         throw new Error('Respuesta inválida del servidor');
@@ -233,7 +233,7 @@ export default function CheckoutScreen() {
 
   const renderItems = () => {
     return items.map((item, index) => {
-      const key = `${item.id}-${index}-${JSON.stringify(item.customizations)}`;
+      const key = buildCartItemKey(item.id, item.customizations);
       
       return (
         <Card key={key} className="mb-3" style={{ backgroundColor: '#111111', borderColor: '#333333' }}>
@@ -246,32 +246,14 @@ export default function CheckoutScreen() {
                 
                 {item.customizations && (
                   <View className="mt-2">
-                    {item.customizations.extras && item.customizations.extras.length > 0 && (
-                      <View className="flex-row items-center mb-1">
+                    {getSelectedCustomizationEntries(item.customizations).map(({ key, label, values }) => (
+                      <View key={key} className="flex-row items-center mb-1">
                         <Plus size={12} color="#FAB10A" className="mr-1" />
                         <Text className="text-xs" style={{ color: '#CCCCCC' }}>
-                          Extras: {item.customizations.extras.join(', ')}
+                          {label}: {values.join(', ')}
                         </Text>
                       </View>
-                    )}
-                    
-                    {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                      <View className="flex-row items-center mb-1">
-                        <Plus size={12} color="#FAB10A" className="mr-1" />
-                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
-                          Salsas: {item.customizations.sauces.join(', ')}
-                        </Text>
-                      </View>
-                    )}
-                    
-                    {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                      <View className="flex-row items-center mb-1">
-                        <Plus size={12} color="#FAB10A" className="mr-1" />
-                        <Text className="text-xs" style={{ color: '#CCCCCC' }}>
-                          Ingredientes: {item.customizations.toppings.join(', ')}
-                        </Text>
-                      </View>
-                    )}
+                    ))}
 
                     {item.customizations.removed && item.customizations.removed.length > 0 && (
                       <View className="flex-row items-center mb-1">

@@ -1,11 +1,10 @@
 import { createContext, useContext, useState } from 'react';
 import api from '@/services/api';
 import { CartItem, Order } from '@/types';
+import { buildCartItemKey, normalizeCustomizationOptions } from '@/lib/cart';
 
 type CustomizationOptions = {
-  extras?: string[];
-  sauces?: string[];
-  toppings?: string[];
+  selected?: Record<string, string[]>;
   removed?: string[];
   specialRequests?: string;
 };
@@ -35,10 +34,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const itemQuantity = newItem.quantity || 1;
 
     setItems(currentItems => {
-      // Only consider it the same item if the ID and customizations match
+      const normalizedCustomizations = normalizeCustomizationOptions(newItem.customizations);
+      const itemKey = buildCartItemKey(newItem.id, normalizedCustomizations);
       const existingItemIndex = currentItems.findIndex(item =>
-        String(item.id) === String(newItem.id) &&
-        JSON.stringify(item.customizations) === JSON.stringify(newItem.customizations)
+        buildCartItemKey(item.id, item.customizations) === itemKey
       );
 
       if (existingItemIndex !== -1) {
@@ -49,27 +48,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      return [...currentItems, { ...newItem, quantity: itemQuantity }];
+      return [...currentItems, { ...newItem, customizations: normalizedCustomizations, quantity: itemQuantity }];
     });
   };
 
   const removeItem = (id: string | number, customizations?: CustomizationOptions) => {
+    const itemKey = buildCartItemKey(id, customizations);
     setItems(currentItems => currentItems.filter(item =>
-      !(String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+      buildCartItemKey(item.id, item.customizations) !== itemKey
     ));
   };
 
   const updateQuantity = (id: string | number, quantity: number, customizations?: CustomizationOptions) => {
+    const itemKey = buildCartItemKey(id, customizations);
     setItems(currentItems => {
       if (quantity <= 0) {
-        // Remove item when quantity reaches 0 or below
         return currentItems.filter(item =>
-          !(String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+          buildCartItemKey(item.id, item.customizations) !== itemKey
         );
       }
 
       return currentItems.map(item =>
-        (String(item.id) === String(id) && JSON.stringify(item.customizations) === JSON.stringify(customizations))
+        buildCartItemKey(item.id, item.customizations) === itemKey
           ? { ...item, quantity }
           : item
       );

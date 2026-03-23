@@ -4,6 +4,7 @@ import {
   AdminOrderWithDetails,
   OrderAcceptData,
   OrderDeclineData,
+  QuickCreateOrderData,
   CustomizationCategoryWithOptions,
   CreateCustomizationCategoryData,
   CustomizationOptionWithCategory,
@@ -73,6 +74,7 @@ export interface IAdminService {
    * Get orders for admin dashboard
    * @returns List of orders with details
    */
+  createQuickOrder(data: QuickCreateOrderData): Promise<AdminOrderWithDetails>;
   getAdminOrders(): Promise<AdminOrderWithDetails[]>;
 
   /**

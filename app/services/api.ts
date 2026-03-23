@@ -2,6 +2,12 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import type {
+  CreateOrderRequestDTO,
+  CustomizationCategoryDTO,
+  CustomizationOptionDTO,
+  MenuItemDTO
+} from '@shared/contracts';
 console.log("🚦 API BASE URL at runtime:", Constants?.expoConfig?.extra?.EXPO_PUBLIC_API_URL);
 
 // Get the host from Expo when running in development
@@ -233,18 +239,16 @@ export const authAPI = {
 };
 
 // Define the structure for all customizations, mirroring the frontend type
-type CustomizationOption = {
-  id: string | number; // Support both string and number IDs for flexibility
-  name: string;
-  price: number;
-  isDefaultSelected?: boolean;
+type CustomizationOption = CustomizationOptionDTO;
+
+type CustomizationCategory = {
+  id: CustomizationCategoryDTO['id'];
+  name: CustomizationCategoryDTO['name'];
+  key: CustomizationCategoryDTO['key'];
+  options: CustomizationOption[];
 };
 
-type AllCustomizations = {
-  extras: CustomizationOption[];
-  sauces: CustomizationOption[];
-  toppings: CustomizationOption[];
-};
+type AllCustomizations = CustomizationCategory[];
 
 export const menuAPI = {
   getMenuItems: async () => {
@@ -273,7 +277,7 @@ export const menuAPI = {
 
   getMenuItemById: async (id: number) => {
     const response = await api.get(`/v1/menu/${id}`);
-    return response.data?.data;
+    return response.data?.data as MenuItemDTO;
   },
 
   // New function to fetch customizations for a menu item
@@ -288,24 +292,21 @@ export const menuAPI = {
 
       if (!customizationsData) {
         console.warn('⚠️ No customizations data received');
-        return { extras: [], sauces: [], toppings: [] };
+        return [];
       }
 
-      // Support both legacy fixed categories and dynamic grouping
-      const result: AllCustomizations = {
-        extras: customizationsData.Extras || customizationsData.extras || [],
-        sauces: customizationsData.Sauces || customizationsData.sauces || [],
-        toppings: customizationsData.Toppings || customizationsData.toppings || []
-      };
-
-      // If we have other categories, we could potentially handle them here
-      // but the mobile app UI expects extras, sauces, toppings specifically.
+      const result: AllCustomizations = Object.entries(customizationsData).map(([name, options]: [string, any], index) => ({
+        id: options[0]?.categoryId ?? index + 1,
+        name,
+        key: name.toLowerCase(),
+        options: options || []
+      }));
 
       console.log('🎯 Transformed customizations:', JSON.stringify(result, null, 2));
       return result;
     } catch (error: any) {
       console.error(`❌ Error fetching customizations for item ${id}:`, error);
-      return { extras: [], sauces: [], toppings: [] };
+      return [];
     }
   },
 
@@ -314,47 +315,22 @@ export const menuAPI = {
     const response = await api.get('/v1/menu/customizations');
     const categories = response.data?.data || response.data || [];
 
-    // Transform backend categories into expected format
-    const customizations: AllCustomizations = {
-      extras: [],
-      sauces: [],
-      toppings: []
-    };
-
-    categories.forEach((category: any) => {
-      const categoryName = category.name.toLowerCase();
-      if (categoryName === 'extras') {
-        customizations.extras = category.options.map((option: any) => ({
-          id: option.id.toString(),
-          name: option.name,
-          price: option.price || 0
-        }));
-      } else if (categoryName === 'sauces') {
-        customizations.sauces = category.options.map((option: any) => ({
-          id: option.id.toString(),
-          name: option.name,
-          price: option.price || 0
-        }));
-      } else if (categoryName === 'toppings') {
-        customizations.toppings = category.options.map((option: any) => ({
-          id: option.id.toString(),
-          name: option.name,
-          price: option.price || 0
-        }));
-      }
-    });
-
-    return customizations;
+    return categories.map((category: any) => ({
+      id: category.id,
+      name: category.name,
+      key: category.name.toLowerCase(),
+      options: (category.options || []).map((option: any) => ({
+        id: option.id.toString(),
+        name: option.name,
+        price: option.price || 0,
+        isDefaultSelected: option.isDefaultSelected
+      }))
+    }));
   },
 };
 
 export const orderAPI = {
-  createOrder: async (orderData: {
-    items: Array<{ menuItemId: number; quantity: number; price: number; customizations?: any }>;
-    total: number;
-    fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
-    deliveryAddress?: string;
-  }) => {
+  createOrder: async (orderData: CreateOrderRequestDTO) => {
     const response = await api.post('/v1/orders', orderData);
     return response.data?.data;
   },
@@ -450,7 +426,7 @@ export const paymentAPI = {
         Object.assign(payload, { redirectUrl });
       }
       const response = await api.post('/v1/payment/initiate-checkout', payload);
-      return response.data;
+      return response.data?.data ?? response.data;
     } catch (error: any) {
       console.error('Error initiating checkout:', error);
 
@@ -466,6 +442,11 @@ export const paymentAPI = {
 
   getOrderStatus: async (orderId: number) => {
     return orderAPI.getOrderStatus(orderId);
+  },
+
+  getCheckoutStatus: async (checkoutId: string) => {
+    const response = await api.get(`/v1/payment/checkouts/${checkoutId}/status`);
+    return response.data?.data || response.data;
   }
 };
 

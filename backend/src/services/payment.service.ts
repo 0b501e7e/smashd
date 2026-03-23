@@ -4,7 +4,7 @@ import {
   createSumUpCheckout,
   getSumUpCheckoutStatus,
   testSumUpConnection,
-  getSumUpMerchantProfile
+  SumUpApiError
 } from './sumupService';
 
 export class PaymentService implements IPaymentService {
@@ -58,6 +58,7 @@ export class PaymentService implements IPaymentService {
 
     // Check if this order already has a SumUp checkout ID
     if (order.sumupCheckoutId) {
+      console.log(`PaymentService: Reusing existing SumUp checkout ${order.sumupCheckoutId} for order ${order.id}`);
       return {
         orderId: order.id,
         checkoutId: order.sumupCheckoutId,
@@ -66,24 +67,37 @@ export class PaymentService implements IPaymentService {
     }
 
     // Check if SumUp credentials are configured
-    if (!process.env.SUMUP_CLIENT_ID ||
-      !process.env.SUMUP_CLIENT_SECRET ||
-      !process.env['SUMUP_MERCHANT_EMAIL']) {
+    if (!process.env['SUMUP_API_KEY']) {
       throw new Error('SumUp credentials not configured');
     }
 
     // Create SumUp checkout using imported utility function
-    const checkoutResponse = await createSumUpCheckout(
-      order.id,
-      order.total,
-      `Order #${order.id}`
-    );
+    let checkoutResponse;
+    try {
+      checkoutResponse = await createSumUpCheckout(
+        order.id,
+        order.total,
+        `Order #${order.id}`
+      );
+    } catch (error) {
+      if (error instanceof SumUpApiError) {
+        console.error('PaymentService: SumUp checkout creation failed:', {
+          orderId: order.id,
+          amount: order.total,
+          statusCode: error.statusCode,
+          responseData: error.responseData
+        });
+      }
+      throw error;
+    }
 
     // Update the order with the SumUp checkout ID
     const updatedOrder = await this.prisma.order.update({
       where: { id: order.id },
       data: { sumupCheckoutId: checkoutResponse.id }
     });
+
+    console.log(`PaymentService: Stored SumUp checkout ${checkoutResponse.id} for order ${updatedOrder.id}`);
 
     return {
       orderId: updatedOrder.id,
@@ -104,6 +118,25 @@ export class PaymentService implements IPaymentService {
 
     // Query SumUp API using imported utility function
     const sumupStatus = await getSumUpCheckoutStatus(checkoutId);
+    console.log('PaymentService: Retrieved SumUp checkout status:', {
+      orderId: order.id,
+      checkoutId,
+      status: sumupStatus.status,
+      amount: sumupStatus.amount
+    });
+
+    const normalizedStatus = typeof sumupStatus?.status === 'string'
+      ? sumupStatus.status.toUpperCase()
+      : 'UNKNOWN';
+
+    if (normalizedStatus !== 'PAID' && normalizedStatus !== 'SUCCESSFUL' && normalizedStatus !== 'PENDING') {
+      console.warn('PaymentService: SumUp checkout returned non-success status:', {
+        orderId: order.id,
+        checkoutId,
+        status: sumupStatus?.status,
+        sumupData: sumupStatus
+      });
+    }
 
 
 
@@ -141,8 +174,7 @@ export class PaymentService implements IPaymentService {
   }
 
   async getMerchantProfile(): Promise<any> {
-    // Use imported utility function
-    return await getSumUpMerchantProfile();
+    return { success: false, message: 'Merchant profile lookup not supported with API key auth. Check your SumUp dashboard.' };
   }
 
   async checkOrderWithSumUp(orderId: number): Promise<{ order: any; sumup_status?: any; sumup_error?: string }> {
