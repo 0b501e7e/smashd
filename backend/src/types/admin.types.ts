@@ -1,5 +1,5 @@
 import { Order, CustomizationCategory, CustomizationOption } from '@prisma/client';
-import type { PaymentMethodDTO } from '@shared/contracts';
+import type { PaymentMethod } from '@/types/order.types';
 
 // =====================
 // ADMIN MENU MANAGEMENT
@@ -44,7 +44,7 @@ export interface QuickCreateOrderItem {
 
 export interface QuickCreateOrderData {
   items: QuickCreateOrderItem[];
-  paymentMethod: Exclude<PaymentMethodDTO, 'SUMUP'>;
+  paymentMethod: Exclude<PaymentMethod, 'SUMUP'>;
   staffUserId: number;
 }
 

@@ -1,29 +1,46 @@
 import { Order, OrderItem, MenuItem } from '@prisma/client';
-import type {
-  CreateOrderItemDTO,
-  FulfillmentMethodDTO,
-  OrderStatusDTO,
-  OrderStatusItemDTO,
-  OrderStatusResponseDTO
-} from '@shared/contracts';
 
 // =====================
 // ORDER STATUS TYPES
 // =====================
 
-export type OrderStatus = OrderStatusDTO;
+export type OrderStatus =
+  | 'AWAITING_PAYMENT'
+  | 'PAYMENT_CONFIRMED'
+  | 'CONFIRMED'
+  | 'PREPARING'
+  | 'READY'
+  | 'OUT_FOR_DELIVERY'
+  | 'DELIVERED'
+  | 'CANCELLED'
+  | 'PAYMENT_FAILED';
+
+export type FulfillmentMethod = 'PICKUP' | 'DELIVERY';
+
+export type PaymentMethod = 'SUMUP' | 'CASH' | 'CARD_READER';
 
 // =====================
 // ORDER CREATION TYPES
 // =====================
 
-export interface OrderItemData extends CreateOrderItemDTO {}
+export interface CustomizationSelection {
+  selected?: Record<string, string[]>;
+  removed?: string[];
+  specialRequests?: string;
+}
+
+export interface OrderItemData {
+  menuItemId: number;
+  quantity: number;
+  price?: number;
+  customizations?: CustomizationSelection;
+}
 
 export interface CreateOrderData {
   items: OrderItemData[];
   total?: number;
   userId?: number;
-  fulfillmentMethod?: FulfillmentMethodDTO;
+  fulfillmentMethod?: FulfillmentMethod;
   deliveryAddress?: string;
 }
 
@@ -42,11 +59,28 @@ export interface OrderWithDetails extends Order {
   })[];
 }
 
-export interface OrderStatusResponse extends Omit<OrderStatusResponseDTO, 'items'> {
-  items: OrderItemWithDetails[];
+export interface OrderItemWithDetails {
+  id: number;
+  menuItemId: number;
+  quantity: number;
+  price: number;
+  name: string;
+  customizations: CustomizationSelection;
 }
 
-export interface OrderItemWithDetails extends OrderStatusItemDTO {}
+export interface OrderStatusResponse {
+  id: number;
+  status: OrderStatus;
+  readyAt: Date | null;
+  estimatedReadyTime: Date | null;
+  sumupCheckoutId: string | null;
+  total: number;
+  createdAt: Date;
+  fulfillmentMethod?: FulfillmentMethod;
+  paymentMethod?: PaymentMethod;
+  deliveryAddress?: string | null;
+  items: OrderItemWithDetails[];
+}
 
 // =====================
 // ORDER UPDATE TYPES
