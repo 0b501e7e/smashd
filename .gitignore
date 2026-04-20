@@ -28,7 +28,6 @@ frontend/coverage
 frontend/public/sw.js
 frontend/public/workbox-*.js
 frontend/public/workbox-*.map
-frontend/package-lock.json
 frontend/.env
 
 backend/node_modules

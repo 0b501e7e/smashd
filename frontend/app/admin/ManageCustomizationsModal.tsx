@@ -47,7 +47,7 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
   onClose,
 }) => {
   const [allOptions, setAllOptions] = useState<CustomizationOptionWithCategory[]>([]);
-  const [linkedOptionIds, setLinkedOptionIds] = useState<Set<number>>(new Set());
+  const [linkedOptions, setLinkedOptions] = useState<Map<number, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,18 +65,24 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
     }
   }, []);
 
-  // Fetch IDs of options currently linked to the menu item
-  const fetchLinkedOptionIds = useCallback(async (menuItemId: number): Promise<Set<number>> => {
+  // Fetch options currently linked to the menu item, including their isDefault status
+  const fetchLinkedOptions = useCallback(async (menuItemId: number): Promise<Map<number, boolean>> => {
     try {
       const response = await api.get(`/admin/customization-options/${menuItemId}`);
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || result.message || 'Failed to fetch linked customization options');
-      // Expecting result.data to be { optionIds: number[] }
-      return new Set(result.data?.optionIds || []);
+
+      const newMap = new Map<number, boolean>();
+      if (result.data?.options) {
+        result.data.options.forEach((opt: { optionId: number, isDefault: boolean }) => {
+          newMap.set(opt.optionId, opt.isDefault);
+        });
+      }
+      return newMap;
     } catch (err) {
       console.error("Fetch Linked Options Error:", err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred while fetching linked options');
-      return new Set<number>(); // Return empty set on error
+      return new Map<number, boolean>(); // Return empty map on error
     }
   }, []);
 
@@ -86,29 +92,39 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
       setError(null); // Clear previous errors
       Promise.all([
         fetchAllCustomizationOptions(),
-        fetchLinkedOptionIds(item.id).then(ids => {
-          setLinkedOptionIds(new Set(ids));
+        fetchLinkedOptions(item.id).then(map => {
+          setLinkedOptions(map);
         })
       ]).finally(() => setIsLoading(false));
     } else {
       // Reset state when modal is closed or no item
       setAllOptions([]);
-      setLinkedOptionIds(new Set());
+      setLinkedOptions(new Map());
       setError(null);
       setIsLoading(false);
       setIsSaving(false);
     }
-  }, [isOpen, item, fetchAllCustomizationOptions, fetchLinkedOptionIds]);
+  }, [isOpen, item, fetchAllCustomizationOptions, fetchLinkedOptions]);
 
   const handleOptionToggle = (optionId: number) => {
-    setLinkedOptionIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(optionId)) {
-        newSet.delete(optionId);
+    setLinkedOptions(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(optionId)) {
+        newMap.delete(optionId);
       } else {
-        newSet.add(optionId);
+        newMap.set(optionId, false); // Default to not included by default when linked
       }
-      return newSet;
+      return newMap;
+    });
+  };
+
+  const handleDefaultToggle = (optionId: number) => {
+    setLinkedOptions(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(optionId)) {
+        newMap.set(optionId, !newMap.get(optionId));
+      }
+      return newMap;
     });
   };
 
@@ -117,7 +133,12 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
     setIsSaving(true);
     setError(null);
     try {
-      const response = await api.post(`/admin/customization-options/${item.id}`, { optionIds: Array.from(linkedOptionIds) });
+      const optionsArray = Array.from(linkedOptions.entries()).map(([optionId, isDefault]) => ({
+        optionId,
+        isDefault
+      }));
+
+      const response = await api.post(`/admin/customization-options/${item.id}`, { options: optionsArray });
 
       const result = await response.json();
 
@@ -190,19 +211,34 @@ const ManageCustomizationsModal: React.FC<ManageCustomizationsModalProps> = ({
                   </h4>
                   <div className="space-y-2">
                     {optionsInCategory.map((option) => (
-                      <div key={option.id} className="flex items-center space-x-3 p-2.5 rounded-md hover:bg-gray-800/60 transition-colors duration-150">
-                        <Checkbox
-                          id={`option-${option.id}`}
-                          checked={linkedOptionIds.has(option.id)}
-                          onCheckedChange={() => handleOptionToggle(option.id)}
-                          className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black h-5 w-5"
-                        />
-                        <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer text-gray-100 text-sm">
-                          {option.name}
-                          {option.price > 0 && (
-                            <span className="text-xs text-gray-400 ml-2">(+€{option.price.toFixed(2)})</span>
-                          )}
-                        </Label>
+                      <div key={option.id} className="flex flex-col space-y-2 p-2.5 rounded-md hover:bg-gray-800/60 transition-colors duration-150">
+                        <div className="flex items-center space-x-3">
+                          <Checkbox
+                            id={`option-${option.id}`}
+                            checked={linkedOptions.has(option.id)}
+                            onCheckedChange={() => handleOptionToggle(option.id)}
+                            className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black h-5 w-5"
+                          />
+                          <Label htmlFor={`option-${option.id}`} className="flex-1 cursor-pointer text-gray-100 text-sm">
+                            {option.name}
+                            {option.price > 0 && (
+                              <span className="text-xs text-gray-400 ml-2">(+€{option.price.toFixed(2)})</span>
+                            )}
+                          </Label>
+                        </div>
+                        {linkedOptions.has(option.id) && (
+                          <div className="flex items-center pl-8 space-x-2">
+                            <Checkbox
+                              id={`default-${option.id}`}
+                              checked={linkedOptions.get(option.id) || false}
+                              onCheckedChange={() => handleDefaultToggle(option.id)}
+                              className="border-green-400 data-[state=checked]:bg-green-400 data-[state=checked]:text-black h-4 w-4"
+                            />
+                            <Label htmlFor={`default-${option.id}`} className="cursor-pointer text-gray-300 text-xs">
+                              Incluido por defecto
+                            </Label>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

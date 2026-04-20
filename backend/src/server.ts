@@ -105,8 +105,10 @@ app.use('/v1/analytics', analyticsRoutes);
 app.use('/v1/beta', betaRoutes);
 app.use('/v1/cron', cronRoutes);
 
-// Test routes for validation and authentication middleware
-app.use('/v1/test', testRoutes);
+// Test routes - development only
+if (APP_CONFIG.NODE_ENV !== 'production') {
+  app.use('/v1/test', testRoutes);
+}
 
 // Handle 404 for unmatched routes
 app.use(handleNotFound);
@@ -120,7 +122,6 @@ const startServer = (): void => {
     console.log(`🚀 TypeScript server running on port ${APP_CONFIG.PORT}`);
     console.log(`🌍 Environment: ${APP_CONFIG.NODE_ENV}`);
     console.log(`📝 Health check: http://localhost:${APP_CONFIG.PORT}/health`);
-    console.log(`🧪 Test routes: http://localhost:${APP_CONFIG.PORT}/v1/test/status`);
     console.log(`💾 Database: Connected via Service Container`);
 
     // Initialize loyalty cron jobs - MOVED TO EXTERNAL CRON TRIGGER

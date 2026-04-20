@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
+import { extractCheckoutUrl, extractOrderIdFromOrderResponse, PENDING_ORDER_ID_KEY } from '@/lib/payment';
 
 export function Checkout() {
-  const { basket, clearBasket, getTotalPrice } = useBasket();
+  const { basket, getTotalPrice } = useBasket();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -21,15 +23,13 @@ export function Checkout() {
     setIsProcessing(true);
     setError(null);
     try {
-      // Step 1: Create the order with detailed items
+      // Step 1: Create the order. The backend owns pricing and total calculation.
       const orderPayload = {
         items: basket.map(item => ({
           menuItemId: item.menuItemId,
           quantity: item.quantity,
-          price: item.unitPrice,
           customizations: item.customizations || {}
         })),
-        total: total
       };
 
       const orderResponse = await api.post('/orders', orderPayload);
@@ -43,7 +43,7 @@ export function Checkout() {
       console.log('Order creation response:', orderData);
 
       // Handle new API response structure
-      const createdOrderId = orderData.data?.order?.id || orderData.order?.id || orderData.id;
+      const createdOrderId = extractOrderIdFromOrderResponse(orderData);
 
       if (!createdOrderId) {
         console.error('Failed to extract order ID from response:', orderData);
@@ -51,7 +51,7 @@ export function Checkout() {
       }
 
       // Step 1.5: Store orderId in sessionStorage BEFORE redirecting to SumUp
-      sessionStorage.setItem('pendingOrderId', createdOrderId.toString());
+      sessionStorage.setItem(PENDING_ORDER_ID_KEY, createdOrderId.toString());
       console.log(`Stored pendingOrderId: ${createdOrderId} in sessionStorage`);
 
       // Step 2: Initiate SumUp checkout - FIXED ROUTE
@@ -65,7 +65,7 @@ export function Checkout() {
       const checkoutData = await initiateCheckoutResponse.json();
 
       // Handle both old and new response formats
-      const sumupCheckoutUrl = checkoutData.checkoutUrl || checkoutData.data?.checkoutUrl;
+      const sumupCheckoutUrl = extractCheckoutUrl(checkoutData);
 
       if (!sumupCheckoutUrl) {
         throw new Error('SumUp checkout URL not received from backend.');
@@ -74,11 +74,6 @@ export function Checkout() {
       // Step 3: Redirect directly to SumUp's hosted payment page
       console.log(`Redirecting to SumUp hosted page: ${sumupCheckoutUrl}`);
       window.location.href = sumupCheckoutUrl; // Use window.location.href for external redirect
-
-      // Clear the basket only after successful initiation
-      // Note: Basket clearing might happen before payment confirmation with this flow.
-      // Consider moving clearBasket() to the order confirmation page upon successful verification.
-      clearBasket();
 
     } catch (err) {
       console.error('Error placing order:', err);
@@ -94,8 +89,7 @@ export function Checkout() {
       return null;
     }
 
-    const { extras = [], sauces = [], toppings = [] } = item.customizations;
-    const allCustomizations = [...extras, ...sauces, ...toppings];
+    const allCustomizations = getSelectedCustomizationEntries(item.customizations).flatMap(({ values }) => values);
 
     if (allCustomizations.length === 0) return null;
 

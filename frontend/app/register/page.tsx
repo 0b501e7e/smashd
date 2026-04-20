@@ -11,6 +11,10 @@ export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [address, setAddress] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -18,8 +22,21 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
+    if (!acceptedTerms) {
+      setError('Debes aceptar los términos y condiciones.');
+      return;
+    }
+
     try {
-      const response = await api.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', {
+        name,
+        email,
+        password,
+        dateOfBirth,
+        address,
+        phoneNumber,
+        acceptedTerms,
+      });
 
       const data = await response.json();
 
@@ -72,6 +89,47 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
                 />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <label className="text-sm text-gray-400">Fecha de nacimiento</label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Input
+                  id="address"
+                  placeholder="Dirección"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <div className="flex flex-col space-y-1.5">
+                <Input
+                  id="phoneNumber"
+                  placeholder="Número de teléfono (ej: +34612345678)"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-400"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  id="acceptedTerms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="w-4 h-4 accent-yellow-400"
+                />
+                <label htmlFor="acceptedTerms" className="text-sm text-gray-400">
+                  Acepto los términos y condiciones
+                </label>
               </div>
               {error && <p className="text-red-500">{error}</p>}
             </div>

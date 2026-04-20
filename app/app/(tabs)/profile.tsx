@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
 
 interface OrderItem {
   id: number;
@@ -19,7 +20,11 @@ interface OrderItem {
   menuItem?: {
     name: string;
   };
-  customizations?: string;
+  customizations?: {
+    selected?: Record<string, string[]>;
+    removed?: string[];
+    specialRequests?: string;
+  };
 }
 
 interface Order {
@@ -149,9 +154,23 @@ export default function ProfileScreen() {
         Precio: €{(item.price * item.quantity).toFixed(2)}
       </Text>
       {item.customizations && (
-        <Text className="text-xs mt-1 italic" style={{ color: '#AAAAAA' }}>
-          Personalizaciones: {typeof item.customizations === 'string' ? item.customizations : JSON.stringify(item.customizations)}
-        </Text>
+        <View className="mt-1">
+          {getSelectedCustomizationEntries(item.customizations).map(({ key, label, values }) => (
+            <Text key={key} className="text-xs italic" style={{ color: '#AAAAAA' }}>
+              {label}: {values.join(', ')}
+            </Text>
+          ))}
+          {item.customizations.removed && item.customizations.removed.length > 0 && (
+            <Text className="text-xs italic" style={{ color: '#AAAAAA' }}>
+              Sin: {item.customizations.removed.join(', ')}
+            </Text>
+          )}
+          {item.customizations.specialRequests && (
+            <Text className="text-xs italic" style={{ color: '#AAAAAA' }}>
+              Peticiones: {item.customizations.specialRequests}
+            </Text>
+          )}
+        </View>
       )}
     </View>
   );

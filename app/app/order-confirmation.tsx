@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
 
 type OrderStatus = 'PENDING' | 'PAID' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED' | 'CONFIRMED' | 'OUT_FOR_DELIVERY' | 'DELIVERED';
 
@@ -345,14 +346,28 @@ export default function OrderConfirmationScreen() {
                         
                         {item.customizations && Object.keys(item.customizations).length > 0 && (
                           <View className="mt-2">
-                            {Object.entries(item.customizations).map(([key, value]) => (
+                            {getSelectedCustomizationEntries(item.customizations).map(({ key, label, values }) => (
                               <View key={key} className="flex-row items-center mb-1">
                                 <Plus size={12} color="#FAB10A" />
                                 <Text className="text-xs ml-1" style={{ color: '#CCCCCC' }}>
-                                  {key}: {Array.isArray(value) ? value.join(', ') : String(value)}
+                                  {label}: {values.join(', ')}
                                 </Text>
                               </View>
                             ))}
+                            {Array.isArray(item.customizations.removed) && item.customizations.removed.length > 0 && (
+                              <View className="flex-row items-center mb-1">
+                                <Text className="text-xs ml-1" style={{ color: '#CCCCCC' }}>
+                                  Sin: {item.customizations.removed.join(', ')}
+                                </Text>
+                              </View>
+                            )}
+                            {typeof item.customizations.specialRequests === 'string' && item.customizations.specialRequests && (
+                              <View className="flex-row items-center mb-1">
+                                <Text className="text-xs ml-1" style={{ color: '#CCCCCC' }}>
+                                  Peticiones: {item.customizations.specialRequests}
+                                </Text>
+                              </View>
+                            )}
                           </View>
                         )}
                       </View>

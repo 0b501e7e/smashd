@@ -4,12 +4,18 @@ import {
   AdminOrderWithDetails,
   OrderAcceptData,
   OrderDeclineData,
+  QuickCreateOrderData,
   CustomizationCategoryWithOptions,
   CreateCustomizationCategoryData,
   CustomizationOptionWithCategory,
   MenuItemCustomizationLinkData,
   SumUpSyncResponse,
-  ImageUploadResult
+  ImageUploadResult,
+  StockOverview,
+  InventoryItemData,
+  InventoryAdjustmentData,
+  InventoryItemWithUsage,
+  RecipeIngredientInput
 } from '../types/admin.types';
 import { MenuItem, Order } from '@prisma/client';
 
@@ -66,6 +72,17 @@ export interface IAdminService {
   uploadMenuItemImage(file: Express.Multer.File): Promise<ImageUploadResult>;
 
   // =====================
+  // STOCK MANAGEMENT
+  // =====================
+
+  getStockOverview(): Promise<StockOverview>;
+  createInventoryItem(data: InventoryItemData): Promise<InventoryItemWithUsage>;
+  updateInventoryItem(id: number, data: InventoryItemData): Promise<InventoryItemWithUsage>;
+  adjustInventoryItem(id: number, data: InventoryAdjustmentData): Promise<InventoryItemWithUsage>;
+  setMenuItemRecipe(menuItemId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }>;
+  setCustomizationOptionRecipe(optionId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }>;
+
+  // =====================
   // ADMIN ORDER MANAGEMENT
   // =====================
 
@@ -73,6 +90,7 @@ export interface IAdminService {
    * Get orders for admin dashboard
    * @returns List of orders with details
    */
+  createQuickOrder(data: QuickCreateOrderData): Promise<AdminOrderWithDetails>;
   getAdminOrders(): Promise<AdminOrderWithDetails[]>;
 
   /**
@@ -174,9 +192,9 @@ export interface IAdminService {
   /**
    * Get linked customization options for a menu item
    * @param menuItemId - Menu item ID
-   * @returns List of linked customization option IDs
+   * @returns List of linked customization options
    */
-  getLinkedCustomizationOptions(menuItemId: number): Promise<number[]>;
+  getLinkedCustomizationOptions(menuItemId: number): Promise<{ optionId: number, isDefault: boolean }[]>;
 
   /**
    * Set linked customization options for a menu item

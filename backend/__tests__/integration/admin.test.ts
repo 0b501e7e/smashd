@@ -34,6 +34,7 @@ jest.mock('@prisma/client', () => {
         findMany: jest.fn(),
         create: jest.fn(),
         createMany: jest.fn(),
+        count: jest.fn(),
       },
       menuItem: {
         findMany: jest.fn(),
@@ -405,10 +406,14 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         menuItemCustomizationOption: {
           deleteMany: jest.fn().mockResolvedValue({ count: 2 })
         },
+        menuItemCustomizationCategory: {
+          deleteMany: jest.fn().mockResolvedValue({ count: 1 })
+        },
         menuItem: {
           delete: jest.fn().mockResolvedValue(mockMenuItems[0])
         }
       };
+      mockedPrisma.orderItem.count.mockResolvedValue(0);
       mockedPrisma.menuItem.findUnique.mockResolvedValue(mockMenuItems[0]);
       mockedPrisma.$transaction.mockImplementation(async (callback: any) => {
         return await callback(mockTx);
@@ -630,8 +635,8 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
   describe('GET /v1/admin/customization-options/:menuItemId', () => {
     it('should return linked customization option IDs', async () => {
       const mockLinks = [
-        { customizationOptionId: 1 },
-        { customizationOptionId: 2 }
+        { optionId: 1, isDefault: false },
+        { optionId: 2, isDefault: true }
       ];
       mockedPrisma.menuItemCustomizationOption.findMany.mockResolvedValue(mockLinks);
 
@@ -641,9 +646,9 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
-      expect(response.body.data).toHaveProperty('optionIds');
-      expect(response.body.data.optionIds).toBeInstanceOf(Array);
-      expect(response.body.data.optionIds).toEqual([1, 2]);
+      expect(response.body.data).toHaveProperty('options');
+      expect(response.body.data.options).toBeInstanceOf(Array);
+      expect(response.body.data.options).toHaveLength(2);
     });
 
     it('should return 400 for invalid menu item ID', async () => {
@@ -671,7 +676,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
       const response = await request(app)
         .post('/v1/admin/customization-options/1')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ optionIds: [1, 2] })
+        .send({ options: [{ optionId: 1, isDefault: false }, { optionId: 2, isDefault: true }] })
         .expect(200);
 
       expect(response.body).toHaveProperty('success', true);
@@ -692,20 +697,20 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
       const response = await request(app)
         .post('/v1/admin/customization-options/1')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ optionIds: [] })
+        .send({ options: [] })
         .expect(200);
 
       expect(response.body).toHaveProperty('message');
     });
 
-    it('should return 400 for invalid optionIds', async () => {
+    it('should return 400 for invalid options', async () => {
       const response = await request(app)
         .post('/v1/admin/customization-options/1')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ optionIds: 'not-an-array' })
+        .send({ options: 'not-an-array' })
         .expect(400);
 
-      expect(response.body).toHaveProperty('error', 'optionIds must be an array');
+      expect(response.body).toHaveProperty('error', 'options must be an array');
     });
 
     it('should return 400 for invalid customization option IDs', async () => {
@@ -714,7 +719,7 @@ describe('Admin Integration Tests - TypeScript Backend', () => {
       const response = await request(app)
         .post('/v1/admin/customization-options/1')
         .set('Authorization', `Bearer ${adminToken}`)
-        .send({ optionIds: [999] })
+        .send({ options: [{ optionId: 999, isDefault: false }] })
         .expect(400);
 
       expect(response.body).toHaveProperty('error', 'One or more customization option IDs are invalid');

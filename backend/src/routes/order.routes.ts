@@ -1,14 +1,12 @@
 import { Router } from 'express';
 import { OrderController } from '../controllers/order.controller';
 import { authenticateToken, validateCreateOrder, validateOrderId } from '../middleware';
-import { PrismaClient } from '@prisma/client';
 import { services } from '../config/services';
 
 const router = Router();
 
-// Use centralized service container (single DB connection, shared services)
 const orderController = new OrderController(services.orderService);
-const prisma = new PrismaClient();
+const prisma = services.prisma;
 
 /**
  * @route   POST /v1/orders

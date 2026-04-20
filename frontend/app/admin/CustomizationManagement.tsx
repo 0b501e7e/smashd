@@ -25,8 +25,9 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, Trash2, Plus, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, Trash2, Plus, Loader2, Package } from 'lucide-react';
 import { api } from '@/lib/api';
+import RecipeAssignmentModal from './RecipeAssignmentModal';
 
 interface CustomizationOption {
     id: number;
@@ -61,6 +62,7 @@ const CustomizationManagement = () => {
     // Delete Dialogs
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ type: 'category' | 'option', id: number } | null>(null);
+    const [recipeOption, setRecipeOption] = useState<CustomizationOption | null>(null);
 
     const [isPending, setIsPending] = useState(false);
 
@@ -287,11 +289,19 @@ const CustomizationManagement = () => {
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
+                                                            onClick={() => setRecipeOption(option)}
+                                                            className="h-10 w-10 text-green-400 hover:text-green-300"
+                                                        >
+                                                            <Package className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
                                                             onClick={() => {
                                                                 setDeleteTarget({ type: 'option', id: option.id });
                                                                 setIsDeleteDialogOpen(true);
                                                             }}
-                                                            className="h-8 w-8 text-gray-400 hover:text-red-500"
+                                                            className="h-10 w-10 text-gray-400 hover:text-red-500"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
@@ -425,6 +435,14 @@ const CustomizationManagement = () => {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <RecipeAssignmentModal
+                entityType="option"
+                entityId={recipeOption?.id ?? null}
+                entityName={recipeOption?.name ?? ''}
+                isOpen={!!recipeOption}
+                onClose={() => setRecipeOption(null)}
+            />
         </div>
     );
 };

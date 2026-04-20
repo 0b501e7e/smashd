@@ -35,6 +35,6 @@ export interface IMenuService {
 
   // Admin operations
   getAllMenuItemsForAdmin(): Promise<MenuItem[]>;
-  linkCustomizationOptions(menuItemId: ID, optionIds: number[]): Promise<void>;
-  getLinkedCustomizationOptions(menuItemId: ID): Promise<number[]>;
+  linkCustomizationOptions(menuItemId: ID, options: { optionId: number, isDefault: boolean }[]): Promise<void>;
+  getLinkedCustomizationOptions(menuItemId: ID): Promise<{ optionId: number, isDefault: boolean }[]>;
 } 

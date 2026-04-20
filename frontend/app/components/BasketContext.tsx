@@ -1,24 +1,14 @@
 'use client' // Ensure this is a client component
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { buildCartItemKey, normalizeCustomizationSelection } from '@/lib/cart';
+import type { CustomizationSelectionDTO, MenuItemDTO } from '@shared/contracts';
 
 // Keep original MenuItem type for fetching menu data
-export type MenuItem = {
-  id: number;         // Corresponds to the database ID
-  name: string;
-  price: number;      // Base price from the database
-  imageUrl: string;
-  description: string;
-  category: string;
-};
+export type MenuItem = MenuItemDTO;
 
 // Define the structure for selected customizations
-export type CustomizationSelection = {
-  extras?: string[]; // e.g., ["Extra Patty", "Bacon"]
-  sauces?: string[]; // e.g., ["Ketchup", "Special Sauce"]
-  toppings?: string[]; // e.g., ["Lettuce", "Onion", "Jalapenos"]
-  specialRequests?: string;
-};
+export type CustomizationSelection = CustomizationSelectionDTO;
 
 // New type for items *in* the basket
 export type BasketItem = {
@@ -46,25 +36,15 @@ const BasketContext = createContext<BasketContextType | undefined>(undefined);
 export const BasketProvider = ({ children }: { children: ReactNode }) => {
   const [basket, setBasket] = useState<BasketItem[]>([]);
 
-  // Function to generate a unique ID for cart items
-  const generateCartItemId = (menuItemId: number, customizations?: CustomizationSelection) => {
-    const custString = JSON.stringify(customizations || {});
-    // Simple unique ID combining item ID and a hash/representation of customizations
-    return `${menuItemId}-${custString}-${Date.now()}`; // Added timestamp for uniqueness even with same customization
-  };
-
-  const addToBasket = (itemToAdd: Omit<BasketItem, 'cartItemId'>) => {
+  const addToBasket = useCallback((itemToAdd: Omit<BasketItem, 'cartItemId'>) => {
     setBasket((prevBasket) => {
-      const cartItemId = generateCartItemId(itemToAdd.menuItemId, itemToAdd.customizations);
-      // Check if an identical item (same menuItemId AND same customizations) already exists
-      // Note: This simple check might need refinement depending on how complex customizations get
+      const normalizedCustomizations = normalizeCustomizationSelection(itemToAdd.customizations);
+      const cartItemId = buildCartItemKey(itemToAdd.menuItemId, normalizedCustomizations);
       const existingItemIndex = prevBasket.findIndex(
-          (item) => item.menuItemId === itemToAdd.menuItemId &&
-                   JSON.stringify(item.customizations || {}) === JSON.stringify(itemToAdd.customizations || {})
+        (item) => item.cartItemId === cartItemId
       );
 
       if (existingItemIndex > -1) {
-        // Update quantity of existing item
         const updatedBasket = [...prevBasket];
         updatedBasket[existingItemIndex] = {
           ...updatedBasket[existingItemIndex],
@@ -72,52 +52,52 @@ export const BasketProvider = ({ children }: { children: ReactNode }) => {
         };
         return updatedBasket;
       } else {
-        // Add as new item
         const newItem: BasketItem = {
-            ...itemToAdd,
-            cartItemId: cartItemId, // Add the generated unique ID
+          ...itemToAdd,
+          customizations: normalizedCustomizations,
+          cartItemId,
         };
         return [...prevBasket, newItem];
       }
     });
-  };
+  }, []);
 
-  const removeFromBasket = (cartItemId: string) => {
+  const removeFromBasket = useCallback((cartItemId: string) => {
     setBasket((prevBasket) => prevBasket.filter(item => item.cartItemId !== cartItemId));
-  };
+  }, []);
 
-  const updateQuantity = (cartItemId: string, newQuantity: number) => {
+  const updateQuantity = useCallback((cartItemId: string, newQuantity: number) => {
     setBasket((prevBasket) =>
       prevBasket.map(item =>
         item.cartItemId === cartItemId
-          ? { ...item, quantity: Math.max(0, newQuantity) } // Prevent negative quantity
+          ? { ...item, quantity: Math.max(0, newQuantity) }
           : item
-      ).filter(item => item.quantity > 0) // Remove item if quantity becomes 0
+      ).filter(item => item.quantity > 0)
     );
-  };
+  }, []);
 
-  const clearBasket = () => {
+  const clearBasket = useCallback(() => {
     setBasket([]);
-  };
+  }, []);
 
-  const getTotalPrice = () => {
+  const getTotalPrice = useCallback(() => {
     return basket.reduce((total, item) => total + item.unitPrice * item.quantity, 0);
-  };
+  }, [basket]);
 
-  const getTotalItems = () => {
-      return basket.reduce((total, item) => total + item.quantity, 0);
-  }
+  const getTotalItems = useCallback(() => {
+    return basket.reduce((total, item) => total + item.quantity, 0);
+  }, [basket]);
 
   return (
     <BasketContext.Provider value={{
-        basket,
-        addToBasket,
-        removeFromBasket,
-        updateQuantity,
-        clearBasket,
-        getTotalPrice,
-        getTotalItems
-     }}>
+      basket,
+      addToBasket,
+      removeFromBasket,
+      updateQuantity,
+      clearBasket,
+      getTotalPrice,
+      getTotalItems
+    }}>
       {children}
     </BasketContext.Provider>
   );

@@ -14,120 +14,124 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  password      String
-  name          String
-  dateOfBirth   DateTime
-  address       String
-  phoneNumber   String
-  acceptedTerms Boolean        @default(false)
-  role          Role           @default(CUSTOMER)
-  isOnline      Boolean        @default(false)
-  pushToken     String?        // Expo push notification token
-  orders        Order[]
-  driverOrders  Order[]        @relation("DriverOrders")
-  loyaltyPoints LoyaltyPoints?
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  password           String
+  name               String
+  dateOfBirth        DateTime
+  address            String
+  phoneNumber        String
+  acceptedTerms      Boolean             @default(false)
+  role               Role                @default(CUSTOMER)
+  isOnline           Boolean             @default(false)
+  pushToken          String? // Expo push notification token
+  orders             Order[]
+  driverOrders       Order[]             @relation("DriverOrders")
+  loyaltyPoints      LoyaltyPoints?
   pointsTransactions PointsTransaction[]
-  notifications Notification[]
-  analyticsEvents AnalyticsEvent[]
+  notifications      Notification[]
+  analyticsEvents    AnalyticsEvent[]
   passwordResetToken PasswordResetToken?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model MenuItem {
-  id                 Int      @id @default(autoincrement())
-  name               String
-  description        String?
-  price              Float
-  originalPrice      Float?   // If set, implies the item is on promotion. 'price' is the current selling price.
-  promotionTitle     String?  // e.g., "20% Off!"
-  vatRate            Float    @default(0.10) // 10% VAT for restaurants in Spain
-  category           String   // BURGER, SIDE, DRINK, DESSERT
-  imageUrl           String?
-  isAvailable        Boolean  @default(true)
-  sumupProductId     String?  @unique // Used to link to SumUp catalog
-  orderItems         OrderItem[]
-  customizationCategories MenuItemCustomizationCategory[] // Relation to join table for old category-based linking
+  id                         Int                             @id @default(autoincrement())
+  name                       String
+  description                String?
+  price                      Float
+  originalPrice              Float? // If set, implies the item is on promotion. 'price' is the current selling price.
+  promotionTitle             String? // e.g., "20% Off!"
+  vatRate                    Float                           @default(0.10) // 10% VAT for restaurants in Spain
+  category                   String // BURGER, SIDE, DRINK, DESSERT
+  imageUrl                   String?
+  isAvailable                Boolean                         @default(true)
+  sumupProductId             String?                         @unique // Used to link to SumUp catalog
+  orderItems                 OrderItem[]
+  customizationCategories    MenuItemCustomizationCategory[] // Relation to join table for old category-based linking
   linkedCustomizationOptions MenuItemCustomizationOption[] // For direct option linking (NEW)
+  inventoryItems             MenuItemInventory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
 
 model Order {
-  id                Int         @id @default(autoincrement())
-  userId            Int?
-  user              User?       @relation(fields: [userId], references: [id])
-  driverId          Int?
-  driver            User?       @relation("DriverOrders", fields: [driverId], references: [id])
-  total             Float
-  status            OrderStatus
-  fulfillmentMethod FulfillmentMethod @default(PICKUP)
-  deliveryAddress   String?
-  orderCode         String?     @unique
-  items             OrderItem[]
-  sumupCheckoutId   String?     // SumUp checkout reference
-  sumupOrderId      String?     // If SumUp has a separate order ID
-  estimatedReadyTime DateTime?  // When business estimates order will be ready
-  readyAt           DateTime?   // When order was actually marked ready
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id                 Int                 @id @default(autoincrement())
+  userId             Int?
+  user               User?               @relation(fields: [userId], references: [id])
+  driverId           Int?
+  driver             User?               @relation("DriverOrders", fields: [driverId], references: [id])
+  total              Float
+  status             OrderStatus
+  fulfillmentMethod  FulfillmentMethod   @default(PICKUP)
+  deliveryAddress    String?
+  orderCode          String?             @unique
+  items              OrderItem[]
+  paymentMethod      PaymentMethod       @default(SUMUP)
+  sumupCheckoutId    String? // SumUp checkout reference
+  sumupOrderId       String? // If SumUp has a separate order ID
+  estimatedReadyTime DateTime? // When business estimates order will be ready
+  readyAt            DateTime? // When order was actually marked ready
+  stockDeductedAt    DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
   pointsTransactions PointsTransaction[]
+  stockMovements     StockMovement[]
 }
 
 model OrderItem {
-  id            Int      @id @default(autoincrement())
-  orderId       Int
-  order         Order    @relation(fields: [orderId], references: [id])
-  menuItemId    Int
-  menuItem      MenuItem @relation(fields: [menuItemId], references: [id])
-  quantity      Int
-  price         Float
-  customizations Json?    // Add customizations as a JSON field
+  id             Int      @id @default(autoincrement())
+  orderId        Int
+  order          Order    @relation(fields: [orderId], references: [id])
+  menuItemId     Int
+  menuItem       MenuItem @relation(fields: [menuItemId], references: [id])
+  quantity       Int
+  price          Float
+  customizations Json? // Add customizations as a JSON field
 }
 
 model LoyaltyPoints {
-  id                 Int      @id @default(autoincrement())
-  user               User     @relation(fields: [userId], references: [id])
-  userId             Int      @unique
-  points             Int      @default(0)
-  tier               String   @default("BRONZE") // BRONZE, SILVER, GOLD
-  registrationDate   DateTime @default(now()) // Date of loyalty enrollment / first points record
+  id                 Int                 @id @default(autoincrement())
+  user               User                @relation(fields: [userId], references: [id])
+  userId             Int                 @unique
+  points             Int                 @default(0)
+  tier               String              @default("BRONZE") // BRONZE, SILVER, GOLD
+  registrationDate   DateTime            @default(now()) // Date of loyalty enrollment / first points record
   lastPointsReset    DateTime? // When points were last reset (e.g. due to 90-day expiry)
-  totalSpentThisYear Float    @default(0) // For birthday reward tracking
-  birthdayRewardSent Boolean  @default(false)
+  totalSpentThisYear Float               @default(0) // For birthday reward tracking
+  birthdayRewardSent Boolean             @default(false)
   pointsTransactions PointsTransaction[] // History of all points changes
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model PointsTransaction {
-  id        Int      @id @default(autoincrement())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  
-  loyaltyPoints LoyaltyPoints @relation(fields: [loyaltyPointsId], references: [id])
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  loyaltyPoints   LoyaltyPoints @relation(fields: [loyaltyPointsId], references: [id])
   loyaltyPointsId Int
 
-  points    Int      // positive for earned, negative for spent/expired
-  reason    String   // e.g., "ORDER_EARNED", "BIRTHDAY_BONUS", "POINTS_REDEEMED", "POINTS_EXPIRED"
-  
-  order     Order?   @relation(fields: [orderId], references: [id]) // Optional: link to an order if points are order-related
-  orderId   Int?     // Optional: foreign key for Order
+  points Int // positive for earned, negative for spent/expired
+  reason String // e.g., "ORDER_EARNED", "BIRTHDAY_BONUS", "POINTS_REDEEMED", "POINTS_EXPIRED"
 
-  details   String?  // Optional: e.g. "Order #123", "Redeemed for Free Burger", "Monthly points expiry"
+  order   Order? @relation(fields: [orderId], references: [id]) // Optional: link to an order if points are order-related
+  orderId Int? // Optional: foreign key for Order
+
+  details   String? // Optional: e.g. "Order #123", "Redeemed for Free Burger", "Monthly points expiry"
   createdAt DateTime @default(now())
 }
 
 // Join table for MenuItem and CustomizationCategory (Many-to-Many)
 model MenuItemCustomizationCategory {
-  menuItem    MenuItem             @relation(fields: [menuItemId], references: [id])
-  menuItemId  Int
-  category    CustomizationCategory @relation(fields: [categoryId], references: [id])
-  categoryId  Int
+  menuItem   MenuItem              @relation(fields: [menuItemId], references: [id])
+  menuItemId Int
+  category   CustomizationCategory @relation(fields: [categoryId], references: [id])
+  categoryId Int
 
   @@id([menuItemId, categoryId])
 }
@@ -135,10 +139,10 @@ model MenuItemCustomizationCategory {
 // New Model: CustomizationCategory
 // Represents a type of customization, e.g., "Extras", "Sauces", "Toppings"
 model CustomizationCategory {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // e.g., "Extras", "Sauces"
-  options     CustomizationOption[]
-  menuItems   MenuItemCustomizationCategory[] // Relation to join table
+  id        Int                             @id @default(autoincrement())
+  name      String                          @unique // e.g., "Extras", "Sauces"
+  options   CustomizationOption[]
+  menuItems MenuItemCustomizationCategory[] // Relation to join table
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -147,52 +151,54 @@ model CustomizationCategory {
 // New Model: CustomizationOption
 // Represents a specific choice within a category, e.g., "Extra Patty" (under "Extras")
 model CustomizationOption {
-  id          Int      @id @default(autoincrement())
-  name        String   // e.g., "Extra Patty", "Ketchup"
-  price       Float    // Price for this specific option
-  categoryId  Int      // Foreign key to CustomizationCategory
-  category    CustomizationCategory @relation(fields: [categoryId], references: [id])
-  menuItems   MenuItemCustomizationOption[] // For direct option linking (NEW)
+  id         Int                           @id @default(autoincrement())
+  name       String // e.g., "Extra Patty", "Ketchup"
+  price      Float // Price for this specific option
+  categoryId Int // Foreign key to CustomizationCategory
+  category   CustomizationCategory         @relation(fields: [categoryId], references: [id])
+  menuItems  MenuItemCustomizationOption[] // For direct option linking (NEW)
+  inventoryItems CustomizationOptionInventory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  
+
   @@unique([name, categoryId])
   @@index([categoryId])
 }
 
 // New join table for MenuItem and CustomizationOption (Many-to-Many for direct linking)
 model MenuItemCustomizationOption {
-  menuItem             MenuItem            @relation(fields: [menuItemId], references: [id])
-  menuItemId           Int
-  customizationOption  CustomizationOption @relation(fields: [customizationOptionId], references: [id])
+  menuItem              MenuItem            @relation(fields: [menuItemId], references: [id])
+  menuItemId            Int
+  customizationOption   CustomizationOption @relation(fields: [customizationOptionId], references: [id])
   customizationOptionId Int
+  isDefault             Boolean             @default(false)
 
   @@id([menuItemId, customizationOptionId])
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  type      String   // "RATING_REQUEST", "BIRTHDAY_REWARD", "ORDER_UPDATE"
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  metadata  Json?    // Additional data like orderId, etc.
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id])
+  type         String // "RATING_REQUEST", "BIRTHDAY_REWARD", "ORDER_UPDATE"
+  title        String
+  message      String
+  isRead       Boolean   @default(false)
+  metadata     Json? // Additional data like orderId, etc.
   scheduledFor DateTime?
-  sentAt    DateTime?
-  createdAt DateTime @default(now())
+  sentAt       DateTime?
+  createdAt    DateTime  @default(now())
 }
 
 // Analytics Models
 model AnalyticsEvent {
   id        Int      @id @default(autoincrement())
-  eventType String   // "order_placed", "screen_viewed", "item_clicked", etc.
-  userId    Int?     // Optional - for guest users
+  eventType String // "order_placed", "screen_viewed", "item_clicked", etc.
+  userId    Int? // Optional - for guest users
   user      User?    @relation(fields: [userId], references: [id])
-  sessionId String?  // For tracking user sessions
-  metadata  Json?    // Event-specific data (orderId, itemId, screenName, etc.)
+  sessionId String? // For tracking user sessions
+  metadata  Json? // Event-specific data (orderId, itemId, screenName, etc.)
   createdAt DateTime @default(now())
 
   @@index([eventType])
@@ -201,30 +207,30 @@ model AnalyticsEvent {
 }
 
 model WeeklyAnalytics {
-  id             Int      @id @default(autoincrement())
-  weekStartDate  DateTime // Start of the week (Monday)
-  weekEndDate    DateTime // End of the week (Sunday)
-  
+  id            Int      @id @default(autoincrement())
+  weekStartDate DateTime // Start of the week (Monday)
+  weekEndDate   DateTime // End of the week (Sunday)
+
   // Revenue metrics
-  totalRevenue   Float    @default(0)
-  totalOrders    Int      @default(0)
-  avgOrderValue  Float    @default(0)
-  revenuePerHour Float    @default(0)
-  
+  totalRevenue   Float @default(0)
+  totalOrders    Int   @default(0)
+  avgOrderValue  Float @default(0)
+  revenuePerHour Float @default(0)
+
   // Customer metrics
-  newCustomers      Int   @default(0)
-  returningCustomers Int  @default(0)
-  totalCustomers    Int   @default(0)
-  
+  newCustomers       Int @default(0)
+  returningCustomers Int @default(0)
+  totalCustomers     Int @default(0)
+
   // Popular items (stored as JSON for flexibility)
-  topItems       Json?    // [{itemId, name, orderCount, revenue}, ...]
-  menuMetrics    Json?    // Detailed menu performance data
-  
+  topItems    Json? // [{itemId, name, orderCount, revenue}, ...]
+  menuMetrics Json? // Detailed menu performance data
+
   // Additional metrics
-  metadata       Json?    // Any other weekly metrics
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  metadata Json? // Any other weekly metrics
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([weekStartDate])
   @@index([weekStartDate])
@@ -247,12 +253,12 @@ enum Category {
 enum OrderStatus {
   AWAITING_PAYMENT // Newly created order, waiting for payment processing
   PAYMENT_CONFIRMED // Payment confirmed by SumUp, ready for business to process
-  CONFIRMED      // Business confirmed, in preparation
-  PREPARING      // In preparation (optional)
-  READY          // Ready for collection
+  CONFIRMED // Business confirmed, in preparation
+  PREPARING // In preparation (optional)
+  READY // Ready for collection
   OUT_FOR_DELIVERY // Driver has picked up order and is delivering
-  DELIVERED      // Customer picked up order
-  CANCELLED      // Order was cancelled
+  DELIVERED // Customer picked up order
+  CANCELLED // Order was cancelled
   PAYMENT_FAILED // Payment processing failed
 }
 
@@ -261,9 +267,15 @@ enum FulfillmentMethod {
   DELIVERY
 }
 
+enum PaymentMethod {
+  SUMUP        // Online payment via SumUp hosted checkout
+  CASH         // Cash payment in store
+  CARD_READER  // Physical card reader in store
+}
+
 model PasswordResetToken {
-  userId    Int   @id
-  user      User  @relation(fields: [userId], references: [id])
+  userId    Int      @id
+  user      User     @relation(fields: [userId], references: [id])
   tokenHash String
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -281,4 +293,62 @@ model AppSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id                   Int                            @id @default(autoincrement())
+  name                 String                         @unique
+  unit                 String                         @default("unit")
+  currentQuantity      Float                          @default(0)
+  lowStockThreshold    Float                          @default(0)
+  isActive             Boolean                        @default(true)
+  menuItemLinks        MenuItemInventory[]
+  customizationLinks   CustomizationOptionInventory[]
+  stockMovements       StockMovement[]
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+}
+
+model MenuItemInventory {
+  menuItemId      Int
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity        Float
+
+  @@id([menuItemId, inventoryItemId])
+  @@index([inventoryItemId])
+}
+
+model CustomizationOptionInventory {
+  customizationOptionId Int
+  customizationOption   CustomizationOption @relation(fields: [customizationOptionId], references: [id], onDelete: Cascade)
+  inventoryItemId       Int
+  inventoryItem         InventoryItem       @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity              Float
+
+  @@id([customizationOptionId, inventoryItemId])
+  @@index([inventoryItemId])
+}
+
+model StockMovement {
+  id              Int               @id @default(autoincrement())
+  inventoryItemId Int
+  inventoryItem   InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  orderId         Int?
+  order           Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  movementType    StockMovementType
+  quantityDelta   Float
+  quantityAfter   Float
+  note            String?
+  createdAt       DateTime          @default(now())
+
+  @@index([inventoryItemId, createdAt])
+  @@index([orderId])
+}
+
+enum StockMovementType {
+  RESTOCK
+  ORDER_DEPLETION
+  MANUAL_ADJUSTMENT
 }

@@ -15,22 +15,32 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'PAYMENT_FAILED';
 
+export type FulfillmentMethod = 'PICKUP' | 'DELIVERY';
+
+export type PaymentMethod = 'SUMUP' | 'CASH' | 'CARD_READER';
+
 // =====================
 // ORDER CREATION TYPES
 // =====================
 
+export interface CustomizationSelection {
+  selected?: Record<string, string[]>;
+  removed?: string[];
+  specialRequests?: string;
+}
+
 export interface OrderItemData {
   menuItemId: number;
   quantity: number;
-  price: number;
-  customizations?: Record<string, any>;
+  price?: number;
+  customizations?: CustomizationSelection;
 }
 
 export interface CreateOrderData {
   items: OrderItemData[];
-  total: number;
+  total?: number;
   userId?: number;
-  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  fulfillmentMethod?: FulfillmentMethod;
   deliveryAddress?: string;
 }
 
@@ -49,6 +59,15 @@ export interface OrderWithDetails extends Order {
   })[];
 }
 
+export interface OrderItemWithDetails {
+  id: number;
+  menuItemId: number;
+  quantity: number;
+  price: number;
+  name: string;
+  customizations: CustomizationSelection;
+}
+
 export interface OrderStatusResponse {
   id: number;
   status: OrderStatus;
@@ -57,18 +76,10 @@ export interface OrderStatusResponse {
   sumupCheckoutId: string | null;
   total: number;
   createdAt: Date;
-  fulfillmentMethod?: 'PICKUP' | 'DELIVERY';
+  fulfillmentMethod?: FulfillmentMethod;
+  paymentMethod?: PaymentMethod;
   deliveryAddress?: string | null;
   items: OrderItemWithDetails[];
-}
-
-export interface OrderItemWithDetails {
-  id: number;
-  menuItemId: number;
-  quantity: number;
-  price: number;
-  name: string;
-  customizations: Record<string, any>;
 }
 
 // =====================

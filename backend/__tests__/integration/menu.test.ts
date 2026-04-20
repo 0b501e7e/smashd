@@ -29,6 +29,15 @@ jest.mock('@prisma/client', () => {
         update: jest.fn(),
         delete: jest.fn(),
       },
+      orderItem: {
+        count: jest.fn(),
+      },
+      menuItemCustomizationCategory: {
+        deleteMany: jest.fn(),
+      },
+      menuItemCustomizationOption: {
+        deleteMany: jest.fn(),
+      },
       customizationCategory: {
         findMany: jest.fn(),
         create: jest.fn(),
@@ -467,11 +476,14 @@ describe('Menu Integration Tests - TypeScript Backend', () => {
     describe('DELETE /v1/admin/menu/:id', () => {
       it('should delete menu item', async () => {
         // Mock: Find existing item and transaction delete
+        mockedPrisma.orderItem.count.mockResolvedValue(0);
         mockedPrisma.menuItem.findUnique.mockResolvedValue(mockMenuItems[0]);
         mockedPrisma.$transaction.mockImplementation(async (callback: any) => {
-          // Simulate the transaction callback
           const mockTx = {
             menuItemCustomizationOption: {
+              deleteMany: jest.fn().mockResolvedValue({ count: 0 })
+            },
+            menuItemCustomizationCategory: {
               deleteMany: jest.fn().mockResolvedValue({ count: 0 })
             },
             menuItem: {

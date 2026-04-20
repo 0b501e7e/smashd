@@ -215,6 +215,60 @@ describe('Order Integration Tests - TypeScript Backend', () => {
       expect(response.body.data).toHaveProperty('message');
     });
 
+    it('should ignore client-supplied pricing and calculate total on the backend', async () => {
+      mockedPrisma.menuItem.findUnique
+        .mockResolvedValueOnce({
+          ...mockMenuItems[0],
+          linkedCustomizationOptions: []
+        })
+        .mockResolvedValueOnce({
+          ...mockMenuItems[1],
+          linkedCustomizationOptions: []
+        });
+
+      const createOrderMock = jest.fn().mockResolvedValue({
+        ...mockOrder,
+        total: 17.98,
+        items: undefined
+      });
+
+      mockedPrisma.$transaction.mockImplementation(async (callback: any) => {
+        const mockTx = {
+          order: {
+            create: createOrderMock
+          },
+          loyaltyPoints: {
+            create: jest.fn().mockResolvedValue({})
+          }
+        };
+        return await callback(mockTx);
+      });
+
+      await request(app)
+        .post('/v1/orders')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          items: [
+            { menuItemId: 1, quantity: 1, price: 9999, customizations: [] },
+            { menuItemId: 2, quantity: 1, price: 9999, customizations: [] }
+          ],
+          total: 999999
+        })
+        .expect(201);
+
+      expect(createOrderMock).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          total: 17.98,
+          items: expect.objectContaining({
+            create: expect.arrayContaining([
+              expect.objectContaining({ menuItemId: 1, quantity: 1, price: 12.99 }),
+              expect.objectContaining({ menuItemId: 2, quantity: 1, price: 4.99 })
+            ])
+          })
+        })
+      }));
+    });
+
     it('should return 401 for unauthenticated requests', async () => {
       const response = await request(app)
         .post('/v1/orders')

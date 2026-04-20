@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils'; // Assuming you have a currency formatter
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
 
 // Helper to render customizations cleanly
 const renderCustomizations = (item: BasketItem) => {
@@ -17,19 +18,32 @@ const renderCustomizations = (item: BasketItem) => {
     return null;
   }
 
-  const { extras = [], sauces = [], toppings = [] } = item.customizations;
-  const allCustomizations = [
-    ...(extras.length > 0 ? [`Extras: ${extras.join(', ')}`] : []),
-    ...(sauces.length > 0 ? [`Sauces: ${sauces.join(', ')}`] : []),
-    ...(toppings.length > 0 ? [`Toppings: ${toppings.join(', ')}`] : []),
-  ];
+  const allCustomizations = getSelectedCustomizationEntries(item.customizations).map(({ label, values }) => (
+    `${label}: ${values.join(', ')}`
+  ));
+  const removed = item.customizations.removed ?? [];
+  const specialRequests = item.customizations.specialRequests;
 
-  if (allCustomizations.length === 0) return null;
+  if (allCustomizations.length === 0 && removed.length === 0 && !specialRequests) return null;
 
   return (
-    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-      {allCustomizations.join('; ')}
-    </p>
+    <div className="mt-1 flex flex-col gap-0.5">
+      {allCustomizations.length > 0 && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {allCustomizations.join('; ')}
+        </p>
+      )}
+      {removed.length > 0 && (
+        <p className="text-xs text-red-500 dark:text-red-400 font-medium italic">
+          - Sin {removed.join(', ')}
+        </p>
+      )}
+      {specialRequests && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+          Nota: {specialRequests}
+        </p>
+      )}
+    </div>
   );
 };
 
@@ -80,8 +94,8 @@ export function BasketButton() {
                   // Get API base URL, remove trailing /v1 or /api suffix
                   const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
                   // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-                  const imageSrc = item.imageUrl && apiUrl
-                    ? `${apiUrl}${item.imageUrl}` // API provides the full relative path like /images/coke.jpg
+                  const imageSrc = item.imageUrl
+                    ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
                     : '/burger.png'; // Keep using frontend fallback
                   const fallbackSrc = '/burger.png';
                   console.log(`Basket Item: Using image path: ${imageSrc}`);

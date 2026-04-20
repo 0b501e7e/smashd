@@ -25,8 +25,15 @@ router.post('/menu', validateCreateMenuItem, adminController.createMenuItem.bind
 router.put('/menu/:id', validateUpdateMenuItem, adminController.updateMenuItem.bind(adminController));
 router.patch('/menu/:id/availability', adminController.updateMenuItemAvailability.bind(adminController));
 router.delete('/menu/:id', adminController.deleteMenuItem.bind(adminController));
+router.get('/stock/overview', adminController.getStockOverview.bind(adminController));
+router.post('/inventory', adminController.createInventoryItem.bind(adminController));
+router.put('/inventory/:id', adminController.updateInventoryItem.bind(adminController));
+router.post('/inventory/:id/adjust', adminController.adjustInventoryItem.bind(adminController));
+router.put('/menu/:id/recipe', adminController.setMenuItemRecipe.bind(adminController));
+router.put('/customization-options/:id/recipe', adminController.setCustomizationOptionRecipe.bind(adminController));
 
 // Order management
+router.post('/orders/quick-create', adminController.quickCreateOrder.bind(adminController));
 router.get('/orders', adminController.getAdminOrders.bind(adminController));
 router.post('/orders/:id/accept', validateOrderId, adminController.acceptOrder.bind(adminController));
 router.post('/orders/:id/decline', validateOrderId, adminController.declineOrder.bind(adminController));
