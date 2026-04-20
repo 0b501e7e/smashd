@@ -170,10 +170,10 @@ function CustomizationContent({
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {/* Item header */}
       <div>
-        <p className="text-gray-400 text-sm">Base price: {formatCurrency(item.price)}</p>
+        <p className="text-sm text-gray-400">Base price: {formatCurrency(item.price)}</p>
       </div>
 
       {/* Customizations */}
@@ -189,26 +189,29 @@ function CustomizationContent({
             <React.Fragment key={cat.id}>
               {i > 0 && <Separator className="bg-gray-700" />}
               <div>
-                <h4 className="text-yellow-300 font-semibold mb-2">{cat.name}</h4>
-                <div className="space-y-1">
+                <h4 className="mb-2 text-base font-semibold text-yellow-300">{cat.name}</h4>
+                <div className="space-y-2">
                   {cat.options.map(opt => (
-                    <div key={opt.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-800/60">
-                      <div className="flex items-center gap-2">
+                    <div
+                      key={opt.id}
+                      className="flex min-h-14 items-center justify-between rounded-lg border border-gray-800 bg-gray-950/60 px-3 py-2 hover:bg-gray-800/60"
+                    >
+                      <div className="flex items-center gap-3">
                         <Checkbox
                           id={`opt-${opt.id}`}
                           checked={(selectedOptions[cat.id] ?? []).includes(opt.id)}
                           onCheckedChange={() => toggle(cat.id, opt.id)}
-                          className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
+                          className="h-5 w-5 border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
                         />
-                        <Label htmlFor={`opt-${opt.id}`} className="cursor-pointer text-sm">
-                          {opt.name}
+                        <Label htmlFor={`opt-${opt.id}`} className="cursor-pointer text-base leading-tight">
+                          <span className="block text-white">{opt.name}</span>
                           {opt.isDefaultSelected && (
-                            <span className="ml-2 text-xs text-yellow-500 italic">Included</span>
+                            <span className="mt-1 block text-sm italic text-yellow-500">Included</span>
                           )}
                         </Label>
                       </div>
                       {opt.price > 0 && !opt.isDefaultSelected && (
-                        <span className="text-xs text-gray-400">+{formatCurrency(opt.price)}</span>
+                        <span className="pl-3 text-sm text-gray-400">+{formatCurrency(opt.price)}</span>
                       )}
                     </div>
                   ))}
@@ -221,33 +224,37 @@ function CustomizationContent({
 
       {/* Quantity & total */}
       <Separator className="bg-gray-700" />
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
+            className="h-11 w-11 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
             onClick={() => setQuantity(q => Math.max(1, q - 1))}
             disabled={quantity <= 1}
           >
-            <Minus className="h-3 w-3" />
+            <Minus className="h-4 w-4" />
           </Button>
-          <span className="text-white font-mono w-6 text-center">{quantity}</span>
+          <span className="w-8 text-center font-mono text-lg text-white">{quantity}</span>
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
+            className="h-11 w-11 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black"
             onClick={() => setQuantity(q => q + 1)}
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800" onClick={onCancel}>
+        <div className="flex gap-3 sm:justify-end">
+          <Button
+            variant="outline"
+            className="h-11 flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 sm:flex-none"
+            onClick={onCancel}
+          >
             Cancel
           </Button>
           <Button
-            className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold"
+            className="h-11 flex-1 bg-yellow-400 font-bold text-black hover:bg-yellow-300 sm:flex-none"
             onClick={handleConfirm}
             disabled={isLoading}
           >
@@ -273,7 +280,7 @@ export default function QuickOrder() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successOrderId, setSuccessOrderId] = useState<number | null>(null);
 
-  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isTabletUp = useMediaQuery('(min-width: 768px)');
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -352,12 +359,12 @@ export default function QuickOrder() {
   ) : null;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 max-w-4xl mx-auto">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row">
 
       {/* Customization modal — Dialog on desktop, Drawer on mobile */}
-      {isDesktop ? (
+      {isTabletUp ? (
         <Dialog open={!!selectedItem} onOpenChange={open => { if (!open) setSelectedItem(null); }}>
-          <DialogContent className="bg-gray-900 border-gray-700 text-white max-w-lg">
+          <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto border-gray-700 bg-gray-900 text-white">
             <DialogHeader>
               <DialogTitle className="text-white">{selectedItem?.name}</DialogTitle>
             </DialogHeader>
@@ -391,62 +398,101 @@ export default function QuickOrder() {
 
         {Object.entries(grouped).map(([cat, items]) => (
           <div key={cat}>
-            <h3 className="text-yellow-400 font-semibold text-sm uppercase tracking-wider mb-2">
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-yellow-400">
               {CATEGORY_LABELS[cat] ?? cat}
             </h3>
 
-            {/* Mobile: horizontal snap carousel — break out of parent padding */}
-            <div className="lg:hidden flex gap-3 overflow-x-auto scrollbar-hide pb-2 snap-x snap-mandatory">
+            {/* Phone: horizontal scroller */}
+            <div className="flex gap-3 overflow-x-auto pb-2 sm:hidden">
               {items.map(item => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="snap-start flex-shrink-0 w-[55vw] h-20 rounded-xl border border-gray-700 bg-[#111111] active:scale-[0.97] transition-transform text-left p-3 flex flex-col justify-between"
+                  className="flex h-24 w-[68vw] flex-shrink-0 flex-col justify-between rounded-2xl border border-gray-700 bg-[#111111] p-4 text-left transition-transform active:scale-[0.98]"
                 >
-                  <p className="text-white text-sm font-semibold leading-tight line-clamp-2">{item.name}</p>
-                  <p className="text-yellow-400 text-sm font-bold">{formatCurrency(item.price)}</p>
+                  <p className="line-clamp-2 text-base font-semibold leading-tight text-white">{item.name}</p>
+                  <p className="text-base font-bold text-yellow-400">{formatCurrency(item.price)}</p>
                 </button>
               ))}
             </div>
 
-            {/* Desktop: grid */}
-            <div className="hidden lg:grid grid-cols-3 gap-2">
+            {/* Tablet and desktop: grid with larger tap targets */}
+            <div className="hidden grid-cols-2 gap-3 sm:grid xl:grid-cols-3">
               {items.map(item => (
                 <button
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="rounded-lg border border-gray-700 bg-gray-900 hover:border-yellow-400 hover:bg-yellow-400/10 p-3 text-left transition-colors"
+                  className="min-h-28 rounded-2xl border border-gray-700 bg-gray-900 p-4 text-left transition-colors hover:border-yellow-400 hover:bg-yellow-400/10"
                 >
-                  <p className="text-white text-sm font-medium leading-tight">{item.name}</p>
-                  <p className="text-gray-400 text-xs mt-1">{formatCurrency(item.price)}</p>
+                  <div className="flex h-full flex-col justify-between gap-3">
+                    <p className="text-base font-medium leading-tight text-white">{item.name}</p>
+                    <p className="text-base font-semibold text-yellow-400">{formatCurrency(item.price)}</p>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
         ))}
+
+        {orderLines.length > 0 && (
+          <div className="rounded-2xl border border-gray-700 bg-gray-900 p-4 md:hidden">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-white">Current Order</h3>
+              <span className="text-sm text-gray-400">{totalItems} items</span>
+            </div>
+
+            <ul className="space-y-3">
+              {orderLines.map(line => {
+                const summary = shortCustomizationSummary(line);
+                return (
+                  <li key={line.lineId} className="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-950/60 p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base text-white">{line.quantity}x {line.menuItem.name}</p>
+                      {summary && <p className="mt-1 text-sm text-gray-400">{summary}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className="text-sm font-medium text-yellow-400">
+                        {formatCurrency(line.unitPrice * line.quantity)}
+                      </span>
+                      <button
+                        onClick={() => removeLine(line.lineId)}
+                        className="rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 transition-colors hover:border-red-500 hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Order summary */}
-      <div className="lg:w-64 lg:sticky lg:top-4 lg:self-start">
+      <div className="md:sticky md:top-4 md:w-80 md:self-start">
 
         {/* Mobile fixed bar */}
-        <div className="fixed bottom-0 left-0 right-0 z-10 lg:hidden bg-gray-950 border-t border-gray-700 p-3 flex items-center gap-3">
+        <div className="fixed bottom-0 left-0 right-0 z-10 flex items-center gap-3 border-t border-gray-700 bg-gray-950 p-3 sm:p-4 md:hidden">
           <div className="flex-1">
             <PaymentToggle value={paymentMethod} onChange={setPaymentMethod} />
           </div>
           <button
             onClick={handleSubmit}
             disabled={orderLines.length === 0 || isSubmitting}
-            className="flex-shrink-0 px-4 py-2.5 rounded-lg font-bold text-black bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm whitespace-nowrap"
+            className="flex-shrink-0 whitespace-nowrap rounded-xl bg-yellow-400 px-4 py-3 text-sm font-bold text-black transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : totalItems > 0 ? `Order (${totalItems}) · ${formatCurrency(total)}` : 'Select items'}
           </button>
         </div>
-        <div className="h-20 lg:hidden" />
+        <div className="h-24 md:hidden" />
 
-        {/* Desktop sidebar */}
-        <div className="hidden lg:block bg-gray-900 border border-gray-700 rounded-lg p-4 space-y-4">
-          <h3 className="text-white font-semibold">Order</h3>
+        {/* Tablet and desktop sidebar */}
+        <div className="hidden space-y-4 rounded-2xl border border-gray-700 bg-gray-900 p-5 md:block">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Order</h3>
+            {orderLines.length > 0 && <span className="text-sm text-gray-400">{totalItems} items</span>}
+          </div>
 
           {submitError && (
             <p className="text-red-400 text-sm">{submitError}</p>
@@ -455,19 +501,23 @@ export default function QuickOrder() {
           {orderLines.length === 0 ? (
             <p className="text-gray-500 text-sm">Tap an item to add it</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="max-h-[55vh] space-y-3 overflow-y-auto pr-1">
               {orderLines.map(line => {
                 const summary = shortCustomizationSummary(line);
                 return (
-                  <li key={line.lineId} className="flex gap-2 text-sm">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white">{line.quantity}× {line.menuItem.name}</p>
-                      {summary && <p className="text-gray-500 text-xs truncate">{summary}</p>}
+                  <li key={line.lineId} className="flex gap-3 rounded-xl border border-gray-800 bg-gray-950/60 p-3 text-sm">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white">{line.quantity}x {line.menuItem.name}</p>
+                      {summary && <p className="mt-1 text-sm text-gray-500">{summary}</p>}
                     </div>
-                    <div className="flex items-start gap-1 flex-shrink-0">
-                      <span className="text-gray-400">{formatCurrency(line.unitPrice * line.quantity)}</span>
-                      <button onClick={() => removeLine(line.lineId)} className="text-gray-600 hover:text-red-400 transition-colors">
-                        <X className="h-3 w-3" />
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <span className="text-gray-300">{formatCurrency(line.unitPrice * line.quantity)}</span>
+                      <button
+                        onClick={() => removeLine(line.lineId)}
+                        className="rounded-lg border border-gray-700 p-2 text-gray-400 transition-colors hover:border-red-500 hover:text-red-300"
+                        aria-label={`Remove ${line.menuItem.name}`}
+                      >
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   </li>
@@ -486,7 +536,7 @@ export default function QuickOrder() {
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold disabled:opacity-40"
+                className="h-12 w-full bg-yellow-400 font-bold text-black hover:bg-yellow-300 disabled:opacity-40"
               >
                 {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : `Create Order · ${formatCurrency(total)}`}
               </Button>
@@ -500,12 +550,12 @@ export default function QuickOrder() {
 
 function PaymentToggle({ value, onChange }: { value: PaymentMethod; onChange: (v: PaymentMethod) => void }) {
   return (
-    <div className="flex rounded-lg overflow-hidden border border-gray-700">
+    <div className="flex overflow-hidden rounded-xl border border-gray-700">
       {(['CASH', 'CARD_READER'] as PaymentMethod[]).map(method => (
         <button
           key={method}
           onClick={() => onChange(method)}
-          className={`flex-1 py-2 text-sm font-medium transition-colors ${value === method ? 'bg-yellow-400 text-black' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+          className={`min-h-12 flex-1 px-3 py-3 text-sm font-medium transition-colors ${value === method ? 'bg-yellow-400 text-black' : 'bg-gray-800 text-gray-300 hover:text-white'}`}
         >
           {method === 'CASH' ? 'Cash' : 'Card Reader'}
         </button>

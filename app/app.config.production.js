@@ -24,7 +24,7 @@ module.exports = ({ config }) => {
         backgroundColor: "#ffffff"
       },
       package: "com.smashd.app",
-      versionCode: 28,
+      versionCode: 29,
       permissions: [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"

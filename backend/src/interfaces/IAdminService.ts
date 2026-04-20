@@ -10,7 +10,12 @@ import {
   CustomizationOptionWithCategory,
   MenuItemCustomizationLinkData,
   SumUpSyncResponse,
-  ImageUploadResult
+  ImageUploadResult,
+  StockOverview,
+  InventoryItemData,
+  InventoryAdjustmentData,
+  InventoryItemWithUsage,
+  RecipeIngredientInput
 } from '../types/admin.types';
 import { MenuItem, Order } from '@prisma/client';
 
@@ -65,6 +70,17 @@ export interface IAdminService {
    * @returns Upload result with image URL
    */
   uploadMenuItemImage(file: Express.Multer.File): Promise<ImageUploadResult>;
+
+  // =====================
+  // STOCK MANAGEMENT
+  // =====================
+
+  getStockOverview(): Promise<StockOverview>;
+  createInventoryItem(data: InventoryItemData): Promise<InventoryItemWithUsage>;
+  updateInventoryItem(id: number, data: InventoryItemData): Promise<InventoryItemWithUsage>;
+  adjustInventoryItem(id: number, data: InventoryAdjustmentData): Promise<InventoryItemWithUsage>;
+  setMenuItemRecipe(menuItemId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }>;
+  setCustomizationOptionRecipe(optionId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }>;
 
   // =====================
   // ADMIN ORDER MANAGEMENT

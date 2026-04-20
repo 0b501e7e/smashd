@@ -14,9 +14,15 @@ import {
   CustomizationOptionWithCategory,
   MenuItemCustomizationLinkData,
   SumUpSyncResponse,
-  ImageUploadResult
+  ImageUploadResult,
+  InventoryAdjustmentData,
+  InventoryItemData,
+  InventoryItemWithUsage,
+  RecipeIngredientInput,
+  StockOverview
 } from '../types/admin.types';
 import { makeHttpRequest } from './sumupService';
+import { InventoryService } from './inventory.service';
 
 /**
  * AdminService - Handles admin-related business logic
@@ -31,6 +37,7 @@ export class AdminService implements IAdminService {
   constructor(
     private prisma: PrismaClient,
     private orderService: OrderService,
+    private inventoryService: InventoryService,
     private notificationService?: INotificationService
   ) { }
 
@@ -206,6 +213,34 @@ export class AdminService implements IAdminService {
   }
 
   // =====================
+  // STOCK MANAGEMENT
+  // =====================
+
+  async getStockOverview(): Promise<StockOverview> {
+    return this.inventoryService.getStockOverview();
+  }
+
+  async createInventoryItem(data: InventoryItemData): Promise<InventoryItemWithUsage> {
+    return this.inventoryService.createInventoryItem(data);
+  }
+
+  async updateInventoryItem(id: number, data: InventoryItemData): Promise<InventoryItemWithUsage> {
+    return this.inventoryService.updateInventoryItem(id, data);
+  }
+
+  async adjustInventoryItem(id: number, data: InventoryAdjustmentData): Promise<InventoryItemWithUsage> {
+    return this.inventoryService.adjustInventoryItem(id, data);
+  }
+
+  async setMenuItemRecipe(menuItemId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }> {
+    return this.inventoryService.setMenuItemRecipe(menuItemId, ingredients);
+  }
+
+  async setCustomizationOptionRecipe(optionId: number, ingredients: RecipeIngredientInput[]): Promise<{ message: string }> {
+    return this.inventoryService.setCustomizationOptionRecipe(optionId, ingredients);
+  }
+
+  // =====================
   // ADMIN ORDER MANAGEMENT
   // =====================
 
@@ -285,32 +320,38 @@ export class AdminService implements IAdminService {
       return sum + unitPrice * item.quantity;
     }, 0);
 
-    const order = await this.prisma.order.create({
-      data: {
-        userId: staffUserId,
-        total: round(total),
-        status: 'CONFIRMED',
-        paymentMethod,
-        fulfillmentMethod: 'PICKUP',
-        items: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          create: items.map(item => ({
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: round(item.unitPrice ?? priceMap.get(item.menuItemId) ?? 0),
-            customizations: item.customizations ?? null,
-          })) as any
-        }
-      },
-      include: {
-        items: {
-          include: {
-            menuItem: { select: { name: true, category: true } }
+    const order = await this.prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          userId: staffUserId,
+          total: round(total),
+          status: 'CONFIRMED',
+          paymentMethod,
+          fulfillmentMethod: 'PICKUP',
+          items: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            create: items.map(item => ({
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              price: round(item.unitPrice ?? priceMap.get(item.menuItemId) ?? 0),
+              customizations: item.customizations ?? null,
+            })) as any
           }
         },
-        user: { select: { id: true, name: true, email: true } },
-        driver: { select: { id: true, name: true, email: true, phoneNumber: true } }
-      }
+        include: {
+          items: {
+            include: {
+              menuItem: { select: { name: true, category: true } }
+            }
+          },
+          user: { select: { id: true, name: true, email: true } },
+          driver: { select: { id: true, name: true, email: true, phoneNumber: true } }
+        }
+      });
+
+      await this.inventoryService.depleteStockForOrderTx(tx, createdOrder.id);
+
+      return createdOrder;
     });
 
     console.log(`AdminService: Quick order created (ID: ${order.id}, method: ${paymentMethod}, total: ${order.total})`);
@@ -342,13 +383,21 @@ export class AdminService implements IAdminService {
 
       console.log(`AdminService: Setting order ${acceptData.orderId} to status: ${newStatus} (fulfillmentMethod: ${order.fulfillmentMethod}, hasDeliveryAddress: ${!!order.deliveryAddress})`);
 
-      const updatedOrder = await this.prisma.order.update({
-        where: { id: acceptData.orderId },
-        data: {
-          estimatedReadyTime,
-          status: newStatus,
-          readyAt: null // Order is just accepted, not ready yet
+      const updatedOrder = await this.prisma.$transaction(async (tx) => {
+        const updated = await tx.order.update({
+          where: { id: acceptData.orderId },
+          data: {
+            estimatedReadyTime,
+            status: newStatus,
+            readyAt: null // Order is just accepted, not ready yet
+          }
+        });
+
+        if (!order.stockDeductedAt) {
+          await this.inventoryService.depleteStockForOrderTx(tx, acceptData.orderId);
         }
+
+        return updated;
       });
 
       // Award loyalty points if eligible

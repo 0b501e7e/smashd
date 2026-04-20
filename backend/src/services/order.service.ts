@@ -19,6 +19,7 @@ import {
 } from '../types/order.types';
 import { getSumUpCheckoutStatus } from './sumupService';
 import { IAnalyticsService } from '../interfaces/IAnalyticsService';
+import { InventoryService } from './inventory.service';
 
 /**
  * OrderService - Handles all order-related business logic
@@ -34,7 +35,8 @@ import { IAnalyticsService } from '../interfaces/IAnalyticsService';
 export class OrderService implements IOrderService {
   constructor(
     private prisma: PrismaClient,
-    private analyticsService: IAnalyticsService
+    private analyticsService: IAnalyticsService,
+    private inventoryService: InventoryService
   ) { }
 
   private roundCurrency(value: number): number {
@@ -487,9 +489,30 @@ export class OrderService implements IOrderService {
 
   async updateOrderStatus(orderId: number, status: OrderStatus): Promise<Order> {
     try {
-      const updatedOrder = await this.prisma.order.update({
-        where: { id: orderId },
-        data: { status: status as any }
+      const updatedOrder = await this.prisma.$transaction(async (tx) => {
+        const existingOrder = await tx.order.findUnique({
+          where: { id: orderId },
+          select: { stockDeductedAt: true }
+        });
+
+        if (!existingOrder) {
+          throw new Error('Order not found');
+        }
+
+        const order = await tx.order.update({
+          where: { id: orderId },
+          data: { status: status as any }
+        });
+
+        const shouldDeductStock =
+          !existingOrder.stockDeductedAt &&
+          ['PAYMENT_CONFIRMED', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERED', 'COMPLETED'].includes(status);
+
+        if (shouldDeductStock) {
+          await this.inventoryService.depleteStockForOrderTx(tx, orderId);
+        }
+
+        return order;
       });
 
       console.log(`OrderService: Order ${orderId} status updated to ${status}`);
