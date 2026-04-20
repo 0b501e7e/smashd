@@ -24,7 +24,7 @@ module.exports = ({ config }) => {
         backgroundColor: "#ffffff"
       },
       package: "com.smashd.app",
-      versionCode: 28,
+      versionCode: 29,
       permissions: [
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
@@ -41,6 +41,12 @@ module.exports = ({ config }) => {
     plugins: ["expo-router"],
     experiments: {
       typedRoutes: true
+    },
+    updates: {
+      url: "https://u.expo.dev/36b14cff-7f2e-43ac-9da6-f163563fd773"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
     },
     extra: {
       router: {

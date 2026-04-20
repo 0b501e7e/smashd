@@ -9,6 +9,8 @@ import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ShoppingCart, Plus, Minus, Trash2, CreditCard, LogIn } from 'lucide-react-native';
+import { buildCartItemKey } from '@/lib/cart';
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
 
 export default function CartScreen() {
   const { items, removeItem, updateQuantity, total } = useCart();
@@ -96,7 +98,7 @@ export default function CartScreen() {
         <View className="gap-4 mb-6">
           {items.map((item, index) => (
             <Card
-              key={`${item.id}-${index}-${JSON.stringify(item.customizations)}`}
+              key={buildCartItemKey(item.id, item.customizations)}
               style={{ backgroundColor: '#111111', borderColor: '#333333' }}
             >
               <View className="p-5">
@@ -127,35 +129,35 @@ export default function CartScreen() {
                 {/* Customizations */}
                 {item.customizations && (
                   <View className="mb-4 py-3 px-3 rounded-md" style={{ backgroundColor: '#1A1A1A' }}>
-                    {item.customizations.extras && item.customizations.extras.length > 0 && (
-                      <View className="mb-2">
+                    {getSelectedCustomizationEntries(item.customizations).map(({ key, label, values }) => (
+                      <View key={key} className="mb-2">
                         <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
-                          Extras:
+                          {label}:
                         </Text>
                         <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
-                          {item.customizations.extras.join(', ')}
+                          {values.join(', ')}
+                        </Text>
+                      </View>
+                    ))}
+
+                    {item.customizations.removed && item.customizations.removed.length > 0 && (
+                      <View className="mt-2">
+                        <Text className="text-sm font-medium" style={{ color: '#FF7A7A' }}>
+                          Sin:
+                        </Text>
+                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
+                          {item.customizations.removed.join(', ')}
                         </Text>
                       </View>
                     )}
 
-                    {item.customizations.sauces && item.customizations.sauces.length > 0 && (
-                      <View className="mb-2">
+                    {item.customizations.specialRequests && (
+                      <View className="mt-2">
                         <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
-                          Salsas:
+                          Peticiones especiales:
                         </Text>
                         <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
-                          {item.customizations.sauces.join(', ')}
-                        </Text>
-                      </View>
-                    )}
-
-                    {item.customizations.toppings && item.customizations.toppings.length > 0 && (
-                      <View>
-                        <Text className="text-sm font-medium" style={{ color: '#FAB10A' }}>
-                          Ingredientes:
-                        </Text>
-                        <Text className="text-sm mt-1" style={{ color: '#CCCCCC' }}>
-                          {item.customizations.toppings.join(', ')}
+                          {item.customizations.specialRequests}
                         </Text>
                       </View>
                     )}

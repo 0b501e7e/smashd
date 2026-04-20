@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, BackHandler, TouchableOpacity } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { sumupService } from '@/services/sumupService';
 import api from '@/services/api';
+import { useCart } from '@/contexts/CartContext';
+
+const redirectUrlBase = (
+  process.env.EXPO_PUBLIC_PAYMENT_REDIRECT_BASE_URL ||
+  process.env.EXPO_PUBLIC_WEB_URL ||
+  'https://example.com'
+).replace(/\/+$/, '');
 
 export default function PaymentWebviewScreen() {
+  const { clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(true);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +46,7 @@ export default function PaymentWebviewScreen() {
                 // Call the verify-payment endpoint. It doesn't require a body.
                 await api.post(`/v1/orders/${orderId}/verify-payment`);
                 console.log(`payment-webview: Successfully called /verify-payment for order ${orderId}`);
+                clearCart();
 
                 // Now, instead of going to order-confirmation, go to waiting-for-confirmation
                 router.replace({ // Using replace so user can't go back to the webview easily
@@ -148,10 +158,9 @@ export default function PaymentWebviewScreen() {
     // The polling useEffect will pick up the actual status.
     // We don't need to do an immediate router.push here as it might be premature.
 
-    // FIXME: This should ideally come from a shared config or environment variable
-    const REDIRECT_URL_BASE = 'https://example.com/order-confirmation';
+    const redirectUrl = `${redirectUrlBase}/order-confirmation`;
 
-    const isRedirectUrl = navState.url.startsWith(REDIRECT_URL_BASE);
+    const isRedirectUrl = navState.url.startsWith(redirectUrl);
 
     if (isRedirectUrl) {
       console.log('Detected navigation to redirect URL. Polling will confirm payment status.');
@@ -230,6 +239,8 @@ export default function PaymentWebviewScreen() {
     );
   }
 
+  const TEST_CARD = '4200000000000091';
+
   return (
     <View
       className="flex-1 bg-black"
@@ -240,10 +251,38 @@ export default function PaymentWebviewScreen() {
         paddingRight: insets.right
       }}
     >
+      {/* Test card banner */}
+      <View style={{ backgroundColor: '#FAB10A', paddingVertical: 10, paddingHorizontal: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#000', fontSize: 11, fontWeight: '500', marginBottom: 2 }}>
+              Tarjeta de prueba
+            </Text>
+            <Text style={{ color: '#000', fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'], letterSpacing: 1 }}>
+              4200 0000 0000 0091
+            </Text>
+            <Text style={{ color: 'rgba(0,0,0,0.6)', fontSize: 11, fontWeight: '500', marginTop: 2 }}>
+              CVV: 123  ·  Caducidad: 12/26
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={async () => {
+              await Clipboard.setStringAsync(TEST_CARD);
+            }}
+            activeOpacity={0.7}
+            style={{ backgroundColor: 'rgba(0,0,0,0.12)', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#000', fontSize: 13, fontWeight: '700' }}>
+              Copiar
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {paymentUrl && (
         <WebView
           source={{ uri: paymentUrl }}
-          className="flex-1"
+          style={{ flex: 1 }}
           onNavigationStateChange={handleNavigationStateChange}
           startInLoadingState={true}
           renderLoading={() => (
@@ -256,4 +295,3 @@ export default function PaymentWebviewScreen() {
     </View>
   );
 }
-

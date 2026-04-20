@@ -15,21 +15,16 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from '@/lib/api';
+import type { CustomizationCategoryDTO, CustomizationOptionDTO } from '@shared/contracts';
 
 // --- Define Types for Fetched Customization Data ---
-type FetchedCustomizationOption = {
-    id: number; // Use number ID from DB
+type FetchedCustomizationOption = CustomizationOptionDTO & {
+    id: number;
     categoryId: number;
-    name: string;
-    price: number;
     isDefaultSelected: boolean;
 };
 
-type FetchedCustomizationCategory = {
-    id: number;
-    name: string; // e.g., "Extras", "Sauces", "Toppings"
-    options: FetchedCustomizationOption[];
-};
+type FetchedCustomizationCategory = CustomizationCategoryDTO<FetchedCustomizationOption>;
 
 interface ItemCustomizationProps {
     item: MenuItem | null;
@@ -53,17 +48,31 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
     const [isImageLoading, setIsImageLoading] = useState(true);
     const [imageLoadError, setImageLoadError] = useState(false);
 
-    // Fetch customization data
+    // Fetch item-specific customization data so default selections are preserved.
     useEffect(() => {
+        if (!isOpen || !item || item.category !== 'BURGER') {
+            setCustomizationCategories([]);
+            setCustomizationError(null);
+            setIsLoadingCustomizations(false);
+            return;
+        }
+
         const fetchCustomizations = async () => {
             setIsLoadingCustomizations(true);
             setCustomizationError(null);
             try {
-                const response = await api.get('/menu/customizations');
+                const response = await api.get(`/menu/items/${item.id}/customizations`);
                 const responseData = await response.json();
-                // Handle new API response structure
-                const data: FetchedCustomizationCategory[] = responseData.data || responseData;
-                setCustomizationCategories(data);
+
+                const groupedData: Record<string, FetchedCustomizationOption[]> = responseData.data || responseData || {};
+                const categories = Object.entries(groupedData).map(([name, options], index) => ({
+                    id: options[0]?.categoryId ?? -(index + 1),
+                    name,
+                    key: name.toLowerCase(),
+                    options,
+                }));
+
+                setCustomizationCategories(categories);
             } catch (err) {
                 console.error("Fetch Customization Error:", err);
                 setCustomizationError(err instanceof Error ? err.message : 'No se pudieron cargar las opciones');
@@ -73,7 +82,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
         };
 
         fetchCustomizations();
-    }, []); // Fetch once on mount
+    }, [isOpen, item]); // Refetch when the selected item changes
 
     // Initialize selections when categories load or item changes
     useEffect(() => {
@@ -104,7 +113,8 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
 
     // Calculate total price based on fetched options
     const calculateTotalPrice = useMemo(() => {
-        if (!item || customizationCategories.length === 0) return 0;
+        if (!item) return 0;
+        if (customizationCategories.length === 0) return item.price * quantity;
 
         let customizationCost = 0;
         customizationCategories.forEach(category => {
@@ -143,33 +153,29 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
 
     // Update basket click handler to use fetched data
     const handleAddToBasketClick = () => {
-        if (!item || customizationCategories.length === 0) return;
+        if (!item) return;
 
         const customizationDetails: CustomizationSelection = {
-            extras: [], // Initialize with explicit keys
-            sauces: [],
-            toppings: [],
+            selected: {},
             removed: [],
         };
         const allSelectedOptions: FetchedCustomizationOption[] = [];
 
         customizationCategories.forEach(category => {
             const selectedInCategory = selectedOptions[category.id] || [];
+            const selectedNames: string[] = [];
 
             selectedInCategory.forEach(optionId => {
                 const option = category.options.find(o => o.id === optionId);
                 if (option) {
-                    // Assign to the correct key based on category name
-                    if (category.name === 'Extras') {
-                        customizationDetails.extras?.push(option.name);
-                    } else if (category.name === 'Sauces') {
-                        customizationDetails.sauces?.push(option.name);
-                    } else if (category.name === 'Toppings') {
-                        customizationDetails.toppings?.push(option.name);
-                    }
+                    selectedNames.push(option.name);
                     allSelectedOptions.push(option);
                 }
             });
+
+            if (selectedNames.length > 0) {
+                customizationDetails.selected![category.name.toLowerCase()] = selectedNames;
+            }
 
             // Track any default options that were unselected (removed)
             category.options.forEach(option => {
@@ -179,10 +185,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             });
         });
 
-        // Remove empty arrays if no options were selected in a category
-        if (customizationDetails.extras?.length === 0) delete customizationDetails.extras;
-        if (customizationDetails.sauces?.length === 0) delete customizationDetails.sauces;
-        if (customizationDetails.toppings?.length === 0) delete customizationDetails.toppings;
+        if (customizationDetails.selected && Object.keys(customizationDetails.selected).length === 0) delete customizationDetails.selected;
         if (customizationDetails.removed?.length === 0) delete customizationDetails.removed;
 
         const unitPriceWithCustomizations = calculateTotalPrice / quantity;
@@ -192,7 +195,7 @@ export function ItemCustomization({ item, isOpen, onOpenChange }: ItemCustomizat
             name: item.name,
             quantity: quantity,
             unitPrice: unitPriceWithCustomizations,
-            imageUrl: item.imageUrl,
+            imageUrl: item.imageUrl ?? undefined,
             customizations: item.category === 'BURGER' && (allSelectedOptions.length > 0 || (customizationDetails.removed && customizationDetails.removed.length > 0)) ? customizationDetails : undefined,
         };
         addToBasket(itemToAdd);

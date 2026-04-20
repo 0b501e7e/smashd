@@ -51,6 +51,7 @@ model MenuItem {
   orderItems                 OrderItem[]
   customizationCategories    MenuItemCustomizationCategory[] // Relation to join table for old category-based linking
   linkedCustomizationOptions MenuItemCustomizationOption[] // For direct option linking (NEW)
+  inventoryItems             MenuItemInventory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -68,13 +69,16 @@ model Order {
   deliveryAddress    String?
   orderCode          String?             @unique
   items              OrderItem[]
+  paymentMethod      PaymentMethod       @default(SUMUP)
   sumupCheckoutId    String? // SumUp checkout reference
   sumupOrderId       String? // If SumUp has a separate order ID
   estimatedReadyTime DateTime? // When business estimates order will be ready
   readyAt            DateTime? // When order was actually marked ready
+  stockDeductedAt    DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   pointsTransactions PointsTransaction[]
+  stockMovements     StockMovement[]
 }
 
 model OrderItem {
@@ -153,6 +157,7 @@ model CustomizationOption {
   categoryId Int // Foreign key to CustomizationCategory
   category   CustomizationCategory         @relation(fields: [categoryId], references: [id])
   menuItems  MenuItemCustomizationOption[] // For direct option linking (NEW)
+  inventoryItems CustomizationOptionInventory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -262,6 +267,12 @@ enum FulfillmentMethod {
   DELIVERY
 }
 
+enum PaymentMethod {
+  SUMUP        // Online payment via SumUp hosted checkout
+  CASH         // Cash payment in store
+  CARD_READER  // Physical card reader in store
+}
+
 model PasswordResetToken {
   userId    Int      @id
   user      User     @relation(fields: [userId], references: [id])
@@ -282,4 +293,62 @@ model AppSetting {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id                   Int                            @id @default(autoincrement())
+  name                 String                         @unique
+  unit                 String                         @default("unit")
+  currentQuantity      Float                          @default(0)
+  lowStockThreshold    Float                          @default(0)
+  isActive             Boolean                        @default(true)
+  menuItemLinks        MenuItemInventory[]
+  customizationLinks   CustomizationOptionInventory[]
+  stockMovements       StockMovement[]
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+}
+
+model MenuItemInventory {
+  menuItemId      Int
+  menuItem        MenuItem      @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity        Float
+
+  @@id([menuItemId, inventoryItemId])
+  @@index([inventoryItemId])
+}
+
+model CustomizationOptionInventory {
+  customizationOptionId Int
+  customizationOption   CustomizationOption @relation(fields: [customizationOptionId], references: [id], onDelete: Cascade)
+  inventoryItemId       Int
+  inventoryItem         InventoryItem       @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  quantity              Float
+
+  @@id([customizationOptionId, inventoryItemId])
+  @@index([inventoryItemId])
+}
+
+model StockMovement {
+  id              Int               @id @default(autoincrement())
+  inventoryItemId Int
+  inventoryItem   InventoryItem     @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  orderId         Int?
+  order           Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  movementType    StockMovementType
+  quantityDelta   Float
+  quantityAfter   Float
+  note            String?
+  createdAt       DateTime          @default(now())
+
+  @@index([inventoryItemId, createdAt])
+  @@index([orderId])
+}
+
+enum StockMovementType {
+  RESTOCK
+  ORDER_DEPLETION
+  MANUAL_ADJUSTMENT
 }

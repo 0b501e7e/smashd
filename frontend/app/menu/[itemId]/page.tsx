@@ -12,37 +12,8 @@ import { useBasket, MenuItem, CustomizationSelection } from '@/app/components/Ba
 import { Minus, Plus } from 'lucide-react';
 import { api } from '@/lib/api';
 
-// Define customization options (similar to React Native app)
-// In a real app, these might come from an API or config
-const CUSTOMIZATION_CONFIG = {
-  BURGER: {
-    EXTRAS: [
-      { id: 'extra-patty', name: 'Extra Patty', price: 2.00 },
-      { id: 'cheese', name: 'Cheese', price: 1.00 },
-      { id: 'bacon', name: 'Bacon', price: 1.50 },
-      { id: 'avocado', name: 'Avocado', price: 1.75 },
-    ],
-    SAUCES: [
-      { id: 'ketchup', name: 'Ketchup', price: 0 },
-      { id: 'mayo', name: 'Mayo', price: 0 },
-      { id: 'bbq', name: 'BBQ Sauce', price: 0 },
-      { id: 'special-sauce', name: 'Special Sauce', price: 0.50 },
-    ],
-    TOPPINGS: [
-      { id: 'lettuce', name: 'Lettuce', price: 0 },
-      { id: 'tomato', name: 'Tomato', price: 0 },
-      { id: 'onion', name: 'Onion', price: 0 },
-      { id: 'pickles', name: 'Pickles', price: 0 },
-      { id: 'jalapenos', name: 'Jalapenos', price: 0.75 },
-    ],
-  },
-  // Add configurations for SIDE, DRINK etc. if they have customizations
-  SIDE: {},
-  DRINK: {},
-};
-
-type Option = { id: string; name: string; price: number };
-type CategoryConfig = { EXTRAS?: Option[]; SAUCES?: Option[]; TOPPINGS?: Option[] };
+type Option = { id: number; name: string; price: number; isDefaultSelected?: boolean };
+type Customizations = Record<string, Option[]>;
 
 export default function MenuItemDetailPage() {
   const params = useParams();
@@ -52,45 +23,58 @@ export default function MenuItemDetailPage() {
   const itemId = params.itemId as string;
 
   const [item, setItem] = useState<MenuItem | null>(null);
+  const [customizations, setCustomizations] = useState<Customizations>({});
+  const [selected, setSelected] = useState<Record<string, Set<number>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-
-  // State for selected customizations
-  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
-  const [selectedSauces, setSelectedSauces] = useState<string[]>([]);
-  const [selectedToppings, setSelectedToppings] = useState<string[]>([]);
   const [specialRequests, setSpecialRequests] = useState('');
   const [suggestedItems, setSuggestedItems] = useState<MenuItem[]>([]);
 
-  // Fetch item details
   useEffect(() => {
     if (!itemId) return;
-    const fetchItem = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [itemResponse, menuResponse] = await Promise.all([
+        const [itemRes, customizationsRes, menuRes] = await Promise.all([
           api.get(`/menu/${itemId}`),
+          api.get(`/menu/items/${itemId}/customizations`),
           api.get('/menu'),
         ]);
 
-        if (!itemResponse.ok) {
-          throw new Error(`Failed to fetch item: ${itemResponse.statusText}`);
-        }
-        const responseData = await itemResponse.json();
-        const data: MenuItem = responseData.data || responseData;
-        setItem(data);
+        if (!itemRes.ok) throw new Error(`Failed to fetch item: ${itemRes.statusText}`);
 
-        // Build "goes well with" suggestions from other categories
-        if (menuResponse.ok) {
-          const menuData = await menuResponse.json();
-          const allItems: MenuItem[] = menuData.data || menuData;
-          const suggestions = allItems
-            .filter(i => i.id !== data.id && i.category !== data.category)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 4);
-          setSuggestedItems(suggestions);
+        const itemData: MenuItem = (await itemRes.json()).data;
+        setItem(itemData);
+
+        // Load customizations from API and pre-select defaults
+        if (customizationsRes.ok) {
+          const custData: Customizations = (await customizationsRes.json()).data ?? {};
+          setCustomizations(custData);
+
+          // Pre-select options marked as default
+          const defaults: Record<string, Set<number>> = {};
+          for (const [category, options] of Object.entries(custData)) {
+            for (const option of options) {
+              if (option.isDefaultSelected) {
+                if (!defaults[category]) defaults[category] = new Set();
+                defaults[category].add(option.id);
+              }
+            }
+          }
+          setSelected(defaults);
+        }
+
+        // "Goes well with" suggestions
+        if (menuRes.ok) {
+          const allItems: MenuItem[] = (await menuRes.json()).data ?? [];
+          setSuggestedItems(
+            allItems
+              .filter(i => i.id !== itemData.id && i.category !== itemData.category)
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 4)
+          );
         }
       } catch (err) {
         console.error(err);
@@ -99,130 +83,85 @@ export default function MenuItemDetailPage() {
         setIsLoading(false);
       }
     };
-    fetchItem();
+    fetchData();
   }, [itemId]);
 
-  // Get customization config for the current item type
-  const categoryConfig = item?.category ? (CUSTOMIZATION_CONFIG as any)[item.category] as CategoryConfig : {};
+  const toggleOption = (category: string, optionId: number) => {
+    setSelected(prev => {
+      const next = { ...prev, [category]: new Set(prev[category] ?? []) };
+      if (next[category].has(optionId)) {
+        next[category].delete(optionId);
+      } else {
+        next[category].add(optionId);
+      }
+      return next;
+    });
+  };
 
-  // Function to calculate total price
   const calculateTotalPrice = () => {
     if (!item) return 0;
     let unitPrice = item.price;
-
-    const calculateCategoryPrice = (selectedIds: string[], options?: Option[]) => {
-      return selectedIds.reduce((sum, id) => {
-        const option = options?.find(opt => opt.id === id);
-        return sum + (option?.price || 0);
-      }, 0);
-    };
-
-    unitPrice += calculateCategoryPrice(selectedExtras, categoryConfig.EXTRAS);
-    unitPrice += calculateCategoryPrice(selectedSauces, categoryConfig.SAUCES);
-    unitPrice += calculateCategoryPrice(selectedToppings, categoryConfig.TOPPINGS);
-
+    for (const [category, options] of Object.entries(customizations)) {
+      for (const option of options) {
+        if (selected[category]?.has(option.id) && !option.isDefaultSelected) {
+          unitPrice += option.price;
+        }
+      }
+    }
     return unitPrice * quantity;
   };
 
-  // Toggle customization selection
-  const handleSelectionChange = (id: string, category: 'EXTRAS' | 'SAUCES' | 'TOPPINGS') => {
-    const setters = {
-      EXTRAS: setSelectedExtras,
-      SAUCES: setSelectedSauces,
-      TOPPINGS: setSelectedToppings,
-    };
-    const currentSelection = { // Correctly reference state variables
-      EXTRAS: selectedExtras,
-      SAUCES: selectedSauces,
-      TOPPINGS: selectedToppings,
-    }[category];
-
-    const setter = setters[category];
-    if (currentSelection.includes(id)) {
-      setter(currentSelection.filter(selId => selId !== id));
-    } else {
-      setter([...currentSelection, id]);
-    }
-  };
-
-  // Add item to basket
   const handleAddToCart = () => {
     if (!item) return;
-
     const unitPrice = calculateTotalPrice() / quantity;
-    const customizations: CustomizationSelection = {};
+    const custSelection: CustomizationSelection = {};
+    const selectedByCategory: Record<string, string[]> = {};
 
-    const mapSelections = (selectedIds: string[], options?: Option[]) => {
-      return selectedIds
-        .map(id => options?.find(opt => opt.id === id)?.name)
-        .filter((name): name is string => !!name);
+    for (const [category, options] of Object.entries(customizations)) {
+      const names = options
+        .filter(o => selected[category]?.has(o.id))
+        .map(o => o.name);
+
+      const removedDefaults = options
+        .filter(o => o.isDefaultSelected && !selected[category]?.has(o.id))
+        .map(o => o.name);
+
+      if (names.length > 0) {
+        selectedByCategory[category.toLowerCase()] = names;
+      }
+      if (removedDefaults.length > 0) {
+        custSelection.removed = [...(custSelection.removed ?? []), ...removedDefaults];
+      }
     }
-
-    if (selectedExtras.length > 0) customizations.extras = mapSelections(selectedExtras, categoryConfig.EXTRAS);
-    if (selectedSauces.length > 0) customizations.sauces = mapSelections(selectedSauces, categoryConfig.SAUCES);
-    if (selectedToppings.length > 0) customizations.toppings = mapSelections(selectedToppings, categoryConfig.TOPPINGS);
-    if (specialRequests.trim()) customizations.specialRequests = specialRequests.trim();
+    if (Object.keys(selectedByCategory).length > 0) custSelection.selected = selectedByCategory;
+    if (specialRequests.trim()) custSelection.specialRequests = specialRequests.trim();
 
     addToBasket({
       menuItemId: item.id,
       name: item.name,
-      quantity: quantity,
-      unitPrice: unitPrice,
-      customizations: Object.keys(customizations).length > 0 ? customizations : undefined,
-      imageUrl: item.imageUrl,
+      quantity,
+      unitPrice,
+      customizations: Object.keys(custSelection).length > 0 ? custSelection : undefined,
+      imageUrl: item.imageUrl ?? undefined,
     });
 
-    // Optionally: show confirmation and/or navigate away
-    router.push('/#menu'); // Navigate back to menu section on homepage for now
+    router.push('/#menu');
   };
 
-  // Helper to render customization options
-  const renderOptions = (title: string, options: Option[] | undefined, selected: string[], category: 'EXTRAS' | 'SAUCES' | 'TOPPINGS') => {
-    if (!options || options.length === 0) return null;
-    return (
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3 text-yellow-300">{title}</h3>
-        <div className="space-y-2">
-          {options.map(option => (
-            <div key={option.id} className="flex items-center justify-between">
-              <Label htmlFor={`${category}-${option.id}`} className="flex items-center space-x-2 cursor-pointer text-white">
-                <Checkbox
-                  id={`${category}-${option.id}`}
-                  checked={selected.includes(option.id)}
-                  onCheckedChange={() => handleSelectionChange(option.id, category)}
-                  className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
-                />
-                <span>{option.name}</span>
-              </Label>
-              {option.price > 0 && (
-                <span className="text-sm text-yellow-200">+€{option.price.toFixed(2)}</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
+  const imageSrc = item?.imageUrl
+    ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
+    : '/burger.png';
 
   if (isLoading) return <div className="container mx-auto min-h-screen flex justify-center items-center"><p className="text-yellow-400 text-xl">Loading...</p></div>;
   if (error) return <div className="container mx-auto min-h-screen flex justify-center items-center"><p className="text-red-500 text-xl">Error: {error}</p></div>;
   if (!item) return <div className="container mx-auto min-h-screen flex justify-center items-center"><p className="text-white text-xl">Item not found.</p></div>;
 
-  // Get API base URL, remove trailing /v1 or /api suffix
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/(v1|api)$/, '');
-  // Construct full image URL: <base_url><api_path> (e.g. http://.../images/coke.jpg)
-  const imageSrc = item.imageUrl
-    ? (item.imageUrl.startsWith('http') ? item.imageUrl : (apiUrl ? `${apiUrl}${item.imageUrl}` : item.imageUrl))
-    : '/burger.png'; // Keep using frontend fallback
-  const fallbackSrc = '/burger.png'; // Define fallback for error handling
-  console.log(`Detail Page: Using image path: ${imageSrc}`);
-
   return (
     <div className="container mx-auto px-4 py-8 pt-20 min-h-screen bg-black text-white">
       <Card className="bg-yellow-950 border border-yellow-400/30 overflow-hidden">
         <div className="md:flex">
-          {/* Image Section */}
+          {/* Image */}
           <div className="md:w-1/2">
             <div className="relative aspect-square w-full max-w-md mx-auto rounded-lg overflow-hidden shadow-lg bg-gray-800">
               <Image
@@ -230,17 +169,16 @@ export default function MenuItemDetailPage() {
                 alt={item.name}
                 fill
                 style={{ objectFit: 'cover' }}
-                priority // Prioritize loading the main image on the detail page
+                priority
                 onError={(e) => {
-                  console.error(`Detail Page: Error loading image ${imageSrc}`);
-                  (e.target as HTMLImageElement).src = fallbackSrc;
-                  (e.target as HTMLImageElement).srcset = fallbackSrc;
+                  (e.target as HTMLImageElement).src = '/burger.png';
+                  (e.target as HTMLImageElement).srcset = '/burger.png';
                 }}
               />
             </div>
           </div>
 
-          {/* Details & Customization Section */}
+          {/* Details & Customization */}
           <div className="md:w-1/2 p-6 flex flex-col">
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-3xl font-bold text-yellow-400 mb-2">{item.name}</CardTitle>
@@ -251,13 +189,37 @@ export default function MenuItemDetailPage() {
             <Separator className="my-4 bg-yellow-400/30" />
 
             <CardContent className="p-0 flex-grow overflow-y-auto">
-              {/* Customizations */}
-              {renderOptions('Extras', categoryConfig.EXTRAS, selectedExtras, 'EXTRAS')}
-              {renderOptions('Sauces', categoryConfig.SAUCES, selectedSauces, 'SAUCES')}
-              {renderOptions('Toppings', categoryConfig.TOPPINGS, selectedToppings, 'TOPPINGS')}
-
-              {/* Spacer if no customizations */}
-              {Object.keys(categoryConfig).length === 0 && <div className="h-16"></div>}
+              {/* Dynamic customization categories from API */}
+              {Object.entries(customizations).map(([category, options]) => (
+                <div key={category} className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3 text-yellow-300">{category}</h3>
+                  <div className="space-y-2">
+                    {options.map(option => (
+                      <div key={option.id} className="flex items-center justify-between">
+                        <Label htmlFor={`${category}-${option.id}`} className="flex items-center space-x-2 cursor-pointer text-white">
+                          <Checkbox
+                            id={`${category}-${option.id}`}
+                            checked={selected[category]?.has(option.id) ?? false}
+                            onCheckedChange={() => toggleOption(category, option.id)}
+                            className="border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
+                          />
+                          <span>
+                            {option.name}
+                            {option.isDefaultSelected && (
+                              <span className="ml-2 rounded bg-yellow-500/10 px-1.5 py-0.5 text-xs italic text-yellow-300">
+                                Included
+                              </span>
+                            )}
+                          </span>
+                        </Label>
+                        {option.price > 0 && !option.isDefaultSelected && (
+                          <span className="text-sm text-yellow-200">+€{option.price.toFixed(2)}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
 
               {/* Special Requests */}
               <div className="mb-6">
@@ -320,7 +282,6 @@ export default function MenuItemDetailPage() {
               const suggestedImageSrc = suggested.imageUrl
                 ? (suggested.imageUrl.startsWith('http') ? suggested.imageUrl : (apiUrl ? `${apiUrl}${suggested.imageUrl}` : suggested.imageUrl))
                 : '/burger.png';
-
               return (
                 <Card
                   key={suggested.id}
@@ -334,9 +295,7 @@ export default function MenuItemDetailPage() {
                       fill
                       style={{ objectFit: 'cover' }}
                       sizes="(max-width: 768px) 45vw, 23vw"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/burger.png';
-                      }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/burger.png'; }}
                     />
                   </div>
                   <CardContent className="p-3">
@@ -351,4 +310,4 @@ export default function MenuItemDetailPage() {
       )}
     </div>
   );
-} 
+}

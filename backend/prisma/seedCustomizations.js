@@ -9,18 +9,18 @@ const EXTRAS = [
 ];
 
 const SAUCES = [
-  { name: 'Ketchup', price: 0 },
-  { name: 'Mayo', price: 0 },
-  { name: 'BBQ Sauce', price: 0 },
-  { name: 'Special Sauce', price: 0.50 },
+  { name: 'Ketchup', price: 0, isDefault: true },
+  { name: 'Mayo', price: 0, isDefault: true },
+  { name: 'BBQ Sauce', price: 0, isDefault: false },
+  { name: 'Special Sauce', price: 0.50, isDefault: false },
 ];
 
 const TOPPINGS = [
-  { name: 'Lettuce', price: 0 },
-  { name: 'Tomato', price: 0 },
-  { name: 'Onion', price: 0 },
-  { name: 'Pickles', price: 0 },
-  { name: 'Jalapenos', price: 0.75 },
+  { name: 'Lettuce', price: 0, isDefault: true },
+  { name: 'Tomato', price: 0, isDefault: true },
+  { name: 'Onion', price: 0, isDefault: true },
+  { name: 'Pickles', price: 0, isDefault: false },
+  { name: 'Jalapenos', price: 0.75, isDefault: false },
 ];
 
 async function main() {
@@ -51,7 +51,7 @@ async function main() {
     await prisma.customizationOption.upsert({
       where: { name_categoryId: { name: sauce.name, categoryId: saucesCategory.id } },
       update: { price: sauce.price },
-      create: { ...sauce, categoryId: saucesCategory.id },
+      create: { name: sauce.name, price: sauce.price, categoryId: saucesCategory.id },
     });
     console.log(`Created/Updated sauce: ${sauce.name}`);
   }
@@ -87,9 +87,16 @@ async function main() {
 
   console.log(`Found ${burgerItems.length} burger items:`, burgerItems.map(b => `${b.name} (ID: ${b.id})`));
 
-  // Get all customization options
-  const allOptions = await prisma.customizationOption.findMany();
+  // Get all customization options with their category names for default lookup
+  const allOptions = await prisma.customizationOption.findMany({ include: { category: true } });
   console.log(`Found ${allOptions.length} customization options to link`);
+
+  // Build a lookup: option name → isDefault (based on our seed definitions above)
+  const defaultLookup = new Map([
+    ...SAUCES.map(s => [s.name, s.isDefault || false]),
+    ...TOPPINGS.map(t => [t.name, t.isDefault || false]),
+    ...EXTRAS.map(e => [e.name, false]),
+  ]);
 
   // Link each burger to all customization options using the NEW direct system
   for (const burger of burgerItems) {
@@ -98,12 +105,13 @@ async function main() {
       where: { menuItemId: burger.id }
     });
 
-    // Create new links to all options
+    // Create new links to all options, setting isDefault from our lookup
     for (const option of allOptions) {
       await prisma.menuItemCustomizationOption.create({
         data: {
           menuItemId: burger.id,
           customizationOptionId: option.id,
+          isDefault: defaultLookup.get(option.name) ?? false,
         },
       });
     }

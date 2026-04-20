@@ -11,6 +11,7 @@ import { DriverService } from '../services/driver.service';
 import { IDriverService } from '../interfaces/IDriverService';
 import { AnalyticsService } from '../services/analytics.service';
 import { IAnalyticsService } from '../interfaces/IAnalyticsService';
+import { InventoryService } from '../services/inventory.service';
 
 /**
  * Service Container - Centralized dependency injection
@@ -35,6 +36,7 @@ export class ServiceContainer {
   private _paymentService: PaymentService;
   private _driverService: IDriverService;
   private _analyticsService: IAnalyticsService;
+  private _inventoryService: InventoryService;
 
   private constructor() {
     console.log('🔧 Initializing Service Container...');
@@ -46,12 +48,13 @@ export class ServiceContainer {
 
     // Initialize services with dependency injection
     this._analyticsService = new AnalyticsService(this._prisma);
+    this._inventoryService = new InventoryService(this._prisma);
     this._authService = new AuthService(this._prisma);
     this._menuService = new MenuService(this._prisma);
     this._notificationService = new NotificationService(this._prisma);
-    this._orderService = new OrderService(this._prisma, this._analyticsService);
+    this._orderService = new OrderService(this._prisma, this._analyticsService, this._inventoryService);
     this._userService = new UserService(this._prisma);
-    this._adminService = new AdminService(this._prisma, this._orderService, this._notificationService);
+    this._adminService = new AdminService(this._prisma, this._orderService, this._inventoryService, this._notificationService);
     this._paymentService = new PaymentService(this._prisma);
     this._driverService = new DriverService(this._prisma, this._orderService, this._notificationService);
 
@@ -136,6 +139,10 @@ export class ServiceContainer {
    */
   public get analyticsService(): IAnalyticsService {
     return this._analyticsService;
+  }
+
+  public get inventoryService(): InventoryService {
+    return this._inventoryService;
   }
 
   /**

@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils'; // Assuming you have a currency formatter
+import { getSelectedCustomizationEntries } from '@/lib/customizations';
 
 // Helper to render customizations cleanly
 const renderCustomizations = (item: BasketItem) => {
@@ -17,14 +18,13 @@ const renderCustomizations = (item: BasketItem) => {
     return null;
   }
 
-  const { extras = [], sauces = [], toppings = [], removed = [] } = item.customizations;
-  const allCustomizations = [
-    ...(extras.length > 0 ? [`Extras: ${extras.join(', ')}`] : []),
-    ...(sauces.length > 0 ? [`Sauces: ${sauces.join(', ')}`] : []),
-    ...(toppings.length > 0 ? [`Toppings: ${toppings.join(', ')}`] : []),
-  ];
+  const allCustomizations = getSelectedCustomizationEntries(item.customizations).map(({ label, values }) => (
+    `${label}: ${values.join(', ')}`
+  ));
+  const removed = item.customizations.removed ?? [];
+  const specialRequests = item.customizations.specialRequests;
 
-  if (allCustomizations.length === 0 && removed.length === 0) return null;
+  if (allCustomizations.length === 0 && removed.length === 0 && !specialRequests) return null;
 
   return (
     <div className="mt-1 flex flex-col gap-0.5">
@@ -36,6 +36,11 @@ const renderCustomizations = (item: BasketItem) => {
       {removed.length > 0 && (
         <p className="text-xs text-red-500 dark:text-red-400 font-medium italic">
           - Sin {removed.join(', ')}
+        </p>
+      )}
+      {specialRequests && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+          Nota: {specialRequests}
         </p>
       )}
     </div>

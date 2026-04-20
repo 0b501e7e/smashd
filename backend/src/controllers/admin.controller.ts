@@ -9,8 +9,12 @@ import {
   AdminMenuItemUpdateData,
   OrderAcceptData,
   OrderDeclineData,
+  QuickCreateOrderData,
   CreateCustomizationCategoryData,
-  MenuItemCustomizationLinkData
+  MenuItemCustomizationLinkData,
+  InventoryAdjustmentData,
+  InventoryItemData,
+  RecipeIngredientInput
 } from '../types/admin.types';
 
 /**
@@ -179,6 +183,147 @@ export class AdminController {
     }
   }
 
+  /**
+   * Get stock management overview
+   * GET /v1/admin/stock/overview
+   */
+  async getStockOverview(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const overview = await this.adminService.getStockOverview();
+      sendSuccess(res, overview);
+    } catch (error) {
+      console.error('AdminController: Error fetching stock overview:', error);
+      next(error);
+    }
+  }
+
+  /**
+   * Create inventory item
+   * POST /v1/admin/inventory
+   */
+  async createInventoryItem(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const data: InventoryItemData = req.body;
+      const item = await this.adminService.createInventoryItem(data);
+      sendSuccess(res, item, 'Inventory item created', HTTP_STATUS.CREATED);
+    } catch (error) {
+      console.error('AdminController: Error creating inventory item:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Update inventory item
+   * PUT /v1/admin/inventory/:id
+   */
+  async updateInventoryItem(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const itemId = parseInt(id as string, 10);
+
+      if (!id || Number.isNaN(itemId)) {
+        sendError(res, 'Invalid inventory item ID', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const data: InventoryItemData = req.body;
+      const item = await this.adminService.updateInventoryItem(itemId, data);
+      sendSuccess(res, item, 'Inventory item updated');
+    } catch (error) {
+      console.error('AdminController: Error updating inventory item:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Adjust inventory item quantity
+   * POST /v1/admin/inventory/:id/adjust
+   */
+  async adjustInventoryItem(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const itemId = parseInt(id as string, 10);
+
+      if (!id || Number.isNaN(itemId)) {
+        sendError(res, 'Invalid inventory item ID', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const data: InventoryAdjustmentData = req.body;
+      const item = await this.adminService.adjustInventoryItem(itemId, data);
+      sendSuccess(res, item, 'Inventory adjusted');
+    } catch (error) {
+      console.error('AdminController: Error adjusting inventory item:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Replace menu item recipe
+   * PUT /v1/admin/menu/:id/recipe
+   */
+  async setMenuItemRecipe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const menuItemId = parseInt(id as string, 10);
+
+      if (!id || Number.isNaN(menuItemId)) {
+        sendError(res, 'Invalid menu item ID', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const ingredients = Array.isArray(req.body?.ingredients) ? req.body.ingredients as RecipeIngredientInput[] : [];
+      const result = await this.adminService.setMenuItemRecipe(menuItemId, ingredients);
+      sendSuccess(res, result, result.message);
+    } catch (error) {
+      console.error('AdminController: Error saving menu recipe:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Replace customization option recipe
+   * PUT /v1/admin/customization-options/:id/recipe
+   */
+  async setCustomizationOptionRecipe(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const optionId = parseInt(id as string, 10);
+
+      if (!id || Number.isNaN(optionId)) {
+        sendError(res, 'Invalid customization option ID', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const ingredients = Array.isArray(req.body?.ingredients) ? req.body.ingredients as RecipeIngredientInput[] : [];
+      const result = await this.adminService.setCustomizationOptionRecipe(optionId, ingredients);
+      sendSuccess(res, result, result.message);
+    } catch (error) {
+      console.error('AdminController: Error saving customization recipe:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
 
 
   // =====================
@@ -187,6 +332,46 @@ export class AdminController {
 
   /**
    * Get orders for admin dashboard
+   * GET /v1/admin/orders
+   */
+  /**
+   * Create a quick walk-in order (cash or card reader, no SumUp checkout)
+   * POST /v1/admin/orders/quick-create
+   */
+  async quickCreateOrder(req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { items, paymentMethod } = req.body;
+
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        sendError(res, 'items must be a non-empty array', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      if (!paymentMethod || !['CASH', 'CARD_READER'].includes(paymentMethod)) {
+        sendError(res, 'paymentMethod must be CASH or CARD_READER', HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+
+      const data: QuickCreateOrderData = {
+        items,
+        paymentMethod,
+        staffUserId: req.user!.userId,
+      };
+
+      const order = await this.adminService.createQuickOrder(data);
+      sendSuccess(res, order, 'Quick order created', HTTP_STATUS.CREATED);
+    } catch (error) {
+      console.error('AdminController: Error creating quick order:', error);
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.BAD_REQUEST);
+        return;
+      }
+      next(error);
+    }
+  }
+
+  /**
+   * Get all active orders for admin panel
    * GET /v1/admin/orders
    */
   async getAdminOrders(_req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> {

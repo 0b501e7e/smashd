@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { HTTP_STATUS } from '../config/constants';
 import { IPaymentService } from '../interfaces/IPaymentService';
 import { sendSuccess, sendError } from '../utils/response.utils';
+import { SumUpApiError } from '../services/sumupService';
 
 export class PaymentController {
   constructor(private paymentService: IPaymentService) { }
@@ -63,6 +64,25 @@ export class PaymentController {
       }
     } catch (error) {
       console.error('Error initiating checkout:', error);
+
+      if (error instanceof SumUpApiError) {
+        const sumupMessage =
+          typeof error.responseData === 'object' &&
+          error.responseData !== null &&
+          'message' in error.responseData &&
+          typeof (error.responseData as { message?: unknown }).message === 'string'
+            ? (error.responseData as { message: string }).message
+            : error.message;
+
+        sendError(res, `SumUp checkout failed: ${sumupMessage}`, HTTP_STATUS.BAD_GATEWAY);
+        return;
+      }
+
+      if (error instanceof Error) {
+        sendError(res, error.message, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+        return;
+      }
+
       sendError(res, 'Error initiating checkout', HTTP_STATUS.INTERNAL_SERVER_ERROR);
     }
   }
@@ -89,6 +109,19 @@ export class PaymentController {
 
       if (error instanceof Error && error.message === 'Checkout not found') {
         sendError(res, 'Checkout not found', HTTP_STATUS.NOT_FOUND);
+        return;
+      }
+
+      if (error instanceof SumUpApiError) {
+        const sumupMessage =
+          typeof error.responseData === 'object' &&
+          error.responseData !== null &&
+          'message' in error.responseData &&
+          typeof (error.responseData as { message?: unknown }).message === 'string'
+            ? (error.responseData as { message: string }).message
+            : error.message;
+
+        sendError(res, `Failed to query SumUp API: ${sumupMessage}`, HTTP_STATUS.BAD_GATEWAY);
         return;
       }
 

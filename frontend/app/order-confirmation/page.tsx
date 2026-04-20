@@ -10,6 +10,8 @@ import { formatCurrency } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion } from 'framer-motion';
 import { api } from '@/lib/api';
+import { useBasket } from '../components/BasketContext';
+import { hasConfirmedPayment, PENDING_ORDER_ID_KEY } from '@/lib/payment';
 
 // Define a type for the order details we expect
 interface OrderDetails {
@@ -49,6 +51,7 @@ function OrderConfirmationSkeleton() {
 }
 
 export default function OrderConfirmation() {
+  const { clearBasket } = useBasket();
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +60,7 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     // Get orderId from sessionStorage
-    const storedOrderId = sessionStorage.getItem('pendingOrderId');
+    const storedOrderId = sessionStorage.getItem(PENDING_ORDER_ID_KEY);
     console.log('OrderConfirmation mounted, retrieved orderId from sessionStorage:', storedOrderId);
 
     if (storedOrderId) {
@@ -101,10 +104,11 @@ export default function OrderConfirmation() {
         setOrderDetails(data);
 
         // Remove orderId from sessionStorage after successful verification
-        sessionStorage.removeItem('pendingOrderId');
+        sessionStorage.removeItem(PENDING_ORDER_ID_KEY);
 
         // Trigger confetti if payment was successful
-        if (data.status === 'PAID' || data.status === 'PAYMENT_CONFIRMED') {
+        if (hasConfirmedPayment(data.status)) {
+          clearBasket();
           setShowConfetti(true);
           // Optional: Hide confetti after a few seconds
           setTimeout(() => setShowConfetti(false), 8000);
@@ -119,7 +123,7 @@ export default function OrderConfirmation() {
     };
 
     verifyAndFetchOrder();
-  }, [orderId]); // Now depends on the orderId state
+  }, [clearBasket, orderId]); // Now depends on the orderId state
 
   const renderContent = () => {
     if (isLoading) {
@@ -165,7 +169,7 @@ export default function OrderConfirmation() {
     let message = "Tu pedido se está preparando. Puedes seguir su estado en tu historial de pedidos.";
     let titleColor = "text-yellow-300"; // Default to yellow
 
-    if (orderDetails.status === 'PAID') {
+    if (hasConfirmedPayment(orderDetails.status)) {
       title = "¡Pago Exitoso!";
       message = "¡Gracias por tu pedido! Lo tendremos listo en breve.";
       titleColor = "text-green-400";
