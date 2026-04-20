@@ -191,30 +191,40 @@ function CustomizationContent({
               <div>
                 <h4 className="mb-2 text-base font-semibold text-yellow-300">{cat.name}</h4>
                 <div className="space-y-2">
-                  {cat.options.map(opt => (
-                    <div
-                      key={opt.id}
-                      className="flex min-h-14 items-center justify-between rounded-lg border border-gray-800 bg-gray-950/60 px-3 py-2 hover:bg-gray-800/60"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          id={`opt-${opt.id}`}
-                          checked={(selectedOptions[cat.id] ?? []).includes(opt.id)}
-                          onCheckedChange={() => toggle(cat.id, opt.id)}
-                          className="h-5 w-5 border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
-                        />
-                        <Label htmlFor={`opt-${opt.id}`} className="cursor-pointer text-base leading-tight">
-                          <span className="block text-white">{opt.name}</span>
-                          {opt.isDefaultSelected && (
-                            <span className="mt-1 block text-sm italic text-yellow-500">Included</span>
-                          )}
-                        </Label>
-                      </div>
-                      {opt.price > 0 && !opt.isDefaultSelected && (
-                        <span className="pl-3 text-sm text-gray-400">+{formatCurrency(opt.price)}</span>
-                      )}
-                    </div>
-                  ))}
+                  {cat.options.map(opt => {
+                    const isChecked = (selectedOptions[cat.id] ?? []).includes(opt.id);
+
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => toggle(cat.id, opt.id)}
+                        className={`flex min-h-16 w-full items-center justify-between rounded-lg border px-3 py-3 text-left transition-colors ${
+                          isChecked
+                            ? 'border-yellow-400 bg-yellow-400/10'
+                            : 'border-gray-800 bg-gray-950/60 hover:bg-gray-800/60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            id={`opt-${opt.id}`}
+                            checked={isChecked}
+                            onCheckedChange={() => toggle(cat.id, opt.id)}
+                            className="h-5 w-5 border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
+                          />
+                          <Label htmlFor={`opt-${opt.id}`} className="cursor-pointer text-base leading-tight pointer-events-none">
+                            <span className="block text-white">{opt.name}</span>
+                            {opt.isDefaultSelected && (
+                              <span className="mt-1 block text-sm italic text-yellow-500">Included</span>
+                            )}
+                          </Label>
+                        </div>
+                        {opt.price > 0 && !opt.isDefaultSelected && (
+                          <span className="pl-3 text-sm text-gray-400">+{formatCurrency(opt.price)}</span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </React.Fragment>
